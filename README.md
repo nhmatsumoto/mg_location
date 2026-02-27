@@ -12,7 +12,7 @@
   Crawlers](https://github.com/sosbrumadinho/brumadinho_crawlers)
 
 ## English
-The aim of this project is to setup a repository of tools to support the search and rescue efforts, currently taking place at Brumadino/MG/Brazil, in response to the [**Brumadinho dam disaster**](https://en.wikipedia.org/wiki/Brumadinho_dam_disaster) occurred on 25 January 2019. As this file is being updated, 65 people have been confirmed dead and over 300 are still missing.
+The aim of this project is to build and maintain a repository of tools to support emergency response, search, rescue, and recovery operations in disaster scenarios. Although it started in response to the [**Brumadinho dam disaster**](https://en.wikipedia.org/wiki/Brumadinho_dam_disaster), the current focus is broader and includes natural and environmental disasters such as dam failures, floods, wildfires, earthquakes, tsunamis, hurricanes, and related critical events.
 
 ### How to colaborate:
 * Please see the list of [Projects](https://github.com/dieegom/brumadinho_location/projects) that are being worked on and their respective issues. Project details are also listed below.
@@ -75,7 +75,7 @@ This tool returns an updated .csv with all the names of missing people.
 Through a set of photos provided by victims relatives in [this project](https://github.com/dieegom/brumadinho_location/projects/3) and based on the picture of the body found, identify who is the possible victim.
 
 ## Português
-Pretendemos que esse projeto seja um repositório de ferramentas para ajudar no resgate e localização das vítimas atingidas pelo rompimento da barragem que ocorreu recentemente em Brumadinho/MG, onde muitas pessoas morreram e muitas outras ainda estão desaparecidas. 
+Este projeto tem como foco ser um repositório de ferramentas para apoiar ações de resposta a emergências, busca, resgate e recuperação em diferentes tipos de desastres. Apesar de ter nascido a partir do rompimento da barragem em Brumadinho/MG, hoje o objetivo é atender cenários mais amplos, como rompimentos de barragem, enchentes, incêndios, terremotos, tsunamis, furacões e outros eventos críticos. 
 
 >No início da tarde do dia 25 de janeiro de 2019 rompeu-se uma barragem de rejeitos de mineração controlada pela Vale S.A.,construída no ribeirão Ferro-Carvão, na localidade de Córrego do Feijão.
 >
