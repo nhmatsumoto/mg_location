@@ -1,4 +1,4 @@
-# Brumadinho Location
+# MG Location
 
 ## Important
 
@@ -12,7 +12,7 @@
   Crawlers](https://github.com/sosbrumadinho/brumadinho_crawlers)
 
 ## English
-The aim of this project is to build and maintain a repository of tools to support emergency response, search, rescue, and recovery operations in disaster scenarios. Although it started in response to the [**Brumadinho dam disaster**](https://en.wikipedia.org/wiki/Brumadinho_dam_disaster), the current focus is broader and includes natural and environmental disasters such as dam failures, floods, wildfires, earthquakes, tsunamis, hurricanes, and related critical events.
+The aim of this project is to build and maintain a repository of tools to support emergency response, search, rescue, and recovery operations in disaster scenarios. This repository is inspired by Brumadinho Location, but the current project is called MG Location and is currently focused on supporting response efforts for the ongoing disaster context in Brazil, including events such as dam failures, floods, wildfires, earthquakes, tsunamis, hurricanes, and related critical incidents.
 
 ### How to colaborate:
 * Please see the list of [Projects](https://github.com/dieegom/brumadinho_location/projects) that are being worked on and their respective issues. Project details are also listed below.
@@ -75,7 +75,7 @@ This tool returns an updated .csv with all the names of missing people.
 Through a set of photos provided by victims relatives in [this project](https://github.com/dieegom/brumadinho_location/projects/3) and based on the picture of the body found, identify who is the possible victim.
 
 ## Português
-Este projeto tem como foco ser um repositório de ferramentas para apoiar ações de resposta a emergências, busca, resgate e recuperação em diferentes tipos de desastres. Apesar de ter nascido a partir do rompimento da barragem em Brumadinho/MG, hoje o objetivo é atender cenários mais amplos, como rompimentos de barragem, enchentes, incêndios, terremotos, tsunamis, furacões e outros eventos críticos. 
+Este projeto tem como foco ser um repositório de ferramentas para apoiar ações de resposta a emergências, busca, resgate e recuperação em diferentes tipos de desastres. O repositório é inspirado no Brumadinho Location, mas este projeto se chama MG Location e, por enquanto, está focado no desastre atual em curso no Brasil, incluindo cenários como rompimentos de barragem, enchentes, incêndios, terremotos, tsunamis, furacões e outros eventos críticos. 
 
 >No início da tarde do dia 25 de janeiro de 2019 rompeu-se uma barragem de rejeitos de mineração controlada pela Vale S.A.,construída no ribeirão Ferro-Carvão, na localidade de Córrego do Feijão.
 >
