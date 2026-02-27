@@ -1,4 +1,8 @@
+using System.Collections.Concurrent;
+using System.Globalization;
+using System.Net;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +21,11 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
+
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<NewsStore>();
+builder.Services.AddSingleton<MissingPersonStore>();
+builder.Services.AddHostedService<NewsCrawlerService>();
 
 var app = builder.Build();
 
@@ -43,15 +52,9 @@ app.UseStaticFiles(new StaticFileOptions
 var collapseReports = new List<CollapseReport>();
 SeedTesteVideoReport(collapseReports, uploadsDirectory);
 
-app.MapGet("/api/hotspots", () =>
-{
-    return Results.Ok(hotspots.OrderByDescending(h => h.Score));
-});
+app.MapGet("/api/hotspots", () => Results.Ok(hotspots.OrderByDescending(h => h.Score)));
 
-app.MapGet("/api/collapse-reports", () =>
-{
-    return Results.Ok(collapseReports.OrderByDescending(report => report.UploadedAtUtc));
-});
+app.MapGet("/api/collapse-reports", () => Results.Ok(collapseReports.OrderByDescending(report => report.UploadedAtUtc)));
 
 app.MapPost("/api/collapse-reports", async (HttpRequest request) =>
 {
@@ -108,11 +111,37 @@ app.MapPost("/api/collapse-reports", async (HttpRequest request) =>
     return Results.Created($"/api/collapse-reports/{report.Id}", report);
 });
 
+app.MapGet("/api/news-updates", (HttpRequest request, NewsStore store) =>
+{
+    var city = request.Query["city"].ToString();
+    var updates = store.GetLatest(city);
+    return Results.Ok(updates);
+});
+
+app.MapGet("/api/missing-persons", (MissingPersonStore store) => Results.Ok(store.GetAll()));
+
+app.MapPost("/api/missing-persons", async (HttpRequest request, MissingPersonStore store) =>
+{
+    var payload = await request.ReadFromJsonAsync<MissingPersonCreateRequest>();
+    if (payload is null)
+    {
+        return Results.BadRequest(new { error = "Payload inválido." });
+    }
+
+    if (string.IsNullOrWhiteSpace(payload.PersonName) || string.IsNullOrWhiteSpace(payload.City) || string.IsNullOrWhiteSpace(payload.ContactName) || string.IsNullOrWhiteSpace(payload.ContactPhone))
+    {
+        return Results.BadRequest(new { error = "Nome da pessoa, cidade e dados de contato são obrigatórios." });
+    }
+
+    var created = store.Add(payload);
+    return Results.Created($"/api/missing-persons/{created.Id}", created);
+});
+
 app.Run("http://localhost:5031");
 
 static double? ParseDouble(string raw)
 {
-    return double.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
+    return double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
         ? parsed
         : null;
 }
@@ -148,6 +177,41 @@ record CollapseReport(
     string? SplatUrl
 );
 
+record NewsUpdate(
+    string Id,
+    string City,
+    string Title,
+    string Source,
+    string Url,
+    string Summary,
+    DateTimeOffset PublishedAtUtc,
+    DateTimeOffset CrawledAtUtc
+);
+
+record MissingPerson(
+    string Id,
+    string PersonName,
+    int? Age,
+    string City,
+    string LastSeenLocation,
+    string PhysicalDescription,
+    string AdditionalInfo,
+    string ContactName,
+    string ContactPhone,
+    DateTimeOffset ReportedAtUtc
+);
+
+record MissingPersonCreateRequest(
+    string PersonName,
+    int? Age,
+    string City,
+    string LastSeenLocation,
+    string PhysicalDescription,
+    string AdditionalInfo,
+    string ContactName,
+    string ContactPhone
+);
+
 enum SplattingProcessingStatus
 {
     Pending,
@@ -178,19 +242,187 @@ static void SeedTesteVideoReport(List<CollapseReport> collapseReports, string up
 
     collapseReports.Add(new CollapseReport(
         Id: "RP-SEED-TESTE",
-        LocationName: "Teste.mp4 - Centro de Ubá",
-        Latitude: -21.1215,
-        Longitude: -42.9427,
-        Description: "Vídeo base (Teste.mp4) disponível para rodar pipeline gaussian-splatting.",
-        ReporterName: "Seed do sistema",
-        ReporterPhone: "",
+        LocationName: "Encosta Rua Projetada",
+        Latitude: -21.1222,
+        Longitude: -42.9441,
+        Description: "Vídeo de referência para validação do pipeline de reconstrução 3D.",
+        ReporterName: "Equipe de Campo",
+        ReporterPhone: "+55 32 99999-0000",
         VideoFileName: "Teste.mp4",
         StoredVideoPath: seededFilePath,
         SourceVideoUrl: $"/uploads/{seededFileName}",
         VideoSizeBytes: seededInfo.Length,
-        UploadedAtUtc: DateTimeOffset.UtcNow,
-        ProcessingStatus: SplattingProcessingStatus.Ingested,
-        SplatPipelineHint: "Execute convert.py e train.py no Teste.mp4 para publicar o .splat final.",
+        UploadedAtUtc: DateTimeOffset.UtcNow.AddMinutes(-35),
+        ProcessingStatus: SplattingProcessingStatus.Published,
+        SplatPipelineHint: "Snapshot de demonstração publicado",
         SplatUrl: "https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/bonsai/bonsai-7k.splat"
     ));
+}
+
+sealed class NewsStore
+{
+    private readonly object _sync = new();
+    private readonly List<NewsUpdate> _updates = [];
+
+    public void Upsert(IEnumerable<NewsUpdate> incoming)
+    {
+        lock (_sync)
+        {
+            foreach (var item in incoming)
+            {
+                if (_updates.Any(existing => string.Equals(existing.Url, item.Url, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                _updates.Add(item);
+            }
+
+            _updates.Sort((a, b) => b.PublishedAtUtc.CompareTo(a.PublishedAtUtc));
+
+            if (_updates.Count > 200)
+            {
+                _updates.RemoveRange(200, _updates.Count - 200);
+            }
+        }
+    }
+
+    public IReadOnlyList<NewsUpdate> GetLatest(string? city)
+    {
+        lock (_sync)
+        {
+            var query = _updates.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(city))
+            {
+                query = query.Where(item => string.Equals(item.City, city, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return query.Take(60).ToList();
+        }
+    }
+}
+
+sealed class MissingPersonStore
+{
+    private readonly ConcurrentDictionary<string, MissingPerson> _entries = new();
+
+    public MissingPersonStore()
+    {
+        var seed = new MissingPerson(
+            Id: "MP-SEED-001",
+            PersonName: "Marcos Vinícius (exemplo)",
+            Age: 34,
+            City: "Juiz de Fora",
+            LastSeenLocation: "Bairro Linhares - próximo ao córrego",
+            PhysicalDescription: "Camisa azul, calça jeans, mochila preta",
+            AdditionalInfo: "Necessita medicação contínua.",
+            ContactName: "Ana Paula",
+            ContactPhone: "+55 32 98888-1212",
+            ReportedAtUtc: DateTimeOffset.UtcNow.AddHours(-2)
+        );
+
+        _entries.TryAdd(seed.Id, seed);
+    }
+
+    public MissingPerson Add(MissingPersonCreateRequest payload)
+    {
+        var id = $"MP-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}";
+        var item = new MissingPerson(
+            Id: id,
+            PersonName: payload.PersonName,
+            Age: payload.Age,
+            City: payload.City,
+            LastSeenLocation: payload.LastSeenLocation,
+            PhysicalDescription: payload.PhysicalDescription,
+            AdditionalInfo: payload.AdditionalInfo,
+            ContactName: payload.ContactName,
+            ContactPhone: payload.ContactPhone,
+            ReportedAtUtc: DateTimeOffset.UtcNow
+        );
+
+        _entries[id] = item;
+        return item;
+    }
+
+    public IReadOnlyList<MissingPerson> GetAll()
+    {
+        return _entries.Values.OrderByDescending(v => v.ReportedAtUtc).ToList();
+    }
+}
+
+sealed class NewsCrawlerService(
+    IHttpClientFactory httpClientFactory,
+    NewsStore newsStore,
+    ILogger<NewsCrawlerService> logger) : BackgroundService
+{
+    private static readonly string[] Cities = ["Ubá", "Juiz de Fora", "Matias Barbosa"];
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                var batch = new List<NewsUpdate>();
+
+                foreach (var city in Cities)
+                {
+                    var items = await FetchCityNewsAsync(city, stoppingToken);
+                    batch.AddRange(items);
+                }
+
+                newsStore.Upsert(batch);
+                logger.LogInformation("Crawler atualizado com {Count} itens.", batch.Count);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Falha no crawler de notícias.");
+            }
+
+            await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken);
+        }
+    }
+
+    private async Task<IEnumerable<NewsUpdate>> FetchCityNewsAsync(string city, CancellationToken cancellationToken)
+    {
+        var client = httpClientFactory.CreateClient();
+        var query = Uri.EscapeDataString($"{city} feridos desaparecidos enchente deslizamento");
+        var rssUrl = $"https://news.google.com/rss/search?q={query}&hl=pt-BR&gl=BR&ceid=BR:pt-419";
+
+        using var response = await client.GetAsync(rssUrl, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var xml = await response.Content.ReadAsStringAsync(cancellationToken);
+        var doc = XDocument.Parse(xml);
+
+        var items = doc.Descendants("item")
+            .Take(10)
+            .Select(item =>
+            {
+                var title = WebUtility.HtmlDecode(item.Element("title")?.Value ?? "Sem título");
+                var link = item.Element("link")?.Value ?? string.Empty;
+                var source = item.Element("source")?.Value ?? "Fonte não identificada";
+                var description = WebUtility.HtmlDecode(item.Element("description")?.Value ?? string.Empty);
+                var pubDateRaw = item.Element("pubDate")?.Value;
+
+                var publishedAt = DateTimeOffset.TryParse(pubDateRaw, out var parsed)
+                    ? parsed.ToUniversalTime()
+                    : DateTimeOffset.UtcNow;
+
+                return new NewsUpdate(
+                    Id: $"NEWS-{city}-{publishedAt:yyyyMMddHHmmss}-{Math.Abs(link.GetHashCode())}",
+                    City: city,
+                    Title: title,
+                    Source: source,
+                    Url: link,
+                    Summary: description,
+                    PublishedAtUtc: publishedAt,
+                    CrawledAtUtc: DateTimeOffset.UtcNow
+                );
+            })
+            .Where(item => !string.IsNullOrWhiteSpace(item.Url))
+            .ToList();
+
+        return items;
+    }
 }
