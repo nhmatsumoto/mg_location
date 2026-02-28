@@ -227,6 +227,25 @@ const RunoutParticles = ({ radiusMeters, postSlideIntensity, terrainGrid }: Runo
   );
 };
 
+
+async function fetchOpenTopoDataBatch(latValues: number[], lngValues: number[]): Promise<number[]> {
+  const locations = latValues.map((lat, index) => `${lat},${lngValues[index]}`).join('|');
+  const response = await fetch(`https://api.opentopodata.org/v1/mapzen?locations=${encodeURIComponent(locations)}`);
+
+  if (!response.ok) {
+    throw new Error('Falha no provedor secundário de elevação.');
+  }
+
+  const data = await response.json();
+  const results = data?.results as Array<{ elevation?: number }> | undefined;
+
+  if (!Array.isArray(results) || results.length === 0) {
+    throw new Error('Sem dados no provedor secundário de elevação.');
+  }
+
+  return results.map((item) => Number(item?.elevation) || 0);
+}
+
 async function fetchTopographyGrid(sourceLat: number, sourceLng: number, radiusMeters: number, gridSize: number): Promise<TerrainGrid> {
   const { latStep, lngStep } = computeDegreesStep(sourceLat, radiusMeters, gridSize);
 
@@ -252,20 +271,28 @@ async function fetchTopographyGrid(sourceLat: number, sourceLng: number, radiusM
       longitude: lngBatch,
     });
 
-    const response = await fetch(`https://api.open-meteo.com/v1/elevation?${params.toString()}`);
+    let batch: number[] = [];
 
-    if (!response.ok) {
-      throw new Error('Falha ao consultar elevação para o ponto selecionado.');
+    try {
+      const response = await fetch(`https://api.open-meteo.com/v1/elevation?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error('Open-Meteo indisponível para este lote.');
+      }
+
+      const data = await response.json();
+      const openMeteoBatch = data?.elevation as number[] | undefined;
+
+      if (!Array.isArray(openMeteoBatch) || openMeteoBatch.length === 0) {
+        throw new Error('Open-Meteo sem dados para este lote.');
+      }
+
+      batch = openMeteoBatch.map((value) => Number(value) || 0);
+    } catch {
+      batch = await fetchOpenTopoDataBatch(allLat.slice(start, start + batchSize), allLng.slice(start, start + batchSize));
     }
 
-    const data = await response.json();
-    const batch = data?.elevation as number[] | undefined;
-
-    if (!Array.isArray(batch) || batch.length === 0) {
-      throw new Error('Sem dados de elevação para essa região.');
-    }
-
-    elevations.push(...batch.map((value) => Number(value) || 0));
+    elevations.push(...batch);
   }
 
   if (elevations.length !== allLat.length) {
@@ -368,7 +395,7 @@ export default function LandslideSimulation({
 
       {!loadingTopography && topographyError && (
         <div className="absolute top-20 left-3 z-20 max-w-[380px] bg-amber-900/70 border border-amber-600 rounded px-3 py-2 text-[11px] text-amber-100">
-          {topographyError} Exibindo relevo local aproximado enquanto o serviço externo não responde.
+          {topographyError} Usando relevo aproximado para manter a visualização ativa.
         </div>
       )}
 
