@@ -21,6 +21,18 @@ A interface web principal agora cobre, de forma operacional, os fluxos essenciai
 
 > Observação: os endpoints `POST` e `GET,POST` continuam disponíveis para integração por apps cliente e operação assistida via API.
 
+## Cobertura atual da interface (voluntários e busca/resgate)
+
+A interface web principal agora cobre, de forma operacional, os fluxos essenciais descritos neste README:
+
+- cálculo de deslocamento estimado por coordenadas e interação direta no mapa;
+- bloco explicativo da **Simulação de Enchente (CFD simplificado)** com endpoint oficial `POST /api/location/flow-simulation`;
+- contexto de terreno com cruzamento de variáveis de vegetação, tipo/densidade do solo e saturação por chuva via `GET /api/terrain/context`;
+- atalhos para módulos já implementados no MVP (`/api/hotspots`, `/api/rescue-support`, `/api/missing-people.csv`, `/api/cfd/ideas`);
+- resumo dos módulos operacionais do MVP (hotspots, rescue-support, searched-areas, report-info e identify-victim) no próprio painel.
+
+> Observação: os endpoints `POST` e `GET,POST` continuam disponíveis para integração por apps cliente e operação assistida via API.
+
 ## Important
 
 > Status atual: o `docker-compose` do repositório está focado no frontend web e é prioridade evoluir para stack completa (frontend + backend + persistência + serviços auxiliares).
@@ -133,19 +145,17 @@ Essa linha de evolução será implementada de forma incremental, com validaçã
 
 ### Endpoints disponíveis (`/api`)
 
-- `POST /api/calculate`
-- `GET /api/hotspots`
-- `GET, POST /api/collapse-reports`
-- `GET /api/rescue-support`
-- `POST /api/location/flow-simulation`
-- `GET, POST /api/searched-areas`
-- `GET, POST /api/report-info`
-- `GET /api/missing-people.csv`
-- `POST /api/identify-victim`
-- `GET /api/cfd/ideas`
-- `GET, POST /api/splat/convert`
-- `POST /api/push/register`
-- `GET, POST /api/attention-alerts`
+### API MVP implemented (rescue suite)
+* `GET /api/hotspots` - ranking de áreas críticas.
+* `GET,POST /api/collapse-reports` - upload de vídeos e fila de ingestão.
+* `GET /api/rescue-support` - snapshot tático com agentes especialistas e locais prováveis.
+* `POST /api/location/flow-simulation` - simulação simplificada de fluxo de rejeitos (base CFD) com ajuste por vegetação, tipo/densidade do solo e saturação climática.
+* `GET /api/terrain/context` - contexto de terreno com fontes abertas (Open-Meteo + fallback local referenciado em SoilGrids/Copernicus).
+* `GET,POST /api/searched-areas` - registro de áreas já buscadas por equipes.
+* `GET,POST /api/report-info` - relatos de pessoas e animais desaparecidos.
+* `GET /api/missing-people.csv` - exportação CSV de desaparecidos.
+* `POST /api/identify-victim` - matching inicial de identificação (triagem).
+* `GET /api/cfd/ideas` - referências e materiais técnicos de fluidodinâmica.
 
 ---
 

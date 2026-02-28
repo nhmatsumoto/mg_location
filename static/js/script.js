@@ -25,7 +25,9 @@ const i18n = {
             step1: 'Entrada principal: coordenada inicial (lat/lng) e cenário de vazão disponível na API.',
             step2: 'Saída operacional: direção estimada de deslocamento e ponto provável para priorização da busca.',
             step3: 'Use em conjunto com camadas de relevo/topografia para validar obstáculos e rotas de acesso.',
+            step4: 'A simulação cruza vegetação, densidade/tipo do solo e saturação estimada por dados climáticos (Open-Meteo + fallback local).',
             endpointLabel: 'Endpoint da simulação',
+            terrainEndpointLabel: 'Endpoint de contexto de terreno',
             note: 'Importante: resultado é apoio tático inicial e não substitui validação da engenharia de campo.'
         },
         statusLabel: 'Situação',
@@ -43,7 +45,8 @@ const i18n = {
                 { name: 'Rescue Support', desc: 'Snapshot tático com agentes e locais prováveis.' },
                 { name: 'Searched Areas', desc: 'Registro das áreas já verificadas por equipes.' },
                 { name: 'Report Info', desc: 'Relatos de pessoas e animais desaparecidos.' },
-                { name: 'Identify Victim', desc: 'Triagem inicial para identificação.' }
+                { name: 'Identify Victim', desc: 'Triagem inicial para identificação.' },
+                { name: 'Terrain Context', desc: 'Contexto de terreno (vegetação, solo e saturação climática).' }
             ]
         },
         status: {
@@ -94,7 +97,9 @@ const i18n = {
             step1: 'Primary input: starting coordinate (lat/lng) and available flow scenario in the API.',
             step2: 'Operational output: estimated displacement direction and probable destination for search prioritization.',
             step3: 'Use together with relief/topography layers to validate barriers and access routes.',
+            step4: 'The simulation cross-checks vegetation, soil type/density and climate-based soil saturation (Open-Meteo + local fallback).',
             endpointLabel: 'Simulation endpoint',
+            terrainEndpointLabel: 'Terrain context endpoint',
             note: 'Important: this is initial tactical support and does not replace field engineering validation.'
         },
         statusLabel: 'Status',
@@ -112,7 +117,8 @@ const i18n = {
                 { name: 'Rescue Support', desc: 'Tactical snapshot with agents and probable locations.' },
                 { name: 'Searched Areas', desc: 'Registry of areas already inspected by teams.' },
                 { name: 'Report Info', desc: 'Reports of missing people and animals.' },
-                { name: 'Identify Victim', desc: 'Initial victim identification triage.' }
+                { name: 'Identify Victim', desc: 'Initial victim identification triage.' },
+                { name: 'Terrain Context', desc: 'Terrain context (vegetation, soil and climate-driven saturation).' }
             ]
         },
         status: {

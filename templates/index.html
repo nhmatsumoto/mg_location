@@ -102,18 +102,11 @@
                                     <li>{{ t.cfd.step1 }}</li>
                                     <li>{{ t.cfd.step2 }}</li>
                                     <li>{{ t.cfd.step3 }}</li>
+                                    <li>{{ t.cfd.step4 }}</li>
                                 </ul>
                                 <p class="small mb-1"><strong>{{ t.cfd.endpointLabel }}:</strong> <code>POST /api/location/flow-simulation</code></p>
+                                <p class="small mb-1"><strong>{{ t.cfd.terrainEndpointLabel }}:</strong> <code>GET /api/terrain/context?lat=&lt;lat&gt;&amp;lng=&lt;lng&gt;</code></p>
                                 <p class="small mb-0 text-muted">{{ t.cfd.note }}</p>
-                            </div>
-
-                            <hr>
-
-                            <h3 class="h6 text-uppercase text-muted">{{ t.quickActions }}</h3>
-                            <div class="btn-group-vertical w-100" role="group" :aria-label="t.quickActions">
-                                <button class="btn btn-outline-info text-left" type="button" @click="setPreset('center')">{{ t.presets.center }}</button>
-                                <button class="btn btn-outline-info text-left" type="button" @click="setPreset('north')">{{ t.presets.north }}</button>
-                                <button class="btn btn-outline-info text-left" type="button" @click="setPreset('south')">{{ t.presets.south }}</button>
                             </div>
 
                             <div class="status-box mt-3" role="status" aria-live="polite">
@@ -151,6 +144,7 @@
                                     <a class="btn btn-sm btn-outline-primary" href="/api/rescue-support" target="_blank" rel="noopener noreferrer">GET /api/rescue-support</a>
                                     <a class="btn btn-sm btn-outline-primary" href="/api/missing-people.csv" target="_blank" rel="noopener noreferrer">GET /api/missing-people.csv</a>
                                     <a class="btn btn-sm btn-outline-primary" href="/api/cfd/ideas" target="_blank" rel="noopener noreferrer">GET /api/cfd/ideas</a>
+                                    <a class="btn btn-sm btn-outline-primary" href="/api/terrain/context?lat=-20.135896&lng=-44.123509" target="_blank" rel="noopener noreferrer">GET /api/terrain/context</a>
                                 </div>
                             </div>
                         </div>
