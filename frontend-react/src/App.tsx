@@ -78,6 +78,18 @@ interface MissingPerson {
   reportedAtUtc: string;
 }
 
+
+interface AttentionAlert {
+  id: string;
+  title: string;
+  message: string;
+  severity: 'low' | 'medium' | 'high' | 'critical' | string;
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+  createdAtUtc: string;
+}
+
 interface FlowCell {
   lat: number;
   lng: number;
@@ -182,6 +194,7 @@ export default function App() {
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
   const [newsUpdates, setNewsUpdates] = useState<NewsUpdate[]>([]);
   const [missingPeople, setMissingPeople] = useState<MissingPerson[]>([]);
+  const [attentionAlerts, setAttentionAlerts] = useState<AttentionAlert[]>([]);
   const [flowForm, setFlowForm] = useState(initialFlowForm);
   const [flowResult, setFlowResult] = useState<FlowSimulationResponse | null>(null);
   const [flowError, setFlowError] = useState('');
@@ -221,6 +234,14 @@ export default function App() {
       .catch(() => setLoadingNews(false));
   };
 
+
+  const loadAttentionAlerts = () => {
+    fetch(`${API_BASE_URL}/api/attention-alerts`)
+      .then((res) => res.json())
+      .then((data: AttentionAlert[]) => setAttentionAlerts(data.slice(0, 6)))
+      .catch(() => undefined);
+  };
+
   const loadMissingPeople = () => {
     setLoadingMissing(true);
     fetch(`${API_BASE_URL}/api/missing-persons`)
@@ -243,8 +264,12 @@ export default function App() {
 
     loadNews();
     loadMissingPeople();
+    loadAttentionAlerts();
 
-    const interval = setInterval(loadNews, 120000);
+    const interval = setInterval(() => {
+      loadNews();
+      loadAttentionAlerts();
+    }, 120000);
     return () => clearInterval(interval);
   }, []);
 
@@ -571,6 +596,21 @@ export default function App() {
             <div className="flex justify-between items-center mb-1"><span className="text-slate-400">Total Hotspots:</span><span className="font-semibold">{hotspots.length}</span></div>
             <div className="flex justify-between items-center mb-1"><span className="text-slate-400">Pop. em Perigo:</span><span className="font-semibold text-yellow-500">{hotspots.reduce((a, b) => a + b.estimatedAffected, 0)}</span></div>
             <div className="flex justify-between items-center mb-1"><span className="text-slate-400">Desaparecidos:</span><span className="font-semibold text-amber-400">{missingPeople.length}</span></div>
+            <div className="mt-2 border-t border-slate-700 pt-2">
+              <p className="text-[11px] uppercase tracking-wide text-slate-400 mb-1">Alertas de atenção</p>
+              {attentionAlerts.length === 0 ? (
+                <p className="text-xs text-slate-500">Sem alertas no momento.</p>
+              ) : (
+                <ul className="space-y-1 max-h-24 overflow-y-auto pr-1">
+                  {attentionAlerts.slice(0, 3).map((alert) => (
+                    <li key={alert.id} className="text-[11px] bg-slate-900/70 border border-slate-700 rounded px-2 py-1">
+                      <p className="font-semibold text-white truncate">{alert.title}</p>
+                      <p className="text-slate-400 truncate">{alert.message}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             {flowResult && (
               <>
                 <div className="mt-2 border-t border-slate-700 pt-2 text-xs text-cyan-300">Flood-CFD (didático)</div>

@@ -5,22 +5,28 @@
 
 ![Centro de Comando com mapa em relevo](browser:/tmp/codex_browser_invocations/3619128cf054b41e/artifacts/docs/images/centro-comando.png)
 
+## Stack atual
+
+* Backend principal mantido em **Python (Django)**.
+* Projeto **.NET removido** deste repositório para simplificar operação e manutenção.
+* Frontend web em React + Leaflet + render 3D e app mobile em Flutter para captura em campo.
+
 ## Important
 
 * If you're looking for the project to predict victims' location of
   disasters like Dam Collapse go to the project [Victims Location
-  Prediction](https://github.com/sosbrumadinho/victims_location_prediction)
+  Prediction](https://github.com/sosmg-location/victims_location_prediction)
 
-* If you want to contribute crawling data related with [Brumadinho dam
-  disaster](https://en.wikipedia.org/wiki/Brumadinho_dam_disaster) go to
-  the project [Brumadinho
-  Crawlers](https://github.com/sosbrumadinho/brumadinho_crawlers)
+* If you want to contribute crawling data related with [MG LOCATION dam
+  disaster](https://en.wikipedia.org/wiki/MG LOCATION_dam_disaster) go to
+  the project [MG LOCATION
+  Crawlers](https://github.com/sosmg-location/mg-location_crawlers)
 
 ## English
-The aim of this project is to build and maintain a repository of tools to support emergency response, search, rescue, and recovery operations in disaster scenarios. This repository is inspired by Brumadinho Location, but the current project is called MG Location and is currently focused on supporting response efforts for the ongoing disaster context in Brazil, including events such as dam failures, floods, wildfires, earthquakes, tsunamis, hurricanes, and related critical incidents.
+The aim of this project is to build and maintain a repository of tools to support emergency response, search, rescue, and recovery operations in disaster scenarios. This repository is inspired by MG LOCATION, but the current project is called MG Location and is currently focused on supporting response efforts for the ongoing disaster context in Brazil, including events such as dam failures, floods, wildfires, earthquakes, tsunamis, hurricanes, and related critical incidents.
 
 ### How to colaborate:
-* Please see the list of [Projects](https://github.com/dieegom/brumadinho_location/projects) that are being worked on and their respective issues. Project details are also listed below.
+* Please see the list of [Projects](https://github.com/dieegom/mg_location/projects) that are being worked on and their respective issues. Project details are also listed below.
 * If you can help with any issue, please add a comment to the issue to indicate that you will work on it. 
 * If you are the first to work on any given project, you can choose the language or technology that you are more familiar with.
 * If other volunteers are already helping with the project then please contact them to discuss what still needs to be implemented.
@@ -39,7 +45,7 @@ This tool calculates the probable location of missing individuals' bodies by tak
 
 The algorithm still needs improvement and to improve it, we will need tailings physical-chemical data, location topographic map (.csv), simulations of the tailing spreading, and, of course, the latitude and longitude coordinates from the victims' cell phones.
 
-The production enviromment is currently live at: https://brumadinho.osei.ong.br
+The production enviromment is currently live at: https://mg-location.osei.ong.br
 
 We ask that those contributing to the project submit their Pull Requests as soon as possible to help improve the algorithm and make it available to those responsible for the search and rescue operations.
 
@@ -77,18 +83,18 @@ App to report missing people and missing animals.
 This tool returns an updated .csv with all the names of missing people.
 
 ### - Identify the victim body
-Through a set of photos provided by victims relatives in [this project](https://github.com/dieegom/brumadinho_location/projects/3) and based on the picture of the body found, identify who is the possible victim.
+Through a set of photos provided by victims relatives in [this project](https://github.com/dieegom/mg_location/projects/3) and based on the picture of the body found, identify who is the possible victim.
 
 ## Português
-Este projeto tem como foco ser um repositório de ferramentas para apoiar ações de resposta a emergências, busca, resgate e recuperação em diferentes tipos de desastres. O repositório é inspirado no Brumadinho Location, mas este projeto se chama MG Location e, por enquanto, está focado no desastre atual em curso no Brasil, incluindo cenários como rompimentos de barragem, enchentes, incêndios, terremotos, tsunamis, furacões e outros eventos críticos. 
+Este projeto tem como foco ser um repositório de ferramentas para apoiar ações de resposta a emergências, busca, resgate e recuperação em diferentes tipos de desastres. O repositório é inspirado no MG LOCATION, mas este projeto se chama MG Location e, por enquanto, está focado no desastre atual em curso no Brasil, incluindo cenários como rompimentos de barragem, enchentes, incêndios, terremotos, tsunamis, furacões e outros eventos críticos. 
 
 >No início da tarde do dia 25 de janeiro de 2019 rompeu-se uma barragem de rejeitos de mineração controlada pela Vale S.A.,construída no ribeirão Ferro-Carvão, na localidade de Córrego do Feijão.
 >
-> — https://pt.wikipedia.org/wiki/Rompimento_de_barragem_em_Brumadinho
+> — https://pt.wikipedia.org/wiki/Rompimento_de_barragem_em_MG LOCATION
 
 ### Como colaborar
 
-* Acesse [Projetos](https://github.com/dieegom/brumadinho_location/projects) e veja a lista de ferramentas que estamos desenvolvendo e suas respectivas issues. Você também pode ver essa lista logo abaixo. 
+* Acesse [Projetos](https://github.com/dieegom/mg_location/projects) e veja a lista de ferramentas que estamos desenvolvendo e suas respectivas issues. Você também pode ver essa lista logo abaixo. 
 * Se você puder ajudar com alguma issue, escreva um comentário dizendo que você irá trabalhar nela.
 * Se você for o primeiro a trabalhar no projeto, você pode escolher a linguagem ou tecnologia que se sinta mais confortável.
 * Se mais voluntários estiverem ajudando, contate-os antes para saber o que ainda precisa ser implementado.
@@ -108,7 +114,7 @@ Obrigado.
 Essa ferramenta requer as coordenadas de latitude e longitude dos desaparecidos para calcular a estimativa baseando-se no fluxo de rejeitos <br/>
 O algoritmo precisa ser melhorado (e muito) ainda. Além disso, fizemos apenas com os poucos dados que obtivemos. Ideal seria termos dados físico-químicos do rejeito, mapa topográfico (em .csv) do local, simulações do rejeito se espalhando e, claro, latitude e longitude dos celulares.<br/>
 
-Vamos deixar o sistema atualizado rodando em: https://brumadinho.osei.ong.br  <br/>
+Vamos deixar o sistema atualizado rodando em: https://mg-location.osei.ong.br  <br/>
 Pedimos aos Devs que façam seus Pull Requests para que possamos deixar este algoritmo mais robusto e disponível para os responsáveis pelo resgate. "Forkem" à vontade. Continuaremos melhorando o código ao longo da semana. <br/><br/>
 
 ####  Ideias a serem implementadas: <br/>
@@ -138,4 +144,4 @@ Essa ferramenta retorna um arquivo .csv atualizado com todos os nomes das pessoa
 
 
 ### - Identificar o corpo da vítima
-Utilizando um conjunto de fotos fornecidos por parentes e amigos da vítimas [neste projeto] (https://github.com/dieegom/brumadinho_location/projects/3) e baseado na foto do corpo, identificar quem possivelmente é a vítima.
+Utilizando um conjunto de fotos fornecidos por parentes e amigos da vítimas [neste projeto] (https://github.com/dieegom/mg_location/projects/3) e baseado na foto do corpo, identificar quem possivelmente é a vítima.

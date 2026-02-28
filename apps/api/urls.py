@@ -2,14 +2,17 @@ from django.urls import path
 
 from apps.api.views import (
     calculatecoordinate,
+    attention_alerts,
     cfd_ideas,
     collapse_reports,
     hotspots,
     identify_victim,
     location_flow_simulation,
     missing_people_csv,
+    push_register,
     report_info,
     rescue_support,
+    splat_convert,
     searched_areas,
 )
 
@@ -26,4 +29,7 @@ urlpatterns = [
     path('missing-people.csv', missing_people_csv, name='missing_people_csv'),
     path('identify-victim', identify_victim, name='identify_victim'),
     path('cfd/ideas', cfd_ideas, name='cfd_ideas'),
+    path('splat/convert', splat_convert, name='splat_convert'),
+    path('push/register', push_register, name='push_register'),
+    path('attention-alerts', attention_alerts, name='attention_alerts'),
 ]
