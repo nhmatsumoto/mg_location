@@ -278,3 +278,12 @@ Com `DB_ENGINE` não definido, o projeto continua em SQLite para desenvolvimento
 - Criptografia em trânsito (TLS) e em repouso no banco
 - Segredos fora do código (variáveis/secret manager)
 - Logs e auditoria de acesso para dados pessoais sensíveis
+
+
+## Portas oficiais (docker-compose)
+
+- Frontend web: `http://localhost:8080`
+- API backend (atual): `http://localhost:8001`
+- PostgreSQL: interno na rede docker (`postgres:5432`)
+
+> Observação: `http://localhost:8000` não é mais a porta pública padrão da API neste setup; a API foi movida para `8001` para evitar conflito e manter separação clara entre front/back.
