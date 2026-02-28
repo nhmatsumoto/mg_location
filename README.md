@@ -89,7 +89,16 @@ MIT.
 
 ## Portas oficiais locais (sem legado)
 
-- Frontend atualizado: `http://localhost:8000`
-- API backend: `http://localhost:8001`
+- Frontend atualizado (default): `http://localhost:8088`
+- API backend (default): `http://localhost:8001`
 
-A porta `8080` foi descontinuada para evitar duas versões concorrentes da interface.
+As portas são configuráveis por ambiente no `docker-compose`:
+
+- `FRONTEND_PORT` (default `8088`)
+- `BACKEND_PORT` (default `8001`)
+
+Exemplo para evitar conflito de porta já ocupada:
+
+```bash
+FRONTEND_PORT=8090 BACKEND_PORT=8002 docker compose up --build
+```

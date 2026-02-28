@@ -35,8 +35,9 @@ const inferApiBaseUrl = () => {
   const { protocol, hostname, port } = window.location;
   if (port === '5173') return `${protocol}//${hostname}:8000`;
   if (port === '8000') return `${protocol}//${hostname}:8001`;
+  if (port === '8088') return `${protocol}//${hostname}:8001`;
 
-  return `${protocol}//${hostname}:8000`;
+  return `${protocol}//${hostname}:8001`;
 };
 
 const API_BASE_URL = inferApiBaseUrl();
