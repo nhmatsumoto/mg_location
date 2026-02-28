@@ -40,6 +40,7 @@ const i18n = {
         },
         missingTitle: 'Cadastro de desaparecidos por clique',
         missingSubtitle: 'Selecione um ponto no mapa e cadastre a pessoa nas coordenadas clicadas.',
+        missingHint: 'Formulário simplificado: os demais dados são preenchidos automaticamente pela plataforma.',
         selectedPoint: 'Coordenadas selecionadas',
         missingName: 'Nome',
         missingNamePlaceholder: 'Ex.: Maria Silva',
@@ -95,6 +96,7 @@ const i18n = {
         },
         missingTitle: 'Click-to-register missing people',
         missingSubtitle: 'Select a point on the map and register a missing person on clicked coordinates.',
+        missingHint: 'Simplified form: remaining fields are auto-filled by the platform.',
         selectedPoint: 'Selected coordinates',
         missingName: 'Name',
         missingNamePlaceholder: 'Example: Maria Silva',
@@ -124,8 +126,7 @@ var app = new Vue({
         errorMessage: '',
         missingForm: {
             name: '',
-            lastSeen: '',
-            details: ''
+            lastSeen: ''
         }
     },
     computed: {
@@ -235,19 +236,20 @@ async function registerMissingPerson() {
     app.savingMissing = true;
     app.errorMessage = '';
 
-    const payload = new URLSearchParams({
-        kind: 'person',
-        name: app.missingForm.name,
-        lastSeen: app.missingForm.lastSeen,
-        details: app.missingForm.details,
-        lat: String(lat),
-        lng: String(lng)
-    });
+    const payload = {
+        personName: app.missingForm.name,
+        lastSeenLocation: app.missingForm.lastSeen,
+        city: app.locale === 'por' ? 'Não informado' : 'Not informed',
+        additionalInfo: `Registro via mapa em lat=${lat}, lng=${lng}`,
+        lat: lat,
+        lng: lng,
+        source: 'map-ui-simplified'
+    };
 
-    const result = await fetch('/api/report-info', {
+    const result = await fetch('/api/missing-persons', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-        body: payload.toString()
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
     });
 
     if (!result.ok) {
@@ -259,7 +261,6 @@ async function registerMissingPerson() {
     createMissingMarker({ name: app.missingForm.name, lat: lat, lng: lng, lastSeen: app.missingForm.lastSeen });
     app.missingForm.name = '';
     app.missingForm.lastSeen = '';
-    app.missingForm.details = '';
     app.statusMessage = app.t.status.missingSaved;
     app.savingMissing = false;
 }
@@ -270,19 +271,26 @@ function createMissingMarker(item) {
     }).bindPopup(
         '<b>' + app.t.markerLabels.missing + '</b>' +
         '<br/>' + item.name +
-        '<br/>' + item.lastSeen +
+        '<br/>' + (item.lastSeenLocation || item.lastSeen || '-') +
         '<br/>Lat: ' + item.lat + ' / Lng: ' + item.lng
     );
     marker.addTo(window.missingGroup);
 }
 
 async function loadMissingReports() {
-    const result = await fetch('/api/report-info');
+    const result = await fetch('/api/missing-persons');
     if (!result.ok) return;
     const list = await result.json();
     list.forEach(function(item) {
-        if (Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lng))) {
-            createMissingMarker(item);
+        const lat = Number(item.lat);
+        const lng = Number(item.lng);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            createMissingMarker({
+                name: item.personName || item.name || 'Desconhecido',
+                lastSeenLocation: item.lastSeenLocation || item.lastSeen || '-',
+                lat: lat,
+                lng: lng
+            });
         }
     });
 }
