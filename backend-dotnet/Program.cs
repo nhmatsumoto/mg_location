@@ -137,6 +137,23 @@ app.MapPost("/api/missing-persons", async (HttpRequest request, MissingPersonSto
     return Results.Created($"/api/missing-persons/{created.Id}", created);
 });
 
+app.MapPost("/api/location/flow-simulation", async (HttpRequest request) =>
+{
+    var payload = await request.ReadFromJsonAsync<FlowSimulationRequest>();
+    if (payload is null)
+    {
+        return Results.BadRequest(new { error = "Payload inválido para simulação." });
+    }
+
+    if (payload.Steps < 5 || payload.Steps > 400 || payload.GridSize < 12 || payload.GridSize > 120)
+    {
+        return Results.BadRequest(new { error = "Parâmetros fora do intervalo permitido (steps: 5-400, gridSize: 12-120)." });
+    }
+
+    var result = RunFlowSimulation(payload);
+    return Results.Ok(result);
+});
+
 app.Run("http://localhost:5031");
 
 static double? ParseDouble(string raw)
@@ -212,6 +229,43 @@ record MissingPersonCreateRequest(
     string ContactPhone
 );
 
+record FlowSimulationRequest(
+    double SourceLat,
+    double SourceLng,
+    double RainfallMmPerHour,
+    double InitialVolume,
+    int Steps,
+    int GridSize,
+    double CellSizeMeters,
+    double ManningCoefficient,
+    double InfiltrationRate
+);
+
+record FlowCellResult(
+    double Lat,
+    double Lng,
+    double Depth,
+    double Terrain,
+    double Velocity
+);
+
+record FlowPathPoint(
+    double Lat,
+    double Lng,
+    int Step,
+    double Depth
+);
+
+record FlowSimulationResponse(
+    DateTimeOffset GeneratedAtUtc,
+    FlowSimulationRequest Parameters,
+    IReadOnlyList<FlowCellResult> FloodedCells,
+    IReadOnlyList<FlowPathPoint> MainPath,
+    double MaxDepth,
+    double EstimatedAffectedAreaM2,
+    string Disclaimer
+);
+
 enum SplattingProcessingStatus
 {
     Pending,
@@ -257,6 +311,165 @@ static void SeedTesteVideoReport(List<CollapseReport> collapseReports, string up
         SplatPipelineHint: "Snapshot de demonstração publicado",
         SplatUrl: "https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/bonsai/bonsai-7k.splat"
     ));
+}
+
+static FlowSimulationResponse RunFlowSimulation(FlowSimulationRequest payload)
+{
+    var grid = payload.GridSize;
+    var center = grid / 2;
+    var terrain = new double[grid, grid];
+    var water = new double[grid, grid];
+    var nextWater = new double[grid, grid];
+
+    var metersPerLat = 111_320d;
+    var metersPerLng = Math.Cos(payload.SourceLat * Math.PI / 180d) * 111_320d;
+
+    for (var y = 0; y < grid; y++)
+    {
+        for (var x = 0; x < grid; x++)
+        {
+            var dx = (x - center) / (double)center;
+            var dy = (y - center) / (double)center;
+            var radial = Math.Sqrt(dx * dx + dy * dy);
+
+            // Modelo simplificado de relevo (vale + ondulações topográficas).
+            var valley = 45d * radial;
+            var undulations = 8d * Math.Sin(dx * 5d) + 6d * Math.Cos(dy * 4d);
+            var downhillBias = 10d * dy;
+            terrain[y, x] = 180d + valley + undulations + downhillBias;
+        }
+    }
+
+    water[center, center] = payload.InitialVolume;
+
+    var path = new List<FlowPathPoint>();
+    var pathX = center;
+    var pathY = center;
+
+    for (var step = 0; step < payload.Steps; step++)
+    {
+        Array.Copy(water, nextWater, water.Length);
+        var rainPerStep = payload.RainfallMmPerHour / 1000d / 3600d;
+
+        for (var y = 1; y < grid - 1; y++)
+        {
+            for (var x = 1; x < grid - 1; x++)
+            {
+                var depth = water[y, x];
+                if (depth <= 1e-5)
+                {
+                    continue;
+                }
+
+                var head = terrain[y, x] + depth;
+                var neighbors = new (int nx, int ny)[] { (x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1) };
+                var positiveDrops = new List<(int nx, int ny, double drop)>();
+
+                foreach (var (nx, ny) in neighbors)
+                {
+                    var neighborHead = terrain[ny, nx] + water[ny, nx];
+                    var drop = head - neighborHead;
+                    if (drop > 0)
+                    {
+                        positiveDrops.Add((nx, ny, drop));
+                    }
+                }
+
+                if (positiveDrops.Count == 0)
+                {
+                    nextWater[y, x] = Math.Max(0, nextWater[y, x] - payload.InfiltrationRate * 0.1);
+                    continue;
+                }
+
+                var totalDrop = positiveDrops.Sum(p => p.drop);
+                var slope = totalDrop / (positiveDrops.Count * payload.CellSizeMeters);
+                var velocity = Math.Pow(Math.Max(depth, 0.01), 2d / 3d) * Math.Sqrt(Math.Max(slope, 0.0001)) / Math.Max(payload.ManningCoefficient, 0.01);
+                var transferable = Math.Min(depth * 0.45, velocity * 0.04);
+
+                nextWater[y, x] -= transferable;
+
+                foreach (var (nx, ny, drop) in positiveDrops)
+                {
+                    nextWater[ny, nx] += transferable * (drop / totalDrop);
+                }
+
+                nextWater[y, x] = Math.Max(0, nextWater[y, x] - payload.InfiltrationRate * 0.1 + rainPerStep);
+            }
+        }
+
+        Array.Copy(nextWater, water, water.Length);
+
+        var best = new (int x, int y, double head)[]
+        {
+            (pathX + 1, pathY, GetHead(pathX + 1, pathY, terrain, water)),
+            (pathX - 1, pathY, GetHead(pathX - 1, pathY, terrain, water)),
+            (pathX, pathY + 1, GetHead(pathX, pathY + 1, terrain, water)),
+            (pathX, pathY - 1, GetHead(pathX, pathY - 1, terrain, water)),
+        }
+        .Where(candidate => candidate.x > 0 && candidate.y > 0 && candidate.x < grid - 1 && candidate.y < grid - 1)
+        .OrderBy(candidate => candidate.head)
+        .FirstOrDefault();
+
+        if (best != default)
+        {
+            pathX = best.x;
+            pathY = best.y;
+        }
+
+        path.Add(new FlowPathPoint(
+            Lat: payload.SourceLat + ((pathY - center) * payload.CellSizeMeters / metersPerLat),
+            Lng: payload.SourceLng + ((pathX - center) * payload.CellSizeMeters / metersPerLng),
+            Step: step,
+            Depth: water[pathY, pathX]
+        ));
+    }
+
+    var floodedCells = new List<FlowCellResult>();
+    var maxDepth = 0d;
+
+    for (var y = 0; y < grid; y++)
+    {
+        for (var x = 0; x < grid; x++)
+        {
+            var depth = water[y, x];
+            maxDepth = Math.Max(maxDepth, depth);
+            if (depth < 0.02)
+            {
+                continue;
+            }
+
+            var localSlope = Math.Abs(terrain[y, x] - terrain[Math.Max(0, y - 1), x]) / payload.CellSizeMeters;
+            var velocity = Math.Pow(Math.Max(depth, 0.01), 2d / 3d) * Math.Sqrt(Math.Max(localSlope, 0.0001)) / Math.Max(payload.ManningCoefficient, 0.01);
+
+            floodedCells.Add(new FlowCellResult(
+                Lat: payload.SourceLat + ((y - center) * payload.CellSizeMeters / metersPerLat),
+                Lng: payload.SourceLng + ((x - center) * payload.CellSizeMeters / metersPerLng),
+                Depth: depth,
+                Terrain: terrain[y, x],
+                Velocity: velocity
+            ));
+        }
+    }
+
+    return new FlowSimulationResponse(
+        GeneratedAtUtc: DateTimeOffset.UtcNow,
+        Parameters: payload,
+        FloodedCells: floodedCells.OrderByDescending(c => c.Depth).Take(1200).ToList(),
+        MainPath: path,
+        MaxDepth: maxDepth,
+        EstimatedAffectedAreaM2: floodedCells.Count * payload.CellSizeMeters * payload.CellSizeMeters,
+        Disclaimer: "Simulação didática inspirada em princípios de CFD/Navier-Stokes e não substitui modelagem hidrodinâmica calibrada de engenharia."
+    );
+}
+
+static double GetHead(int x, int y, double[,] terrain, double[,] water)
+{
+    if (x < 0 || y < 0 || x >= terrain.GetLength(1) || y >= terrain.GetLength(0))
+    {
+        return double.MaxValue;
+    }
+
+    return terrain[y, x] + water[y, x];
 }
 
 sealed class NewsStore

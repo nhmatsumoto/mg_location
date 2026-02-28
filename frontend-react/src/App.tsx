@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, LayersControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, LayersControl, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import {
   AlertTriangle,
@@ -14,11 +14,12 @@ import {
   Camera,
   Upload,
   Smartphone,
-  Film,
   Maximize2,
   Minimize2,
   Newspaper,
   Users,
+  Play,
+  Droplets,
 } from 'lucide-react';
 import LandslideSimulation from './LandslideSimulation';
 import PostDisasterSplat from './PostDisasterSplat';
@@ -54,19 +55,51 @@ interface Hotspot {
   urgency: string;
 }
 
-interface CollapseReport {
+
+interface NewsUpdate {
   id: string;
-  locationName: string;
-  latitude: number;
-  longitude: number;
-  description: string;
-  reporterName: string;
-  reporterPhone: string;
-  videoFileName: string;
-  sourceVideoUrl: string;
-  uploadedAtUtc: string;
-  processingStatus: 'Pending' | 'Ingested' | 'Trained' | 'Published';
-  splatUrl?: string | null;
+  city: string;
+  title: string;
+  source: string;
+  url: string;
+  publishedAtUtc: string;
+}
+
+interface MissingPerson {
+  id: string;
+  personName: string;
+  age?: number | null;
+  city: string;
+  lastSeenLocation: string;
+  physicalDescription: string;
+  additionalInfo: string;
+  contactName: string;
+  contactPhone: string;
+  reportedAtUtc: string;
+}
+
+interface FlowCell {
+  lat: number;
+  lng: number;
+  depth: number;
+  terrain: number;
+  velocity: number;
+}
+
+interface FlowPathPoint {
+  lat: number;
+  lng: number;
+  step: number;
+  depth: number;
+}
+
+interface FlowSimulationResponse {
+  generatedAtUtc: string;
+  floodedCells: FlowCell[];
+  mainPath: FlowPathPoint[];
+  maxDepth: number;
+  estimatedAffectedAreaM2: number;
+  disclaimer: string;
 }
 
 interface NewsUpdate {
@@ -112,38 +145,47 @@ const initialMissingForm = {
   contactPhone: '',
 };
 
+const initialFlowForm = {
+  sourceLat: '-21.1215',
+  sourceLng: '-42.9427',
+  rainfallMmPerHour: '80',
+  initialVolume: '3.5',
+  steps: '120',
+  gridSize: '40',
+  cellSizeMeters: '25',
+  manningCoefficient: '0.045',
+  infiltrationRate: '0.002',
+};
+
 export default function App() {
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
-  const [reports, setReports] = useState<CollapseReport[]>([]);
   const [newsUpdates, setNewsUpdates] = useState<NewsUpdate[]>([]);
   const [missingPeople, setMissingPeople] = useState<MissingPerson[]>([]);
+  const [flowForm, setFlowForm] = useState(initialFlowForm);
+  const [flowResult, setFlowResult] = useState<FlowSimulationResponse | null>(null);
+  const [flowError, setFlowError] = useState('');
+
   const [loading, setLoading] = useState(true);
-  const [loadingReports, setLoadingReports] = useState(true);
   const [loadingNews, setLoadingNews] = useState(true);
   const [loadingMissing, setLoadingMissing] = useState(true);
+  const [runningFlow, setRunningFlow] = useState(false);
+
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showMissingModal, setShowMissingModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [savingMissing, setSavingMissing] = useState(false);
+
   const [uploadError, setUploadError] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState('');
   const [missingError, setMissingError] = useState('');
   const [missingSuccess, setMissingSuccess] = useState('');
+
   const [formState, setFormState] = useState(initialFormState);
   const [missingForm, setMissingForm] = useState(initialMissingForm);
-  const [selectedPanel, setSelectedPanel] = useState<{ hotspot?: Hotspot; report?: CollapseReport; mode: 'sim' | 'splat' } | null>(null);
+  const [selectedPanel, setSelectedPanel] = useState<{ hotspot?: Hotspot; mode: 'sim' | 'splat' } | null>(null);
   const [isPanelFullscreen, setIsPanelFullscreen] = useState(true);
 
-  const loadReports = () => {
-    setLoadingReports(true);
-    fetch(`${API_BASE_URL}/api/collapse-reports`)
-      .then((res) => res.json())
-      .then((data: CollapseReport[]) => {
-        setReports(data);
-        setLoadingReports(false);
-      })
-      .catch(() => setLoadingReports(false));
-  };
+  const flowPathLatLng = useMemo(() => flowResult?.mainPath.map((point) => [point.lat, point.lng] as [number, number]) ?? [], [flowResult]);
 
   const loadNews = () => {
     setLoadingNews(true);
@@ -176,7 +218,6 @@ export default function App() {
       })
       .catch(() => setLoading(false));
 
-    loadReports();
     loadNews();
     loadMissingPeople();
 
@@ -217,7 +258,6 @@ export default function App() {
 
       setUploadSuccess('Upload recebido! O vídeo entrou na fila para gaussian-splatting.');
       setFormState(initialFormState);
-      loadReports();
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : 'Erro inesperado no envio.');
     } finally {
@@ -262,7 +302,43 @@ export default function App() {
     }
   };
 
-  const openPanel = (panel: { hotspot?: Hotspot; report?: CollapseReport; mode: 'sim' | 'splat' }) => {
+  const handleRunFlow = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFlowError('');
+    setRunningFlow(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/location/flow-simulation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceLat: Number(flowForm.sourceLat),
+          sourceLng: Number(flowForm.sourceLng),
+          rainfallMmPerHour: Number(flowForm.rainfallMmPerHour),
+          initialVolume: Number(flowForm.initialVolume),
+          steps: Number(flowForm.steps),
+          gridSize: Number(flowForm.gridSize),
+          cellSizeMeters: Number(flowForm.cellSizeMeters),
+          manningCoefficient: Number(flowForm.manningCoefficient),
+          infiltrationRate: Number(flowForm.infiltrationRate),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.json();
+        throw new Error(errorPayload.error ?? 'Falha na simulação hidrodinâmica.');
+      }
+
+      const data: FlowSimulationResponse = await response.json();
+      setFlowResult(data);
+    } catch (error) {
+      setFlowError(error instanceof Error ? error.message : 'Erro inesperado na simulação.');
+    } finally {
+      setRunningFlow(false);
+    }
+  };
+
+  const openPanel = (panel: { hotspot?: Hotspot; mode: 'sim' | 'splat' }) => {
     setSelectedPanel(panel);
     setIsPanelFullscreen(true);
   };
@@ -302,10 +378,40 @@ export default function App() {
           </div>
 
           <div className="px-4 py-3 border-b border-slate-700 bg-slate-800/50">
+            <h2 className="text-xs uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
+              <Droplets className="w-3 h-3" /> Simulação de Enchente (CFD simplificado)
+            </h2>
+            <form className="space-y-2" onSubmit={handleRunFlow}>
+              <div className="grid grid-cols-2 gap-2">
+                <input value={flowForm.sourceLat} onChange={(e) => setFlowForm((prev) => ({ ...prev, sourceLat: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Lat" />
+                <input value={flowForm.sourceLng} onChange={(e) => setFlowForm((prev) => ({ ...prev, sourceLng: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Lng" />
+                <input value={flowForm.rainfallMmPerHour} onChange={(e) => setFlowForm((prev) => ({ ...prev, rainfallMmPerHour: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Chuva mm/h" />
+                <input value={flowForm.initialVolume} onChange={(e) => setFlowForm((prev) => ({ ...prev, initialVolume: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Volume inicial" />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <input value={flowForm.steps} onChange={(e) => setFlowForm((prev) => ({ ...prev, steps: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="steps" />
+                <input value={flowForm.gridSize} onChange={(e) => setFlowForm((prev) => ({ ...prev, gridSize: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="grid" />
+                <input value={flowForm.cellSizeMeters} onChange={(e) => setFlowForm((prev) => ({ ...prev, cellSizeMeters: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="célula m" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input value={flowForm.manningCoefficient} onChange={(e) => setFlowForm((prev) => ({ ...prev, manningCoefficient: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Manning n" />
+                <input value={flowForm.infiltrationRate} onChange={(e) => setFlowForm((prev) => ({ ...prev, infiltrationRate: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Infiltração" />
+              </div>
+              <button type="submit" disabled={runningFlow} className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-70 text-white px-3 py-1.5 rounded text-xs font-semibold">
+                <Play className="w-3 h-3" /> {runningFlow ? 'Simulando...' : 'Rodar Navier-Stokes simplificado'}
+              </button>
+              {flowError && <p className="text-xs text-red-400">{flowError}</p>}
+              {flowResult && (
+                <p className="text-[11px] text-cyan-300">
+                  Prof. máx: {flowResult.maxDepth.toFixed(2)} m • Área: {Math.round(flowResult.estimatedAffectedAreaM2)} m²
+                </p>
+              )}
+            </form>
+          </div>
+
+          <div className="px-4 py-3 border-b border-slate-700 bg-slate-800/50">
             <h2 className="text-xs uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2"><Newspaper className="w-3 h-3" />Crawler de notícias (Ubá/JF/Matias Barbosa)</h2>
-            {loadingNews ? (
-              <p className="text-xs text-slate-500">Buscando atualizações...</p>
-            ) : (
+            {loadingNews ? <p className="text-xs text-slate-500">Buscando atualizações...</p> : (
               <ul className="space-y-2 max-h-28 overflow-y-auto pr-1">
                 {newsUpdates.slice(0, 4).map((news) => (
                   <li key={news.id} className="text-xs bg-slate-900/60 border border-slate-700 rounded-md p-2">
@@ -319,9 +425,7 @@ export default function App() {
 
           <div className="px-4 py-3 border-b border-slate-700 bg-slate-800/50">
             <h2 className="text-xs uppercase tracking-wider text-slate-400 mb-2">Pessoas desaparecidas</h2>
-            {loadingMissing ? (
-              <p className="text-xs text-slate-500">Carregando cadastros...</p>
-            ) : (
+            {loadingMissing ? <p className="text-xs text-slate-500">Carregando cadastros...</p> : (
               <ul className="space-y-2 max-h-28 overflow-y-auto pr-1">
                 {missingPeople.slice(0, 4).map((person) => (
                   <li key={person.id} className="text-xs bg-slate-900/60 border border-slate-700 rounded-md p-2">
@@ -333,52 +437,23 @@ export default function App() {
             )}
           </div>
 
-          <div className="px-4 py-3 border-b border-slate-700 bg-slate-800/50">
-            <h2 className="text-xs uppercase tracking-wider text-slate-400 mb-2">Fila de uploads para Gaussian Splatting</h2>
-            {loadingReports ? (
-              <p className="text-xs text-slate-500">Carregando uploads...</p>
-            ) : reports.length === 0 ? (
-              <p className="text-xs text-slate-500">Nenhum vídeo enviado até agora.</p>
-            ) : (
-              <ul className="space-y-2 max-h-32 overflow-y-auto pr-1">
-                {reports.slice(0, 4).map((report) => (
-                  <li key={report.id} className="text-xs bg-slate-900/60 border border-slate-700 rounded-md p-2">
-                    <p className="font-semibold text-white truncate">{report.locationName}</p>
-                    <p className="text-slate-400 truncate">{report.videoFileName}</p>
-                    <p className="text-emerald-400">Status: {report.processingStatus}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
           <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-            {loading ? (
-              <div className="flex items-center justify-center h-full"><Activity className="w-8 h-8 text-blue-500 animate-spin" /></div>
-            ) : (
-              hotspots.map((hs, i) => (
-                <div key={hs.id} className={`rounded-xl p-4 border transition-all ${hs.score > 90 ? 'bg-red-950/40 border-red-500/50 hover:bg-red-900/40' : 'bg-slate-700/50 border-orange-500/30 hover:bg-slate-700'}`}>
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${hs.score > 90 ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'}`}>{i + 1}</span>
-                      <h3 className="font-bold text-lg">{hs.type === 'Flood' ? 'Enchente' : 'Deslizamento'}</h3>
-                    </div>
-                    <div className="bg-slate-900 px-2 py-1 rounded-md border border-slate-600"><span className="text-xs font-mono text-slate-300">Score: {hs.score.toFixed(1)}</span></div>
+            {loading ? <div className="flex items-center justify-center h-full"><Activity className="w-8 h-8 text-blue-500 animate-spin" /></div> : hotspots.map((hs, i) => (
+              <div key={hs.id} className={`rounded-xl p-4 border transition-all ${hs.score > 90 ? 'bg-red-950/40 border-red-500/50 hover:bg-red-900/40' : 'bg-slate-700/50 border-orange-500/30 hover:bg-slate-700'}`}>
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${hs.score > 90 ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'}`}>{i + 1}</span>
+                    <h3 className="font-bold text-lg">{hs.type === 'Flood' ? 'Enchente' : 'Deslizamento'}</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                    <div className="bg-slate-800 p-2 rounded border border-slate-700">
-                      <p className="text-slate-400 mb-0.5">Potencial Vítimas</p>
-                      <p className="font-semibold text-white flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-yellow-500" /> {hs.estimatedAffected}</p>
-                    </div>
-                    <div className="bg-slate-800 p-2 rounded border border-slate-700"><p className="text-slate-400 mb-0.5">Confiança IA</p><p className="font-semibold text-white">{(hs.confidence * 100).toFixed(0)}%</p></div>
-                  </div>
-                  <div className="mt-3">
-                    <p className="text-xs text-slate-400 mb-1 font-semibold uppercase tracking-wider">Evidências / Gatilhos:</p>
-                    <ul className="text-sm space-y-1">{hs.riskFactors.map((r, idx) => <li key={idx} className="flex items-start gap-1.5 text-slate-300"><CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" /><span>{r}</span></li>)}</ul>
-                  </div>
+                  <div className="bg-slate-900 px-2 py-1 rounded-md border border-slate-600"><span className="text-xs font-mono text-slate-300">Score: {hs.score.toFixed(1)}</span></div>
                 </div>
-              ))
-            )}
+                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                  <div className="bg-slate-800 p-2 rounded border border-slate-700"><p className="text-slate-400 mb-0.5">Potencial Vítimas</p><p className="font-semibold text-white flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-yellow-500" /> {hs.estimatedAffected}</p></div>
+                  <div className="bg-slate-800 p-2 rounded border border-slate-700"><p className="text-slate-400 mb-0.5">Confiança IA</p><p className="font-semibold text-white">{(hs.confidence * 100).toFixed(0)}%</p></div>
+                </div>
+                <ul className="text-sm space-y-1">{hs.riskFactors.map((r, idx) => <li key={idx} className="flex items-start gap-1.5 text-slate-300"><CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" /><span>{r}</span></li>)}</ul>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -411,51 +486,57 @@ export default function App() {
               </Marker>
             ))}
 
-            {reports.map((report) => (
+            {flowResult?.floodedCells.map((cell, index) => (
               <CircleMarker
-                key={`report-${report.id}`}
-                center={[report.latitude, report.longitude]}
-                radius={8}
-                pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.35, weight: 2 }}
+                key={`flow-${index}`}
+                center={[cell.lat, cell.lng]}
+                radius={Math.max(2, Math.min(8, cell.depth * 5))}
+                pathOptions={{
+                  color: cell.depth > 1.0 ? '#1d4ed8' : '#38bdf8',
+                  fillColor: cell.depth > 1.0 ? '#1d4ed8' : '#38bdf8',
+                  fillOpacity: Math.min(0.85, 0.2 + cell.depth * 0.25),
+                  weight: 0.8,
+                }}
               >
                 <Popup className="custom-popup">
-                  <div className="text-slate-900 font-sans">
-                    <h3 className="font-bold text-base mb-1 flex items-center gap-2"><Film className="w-4 h-4 text-blue-600" /> Upload: {report.locationName}</h3>
-                    <p className="text-xs mb-2 text-slate-700">Arquivo: {report.videoFileName}</p>
-                    <p className="text-xs mb-2 text-slate-700">Status: {report.processingStatus}</p>
-                    <button onClick={() => openPanel({ report, mode: 'splat' })} className="w-full flex justify-center items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-2 rounded text-xs font-bold transition-colors"><Camera className="w-3 h-3" /> Abrir Splatting deste vídeo</button>
+                  <div className="text-slate-900 text-xs">
+                    <p><strong>Profundidade:</strong> {cell.depth.toFixed(2)} m</p>
+                    <p><strong>Velocidade:</strong> {cell.velocity.toFixed(2)} m/s</p>
+                    <p><strong>Cota terreno:</strong> {cell.terrain.toFixed(1)} m</p>
                   </div>
                 </Popup>
               </CircleMarker>
             ))}
 
-            {hotspots.map((hs) => (
-              <CircleMarker
-                key={`circle-${hs.id}`}
-                center={[hs.lat, hs.lng]}
-                radius={hs.score > 90 ? 30 : 20}
-                pathOptions={{ color: hs.score > 90 ? '#ef4444' : '#f97316', fillColor: hs.score > 90 ? '#ef4444' : '#f97316', fillOpacity: 0.2, weight: 1 }}
-              />
-            ))}
+            {flowPathLatLng.length > 1 && (
+              <Polyline positions={flowPathLatLng} pathOptions={{ color: '#06b6d4', weight: 3, opacity: 0.9, dashArray: '6 6' }} />
+            )}
           </MapContainer>
 
-          <div className="absolute top-4 right-4 bg-slate-800/80 backdrop-blur-md border border-slate-700 shadow-xl rounded-xl p-4 w-64 z-[400] text-sm">
+          <div className="absolute top-4 right-4 bg-slate-800/80 backdrop-blur-md border border-slate-700 shadow-xl rounded-xl p-4 w-72 z-[400] text-sm">
             <h4 className="font-bold text-white mb-2 uppercase tracking-wide text-xs">Status Global</h4>
             <div className="flex justify-between items-center mb-1"><span className="text-slate-400">Total Hotspots:</span><span className="font-semibold">{hotspots.length}</span></div>
             <div className="flex justify-between items-center mb-1"><span className="text-slate-400">Pop. em Perigo:</span><span className="font-semibold text-yellow-500">{hotspots.reduce((a, b) => a + b.estimatedAffected, 0)}</span></div>
-            <div className="flex justify-between items-center"><span className="text-slate-400">Desaparecidos:</span><span className="font-semibold text-amber-400">{missingPeople.length}</span></div>
+            <div className="flex justify-between items-center mb-1"><span className="text-slate-400">Desaparecidos:</span><span className="font-semibold text-amber-400">{missingPeople.length}</span></div>
+            {flowResult && (
+              <>
+                <div className="mt-2 border-t border-slate-700 pt-2 text-xs text-cyan-300">Flood-CFD (didático)</div>
+                <div className="flex justify-between items-center text-xs"><span className="text-slate-400">Prof. máxima:</span><span className="font-semibold text-cyan-300">{flowResult.maxDepth.toFixed(2)} m</span></div>
+                <div className="flex justify-between items-center text-xs"><span className="text-slate-400">Área estimada:</span><span className="font-semibold text-cyan-300">{Math.round(flowResult.estimatedAffectedAreaM2)} m²</span></div>
+              </>
+            )}
           </div>
 
           {selectedPanel && (
             <div className={`absolute z-50 bg-slate-900 shadow-2xl border border-slate-600 flex flex-col overflow-hidden animate-in fade-in ${isPanelFullscreen ? 'inset-0 rounded-none' : 'bottom-4 left-4 w-96 h-80 rounded-xl slide-in-from-bottom-4'}`}>
               <div className="flex justify-between items-center p-2 border-b border-slate-700 bg-slate-800">
-                <span className="text-xs font-bold text-slate-200 flex items-center gap-1">{selectedPanel.mode === 'sim' ? <MapPin className="w-3 h-3 text-orange-500" /> : <Camera className="w-3 h-3 text-blue-500" />}{selectedPanel.mode === 'sim' ? 'Simulação' : 'Drone (Splat)'}: {selectedPanel.hotspot?.id ?? selectedPanel.report?.id}</span>
+                <span className="text-xs font-bold text-slate-200 flex items-center gap-1">{selectedPanel.mode === 'sim' ? <MapPin className="w-3 h-3 text-orange-500" /> : <Camera className="w-3 h-3 text-blue-500" />}{selectedPanel.mode === 'sim' ? 'Simulação' : 'Drone (Splat)'}: {selectedPanel.hotspot?.id}</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => setIsPanelFullscreen((prev) => !prev)} className="text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 rounded p-0.5 transition-colors" title={isPanelFullscreen ? 'Sair de tela cheia' : 'Tela cheia'}>{isPanelFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}</button>
                   <button onClick={() => setSelectedPanel(null)} className="text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 rounded p-0.5 transition-colors"><X className="w-4 h-4" /></button>
                 </div>
               </div>
-              <div className="flex-1 w-full h-full relative">{selectedPanel.mode === 'sim' ? <LandslideSimulation /> : <PostDisasterSplat splatUrl={selectedPanel.report?.splatUrl} sourceVideoUrl={selectedPanel.report?.sourceVideoUrl ? `${API_BASE_URL}${selectedPanel.report.sourceVideoUrl}` : undefined} />}</div>
+              <div className="flex-1 w-full h-full relative">{selectedPanel.mode === 'sim' ? <LandslideSimulation /> : <PostDisasterSplat />}</div>
             </div>
           )}
         </div>
@@ -500,9 +581,7 @@ export default function App() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <input required value={missingForm.personName} onChange={(event) => setMissingForm((prev) => ({ ...prev, personName: event.target.value }))} className="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm" placeholder="Nome da pessoa" />
                 <input value={missingForm.age} onChange={(event) => setMissingForm((prev) => ({ ...prev, age: event.target.value }))} className="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm" placeholder="Idade (opcional)" />
-                <select value={missingForm.city} onChange={(event) => setMissingForm((prev) => ({ ...prev, city: event.target.value }))} className="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm">
-                  <option>Ubá</option><option>Juiz de Fora</option><option>Matias Barbosa</option>
-                </select>
+                <select value={missingForm.city} onChange={(event) => setMissingForm((prev) => ({ ...prev, city: event.target.value }))} className="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"><option>Ubá</option><option>Juiz de Fora</option><option>Matias Barbosa</option></select>
                 <input required value={missingForm.lastSeenLocation} onChange={(event) => setMissingForm((prev) => ({ ...prev, lastSeenLocation: event.target.value }))} className="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm" placeholder="Último local visto" />
               </div>
               <textarea value={missingForm.physicalDescription} onChange={(event) => setMissingForm((prev) => ({ ...prev, physicalDescription: event.target.value }))} className="w-full min-h-20 bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm" placeholder="Descrição física (roupas, características)" />
