@@ -42,56 +42,6 @@ const inferApiBaseUrl = () => {
 const API_BASE_URL = inferApiBaseUrl();
 const resolveApiUrl = (path: string) => (API_BASE_URL ? `${API_BASE_URL}${path}` : path);
 
-const LOCAL_WEEKLY_RAIN_NEWS: NewsUpdate[] = [
-  {
-    id: 'news-uba-1',
-    city: 'Ubá',
-    title: 'Defesa Civil reforça alerta de chuva forte em bairros ribeirinhos de Ubá',
-    source: 'Boletim Regional MG',
-    url: 'https://exemplo.local/noticias/uba-alerta-chuva-forte',
-    publishedAtUtc: new Date(Date.now() - (1 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-uba-2',
-    city: 'Ubá',
-    title: 'Acumulado de chuva da semana eleva atenção para enxurradas no centro de Ubá',
-    source: 'Radar da Chuva Zona da Mata',
-    url: 'https://exemplo.local/noticias/uba-acumulado-semana',
-    publishedAtUtc: new Date(Date.now() - (3 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-jf-1',
-    city: 'Juiz de Fora',
-    title: 'Juiz de Fora registra pontos de alagamento após chuva intensa no fim da tarde',
-    source: 'Painel Metropolitano JF',
-    url: 'https://exemplo.local/noticias/jf-alagamento-chuva',
-    publishedAtUtc: new Date(Date.now() - (2 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-jf-2',
-    city: 'Juiz de Fora',
-    title: 'Nova frente de chuva mantém risco hidrológico moderado em Juiz de Fora',
-    source: 'Tempo e Cidade',
-    url: 'https://exemplo.local/noticias/jf-frente-de-chuva',
-    publishedAtUtc: new Date(Date.now() - (5 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-mb-1',
-    city: 'Matias Barbosa',
-    title: 'Matias Barbosa entra em observação após sequência de chuvas na última semana',
-    source: 'Monitor Mata Sul',
-    url: 'https://exemplo.local/noticias/matias-barbosa-sequencia-chuvas',
-    publishedAtUtc: new Date(Date.now() - (1.5 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-mb-2',
-    city: 'Matias Barbosa',
-    title: 'Defesa local atualiza pontos críticos de drenagem devido à chuva acumulada',
-    source: 'Informe Municipal',
-    url: 'https://exemplo.local/noticias/matias-drenagem-chuva',
-    publishedAtUtc: new Date(Date.now() - (6 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-];
 
 
 
@@ -812,6 +762,7 @@ export default function App() {
     }
   };
 
+
   const openPanel = (panel: SelectedPanel) => {
     setSelectedPanel(panel);
     setIsPanelFullscreen(true);
@@ -1222,7 +1173,7 @@ export default function App() {
               </div>
               <div className="flex-1 w-full h-full relative">
                 <Suspense fallback={<div className="h-full w-full flex items-center justify-center text-slate-400 text-sm">Carregando visualização 3D...</div>}>
-                  {selectedPanel.mode === 'sim' ? <LandslideSimulation sourceLat={selectedPanel.sourceLat ?? selectedPanel.hotspot?.lat} sourceLng={selectedPanel.sourceLng ?? selectedPanel.hotspot?.lng} radiusMeters={500} allowRadiusControl={false} /> : <PostDisasterSplat />}
+                  {selectedPanel.mode === 'sim' ? <LandslideSimulation sourceLat={selectedPanel.sourceLat ?? selectedPanel.hotspot?.lat} sourceLng={selectedPanel.sourceLng ?? selectedPanel.hotspot?.lng} radiusMeters={500} allowRadiusControl /> : <PostDisasterSplat />}
                 </Suspense>
               </div>
             </div>
