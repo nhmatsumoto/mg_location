@@ -33,6 +33,19 @@ A interface web principal agora cobre, de forma operacional, os fluxos essenciai
 
 > Observação: os endpoints `POST` e `GET,POST` continuam disponíveis para integração por apps cliente e operação assistida via API.
 
+## Cobertura atual da interface (voluntários e busca/resgate)
+
+A interface web principal agora cobre, de forma operacional, os fluxos essenciais descritos neste README:
+
+- cálculo de deslocamento estimado por coordenadas e interação direta no mapa;
+- bloco explicativo da **Simulação de Enchente (CFD simplificado)** com endpoint oficial `POST /api/location/flow-simulation`;
+- contexto de terreno com cruzamento de variáveis de vegetação, tipo/densidade do solo e saturação por chuva via `GET /api/terrain/context`;
+- atalhos para módulos já implementados no MVP (`/api/hotspots`, `/api/rescue-support`, `/api/missing-people.csv`, `/api/cfd/ideas`);
+- resumo dos módulos operacionais do MVP (hotspots, rescue-support, searched-areas, report-info e identify-victim) no próprio painel.
+- cadastro de desaparecidos diretamente no mapa: clique nas coordenadas e adicione a pessoa via integração com `POST /api/report-info` (com lat/lng).
+
+> Observação: os endpoints `POST` e `GET,POST` continuam disponíveis para integração por apps cliente e operação assistida via API.
+
 ## Important
 
 > Status atual: o `docker-compose` do repositório está focado no frontend web e é prioridade evoluir para stack completa (frontend + backend + persistência + serviços auxiliares).

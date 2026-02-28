@@ -597,9 +597,12 @@ def report_info(request):
     if request.method != 'POST':
         return HttpResponse(status=405)
 
-    kind = (request.POST.get('kind') or 'person').lower()
-    name = request.POST.get('name')
-    last_seen = request.POST.get('lastSeen')
+    data = _request_payload(request)
+    kind = (data.get('kind') or 'person').lower()
+    name = data.get('name')
+    last_seen = data.get('lastSeen')
+    lat = _parse_float(data.get('lat'))
+    lng = _parse_float(data.get('lng'))
 
     if kind not in ['person', 'animal']:
         return _json_error('kind deve ser person ou animal.')
@@ -611,8 +614,10 @@ def report_info(request):
         'kind': kind,
         'name': name,
         'lastSeen': last_seen,
-        'contact': request.POST.get('contact') or '',
-        'details': request.POST.get('details') or '',
+        'lat': lat,
+        'lng': lng,
+        'contact': data.get('contact') or '',
+        'details': data.get('details') or '',
         'reportedAtUtc': datetime.now(timezone.utc).isoformat(),
     }
     MISSING_REPORTS.append(payload)
@@ -620,7 +625,7 @@ def report_info(request):
     MISSING_PEOPLE.append(
         {
             'name': name,
-            'age': int(request.POST.get('age') or 0),
+            'age': int(data.get('age') or 0),
             'category': kind,
             'lastSeen': last_seen,
             'status': 'missing',
