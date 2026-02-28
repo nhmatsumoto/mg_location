@@ -79,58 +79,6 @@ const LOCAL_WEEKLY_RAIN_NEWS: NewsUpdate[] = [
   },
 ];
 
-
-const LOCAL_WEEKLY_RAIN_NEWS: NewsUpdate[] = [
-  {
-    id: 'news-uba-1',
-    city: 'Ubá',
-    title: 'Defesa Civil reforça alerta de chuva forte em bairros ribeirinhos de Ubá',
-    source: 'Boletim Regional MG',
-    url: 'https://exemplo.local/noticias/uba-alerta-chuva-forte',
-    publishedAtUtc: new Date(Date.now() - (1 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-uba-2',
-    city: 'Ubá',
-    title: 'Acumulado de chuva da semana eleva atenção para enxurradas no centro de Ubá',
-    source: 'Radar da Chuva Zona da Mata',
-    url: 'https://exemplo.local/noticias/uba-acumulado-semana',
-    publishedAtUtc: new Date(Date.now() - (3 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-jf-1',
-    city: 'Juiz de Fora',
-    title: 'Juiz de Fora registra pontos de alagamento após chuva intensa no fim da tarde',
-    source: 'Painel Metropolitano JF',
-    url: 'https://exemplo.local/noticias/jf-alagamento-chuva',
-    publishedAtUtc: new Date(Date.now() - (2 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-jf-2',
-    city: 'Juiz de Fora',
-    title: 'Nova frente de chuva mantém risco hidrológico moderado em Juiz de Fora',
-    source: 'Tempo e Cidade',
-    url: 'https://exemplo.local/noticias/jf-frente-de-chuva',
-    publishedAtUtc: new Date(Date.now() - (5 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-mb-1',
-    city: 'Matias Barbosa',
-    title: 'Matias Barbosa entra em observação após sequência de chuvas na última semana',
-    source: 'Monitor Mata Sul',
-    url: 'https://exemplo.local/noticias/matias-barbosa-sequencia-chuvas',
-    publishedAtUtc: new Date(Date.now() - (1.5 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-mb-2',
-    city: 'Matias Barbosa',
-    title: 'Defesa local atualiza pontos críticos de drenagem devido à chuva acumulada',
-    source: 'Informe Municipal',
-    url: 'https://exemplo.local/noticias/matias-drenagem-chuva',
-    publishedAtUtc: new Date(Date.now() - (6 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-];
-
 const iconLandslide = new L.Icon({
   iconUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-orange.png',
   iconSize: [25, 41],
@@ -656,19 +604,46 @@ export default function App() {
             </h2>
             <form className="space-y-2" onSubmit={handleRunFlow}>
               <div className="grid grid-cols-2 gap-2">
-                <input value={flowForm.sourceLat} onChange={(e) => setFlowForm((prev) => ({ ...prev, sourceLat: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Lat" />
-                <input value={flowForm.sourceLng} onChange={(e) => setFlowForm((prev) => ({ ...prev, sourceLng: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Lng" />
-                <input value={flowForm.rainfallMmPerHour} onChange={(e) => setFlowForm((prev) => ({ ...prev, rainfallMmPerHour: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Chuva mm/h" />
-                <input value={flowForm.initialVolume} onChange={(e) => setFlowForm((prev) => ({ ...prev, initialVolume: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Volume inicial" />
+                <label className="space-y-1 text-[11px] text-slate-300">
+                  <span>Latitude da fonte</span>
+                  <input value={flowForm.sourceLat} onChange={(e) => setFlowForm((prev) => ({ ...prev, sourceLat: e.target.value }))} className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="-21.1215" />
+                </label>
+                <label className="space-y-1 text-[11px] text-slate-300">
+                  <span>Longitude da fonte</span>
+                  <input value={flowForm.sourceLng} onChange={(e) => setFlowForm((prev) => ({ ...prev, sourceLng: e.target.value }))} className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="-42.9427" />
+                </label>
+                <label className="space-y-1 text-[11px] text-slate-300">
+                  <span>Chuva (mm/h)</span>
+                  <input value={flowForm.rainfallMmPerHour} onChange={(e) => setFlowForm((prev) => ({ ...prev, rainfallMmPerHour: e.target.value }))} className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="80" />
+                </label>
+                <label className="space-y-1 text-[11px] text-slate-300">
+                  <span>Volume inicial (m³)</span>
+                  <input value={flowForm.initialVolume} onChange={(e) => setFlowForm((prev) => ({ ...prev, initialVolume: e.target.value }))} className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="3.5" />
+                </label>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <input value={flowForm.steps} onChange={(e) => setFlowForm((prev) => ({ ...prev, steps: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="steps" />
-                <input value={flowForm.gridSize} onChange={(e) => setFlowForm((prev) => ({ ...prev, gridSize: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="grid" />
-                <input value={flowForm.cellSizeMeters} onChange={(e) => setFlowForm((prev) => ({ ...prev, cellSizeMeters: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="célula m" />
+                <label className="space-y-1 text-[11px] text-slate-300">
+                  <span>Passos</span>
+                  <input value={flowForm.steps} onChange={(e) => setFlowForm((prev) => ({ ...prev, steps: e.target.value }))} className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="120" />
+                </label>
+                <label className="space-y-1 text-[11px] text-slate-300">
+                  <span>Grid</span>
+                  <input value={flowForm.gridSize} onChange={(e) => setFlowForm((prev) => ({ ...prev, gridSize: e.target.value }))} className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="40" />
+                </label>
+                <label className="space-y-1 text-[11px] text-slate-300">
+                  <span>Célula (m)</span>
+                  <input value={flowForm.cellSizeMeters} onChange={(e) => setFlowForm((prev) => ({ ...prev, cellSizeMeters: e.target.value }))} className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="25" />
+                </label>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <input value={flowForm.manningCoefficient} onChange={(e) => setFlowForm((prev) => ({ ...prev, manningCoefficient: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Manning n" />
-                <input value={flowForm.infiltrationRate} onChange={(e) => setFlowForm((prev) => ({ ...prev, infiltrationRate: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Infiltração" />
+                <label className="space-y-1 text-[11px] text-slate-300">
+                  <span>Coef. Manning (n)</span>
+                  <input value={flowForm.manningCoefficient} onChange={(e) => setFlowForm((prev) => ({ ...prev, manningCoefficient: e.target.value }))} className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="0.045" />
+                </label>
+                <label className="space-y-1 text-[11px] text-slate-300">
+                  <span>Taxa de infiltração</span>
+                  <input value={flowForm.infiltrationRate} onChange={(e) => setFlowForm((prev) => ({ ...prev, infiltrationRate: e.target.value }))} className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="0.002" />
+                </label>
               </div>
               <button type="submit" disabled={runningFlow} className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-70 text-white px-3 py-1.5 rounded text-xs font-semibold">
                 <Play className="w-3 h-3" /> {runningFlow ? 'Simulando...' : 'Rodar Navier-Stokes simplificado'}
@@ -902,7 +877,7 @@ export default function App() {
               </div>
               <div className="flex-1 w-full h-full relative">
                 <Suspense fallback={<div className="h-full w-full flex items-center justify-center text-slate-400 text-sm">Carregando visualização 3D...</div>}>
-                  {selectedPanel.mode === 'sim' ? <LandslideSimulation sourceLat={selectedPanel.sourceLat ?? selectedPanel.hotspot?.lat} sourceLng={selectedPanel.sourceLng ?? selectedPanel.hotspot?.lng} radiusMeters={500} allowRadiusControl={false} /> : <PostDisasterSplat />}
+                  {selectedPanel.mode === 'sim' ? <LandslideSimulation sourceLat={selectedPanel.sourceLat ?? selectedPanel.hotspot?.lat} sourceLng={selectedPanel.sourceLng ?? selectedPanel.hotspot?.lng} radiusMeters={500} allowRadiusControl /> : <PostDisasterSplat />}
                 </Suspense>
               </div>
             </div>
