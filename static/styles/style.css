@@ -3,7 +3,7 @@
 body {
     margin: 0;
     font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #eef3f9;
+    background: #f3f6fb;
     color: #1d2b3a;
 }
 
@@ -39,21 +39,23 @@ body {
     border: 1px solid #cfdceb;
 }
 
-body {
-    margin: 0;
-    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #f3f6fb;
-    color: #1d2b3a;
-}
-
 .map-panel {
     position: absolute;
     z-index: 900;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.96);
     border: 1px solid #d1deee;
     border-radius: 10px;
     box-shadow: 0 6px 18px rgba(17, 35, 58, .12);
     padding: .75rem;
+}
+
+.map-panel .form-control {
+    border-color: #c8d7ea;
+}
+
+.map-panel .form-control:focus {
+    border-color: #2f6dba;
+    box-shadow: 0 0 0 0.1rem rgba(47, 109, 186, .2);
 }
 
 .panel-main {
@@ -68,6 +70,10 @@ body {
     right: 12px;
     top: 12px;
     width: 320px;
+}
+
+.helper-muted {
+    color: #4f657d;
 }
 
 .panel-services {

@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
 from apps.api.integrations.alerts.inmet_cap import alert_feed_registry
+from apps.api.integrations.core.http_client import CircuitOpenError
 from apps.api.integrations.satellite.gibs import get_layers_manifest
 from apps.api.integrations.satellite.goes_aws import enabled as goes_enabled
 from apps.api.integrations.satellite.goes_aws import list_recent
@@ -25,6 +26,12 @@ def _float_param(request, name, required=True, default=None):
     return float(raw)
 
 
+def _integration_error(exc):
+    if isinstance(exc, CircuitOpenError):
+        return JsonResponse({'error': 'Fonte temporariamente indisponível (circuit breaker ativo).'}, status=503)
+    return JsonResponse({'error': f'Falha ao consultar provedor externo: {type(exc).__name__}'}, status=502)
+
+
 @require_GET
 def weather_forecast(request):
     try:
@@ -34,7 +41,10 @@ def weather_forecast(request):
     except (ValueError, TypeError) as exc:
         return JsonResponse({'error': str(exc)}, status=400)
 
-    data, cache_hit = fetch_forecast(lat=lat, lon=lon, days=days)
+    try:
+        data, cache_hit = fetch_forecast(lat=lat, lon=lon, days=days)
+    except Exception as exc:
+        return _integration_error(exc)
     data['cacheHit'] = cache_hit
     return JsonResponse(data)
 
@@ -52,7 +62,10 @@ def weather_archive(request):
     except (ValueError, TypeError) as exc:
         return JsonResponse({'error': str(exc)}, status=400)
 
-    data, cache_hit = fetch_archive(lat=lat, lon=lon, start=start, end=end)
+    try:
+        data, cache_hit = fetch_archive(lat=lat, lon=lon, start=start, end=end)
+    except Exception as exc:
+        return _integration_error(exc)
     data['cacheHit'] = cache_hit
     return JsonResponse(data)
 
@@ -70,7 +83,10 @@ def alerts(request):
             return JsonResponse({'error': str(exc)}, status=400)
 
     since = request.GET.get('since')
-    items, cache_hit = alert_feed_registry.fetch(bbox=bbox_tuple, since=since)
+    try:
+        items, cache_hit = alert_feed_registry.fetch(bbox=bbox_tuple, since=since)
+    except Exception as exc:
+        return _integration_error(exc)
     return JsonResponse({'items': items, 'cacheHit': cache_hit})
 
 
@@ -85,6 +101,8 @@ def transparency_transfers(request):
         )
     except TransparencyApiKeyMissing as exc:
         return JsonResponse({'error': str(exc)}, status=400)
+    except Exception as exc:
+        return _integration_error(exc)
     data['cacheHit'] = cache_hit
     return JsonResponse(data)
 
@@ -99,6 +117,8 @@ def transparency_search(request):
         data, cache_hit = search(query, request.GET.get('start'), request.GET.get('end'))
     except TransparencyApiKeyMissing as exc:
         return JsonResponse({'error': str(exc)}, status=400)
+    except Exception as exc:
+        return _integration_error(exc)
 
     data['cacheHit'] = cache_hit
     return JsonResponse(data)
@@ -124,7 +144,10 @@ def satellite_stac_search(request):
     if not bbox or not start or not end:
         return JsonResponse({'error': 'Parâmetros obrigatórios: bbox,start,end'}, status=400)
 
-    data, cache_hit = search_stac(collection=collection, bbox=bbox, start=start, end=end, limit=limit)
+    try:
+        data, cache_hit = search_stac(collection=collection, bbox=bbox, start=start, end=end, limit=limit)
+    except Exception as exc:
+        return _integration_error(exc)
     data['cacheHit'] = cache_hit
     return JsonResponse(data)
 
@@ -135,6 +158,9 @@ def satellite_goes_recent(request):
         return JsonResponse({'error': 'GOES desabilitado por config (ENABLE_GOES=false).'}, status=403)
 
     minutes = int(request.GET.get('minutes', 60))
-    data, cache_hit = list_recent(minutes=minutes)
+    try:
+        data, cache_hit = list_recent(minutes=minutes)
+    except Exception as exc:
+        return _integration_error(exc)
     data['cacheHit'] = cache_hit
     return JsonResponse(data)

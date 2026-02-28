@@ -74,3 +74,34 @@ CACHE_DIR=.cache
 
 - `ENABLE_GOES=false`: endpoint GOES retorna 403 por padrão (opcional).
 - `ENABLE_STAC=true`: habilita busca STAC.
+
+
+## Configuração avançada (CGU)
+
+Se o Portal da Transparência alterar os caminhos de endpoint, você pode sobrescrever por env:
+
+```env
+TRANSPARENCIA_TRANSFERS_PATH=/transferencias
+TRANSPARENCIA_SEARCH_PATH=/busca-livre
+```
+
+## Testes rápidos sem dependência de Django
+
+Execute:
+
+```bash
+python -m unittest apps.api.integrations.tests.test_integrations_unit
+```
+
+
+## Cadastros e integração com banco (Missing Persons)
+
+O formulário de cadastro no mapa foi simplificado para usar apenas os campos essenciais:
+
+- `personName`
+- `lastSeenLocation`
+- coordenadas (`lat`, `lng`) selecionadas no mapa
+
+A API `POST /api/missing-persons` agora aceita payload simplificado e completa defaults de plataforma para campos não informados (`city`, `contactName`, `contactPhone`), persistindo no banco via model `MissingPerson`.
+
+A listagem de `GET /api/missing-persons` retorna também `lat` e `lng`, permitindo renderização direta no mapa.
