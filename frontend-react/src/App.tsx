@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker, LayersControl, Polyline, Circle, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -22,8 +22,8 @@ import {
   Droplets,
   CloudRain,
 } from 'lucide-react';
-import LandslideSimulation from './LandslideSimulation';
-import PostDisasterSplat from './PostDisasterSplat';
+const LandslideSimulation = lazy(() => import('./LandslideSimulation'));
+const PostDisasterSplat = lazy(() => import('./PostDisasterSplat'));
 
 const API_BASE_URL = 'http://localhost:5031';
 
@@ -743,7 +743,11 @@ export default function App() {
                   <button onClick={() => setSelectedPanel(null)} className="text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 rounded p-0.5 transition-colors"><X className="w-4 h-4" /></button>
                 </div>
               </div>
-              <div className="flex-1 w-full h-full relative">{selectedPanel.mode === 'sim' ? <LandslideSimulation sourceLat={selectedPanel.sourceLat ?? selectedPanel.hotspot?.lat} sourceLng={selectedPanel.sourceLng ?? selectedPanel.hotspot?.lng} radiusMeters={500} allowRadiusControl={false} /> : <PostDisasterSplat />}</div>
+              <div className="flex-1 w-full h-full relative">
+                <Suspense fallback={<div className="h-full w-full flex items-center justify-center text-slate-400 text-sm">Carregando visualização 3D...</div>}>
+                  {selectedPanel.mode === 'sim' ? <LandslideSimulation sourceLat={selectedPanel.sourceLat ?? selectedPanel.hotspot?.lat} sourceLng={selectedPanel.sourceLng ?? selectedPanel.hotspot?.lng} radiusMeters={500} allowRadiusControl={false} /> : <PostDisasterSplat />}
+                </Suspense>
+              </div>
             </div>
           )}
         </div>
