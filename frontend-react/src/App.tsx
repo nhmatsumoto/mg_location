@@ -1,5 +1,5 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
-import type { FormEvent, MouseEvent, ReactNode } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
+import type { FormEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker, LayersControl, Polyline, Circle, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
@@ -189,28 +189,6 @@ interface ClimakiSnapshot {
   saturationRisk: string;
 }
 
-interface NewsUpdate {
-  id: string;
-  city: string;
-  title: string;
-  source: string;
-  url: string;
-  publishedAtUtc: string;
-}
-
-interface MissingPerson {
-  id: string;
-  personName: string;
-  age?: number | null;
-  city: string;
-  lastSeenLocation: string;
-  physicalDescription: string;
-  additionalInfo: string;
-  contactName: string;
-  contactPhone: string;
-  reportedAtUtc: string;
-}
-
 const initialFormState = {
   locationName: '',
   latitude: '',
@@ -259,13 +237,20 @@ interface FloatingPanelPosition {
   left: number;
 }
 
+type FloatingPanelId = 'global' | 'terrain';
+
+const FLOATING_PANEL_WIDTHS: Record<FloatingPanelId, number> = {
+  global: 288,
+  terrain: 320,
+};
+
 interface DraggablePanelProps {
   title: string;
-  panelId: 'global' | 'terrain';
+  panelId: FloatingPanelId;
   position: FloatingPanelPosition;
   docked: boolean;
-  onStartDrag: (panelId: 'global' | 'terrain', event: MouseEvent<HTMLDivElement>) => void;
-  onToggleDock: (panelId: 'global' | 'terrain') => void;
+  onStartDrag: (panelId: FloatingPanelId, event: ReactPointerEvent<HTMLDivElement>) => void;
+  onToggleDock: (panelId: FloatingPanelId) => void;
   children: ReactNode;
   widthClass?: string;
 }
@@ -286,13 +271,13 @@ function DraggablePanel({
       style={{ top: `${position.top}px`, left: `${position.left}px` }}
     >
       <div
-        className="px-3 py-2 border-b border-slate-700 bg-slate-800/70 rounded-t-xl flex items-center justify-between cursor-move"
-        onMouseDown={(event) => onStartDrag(panelId, event)}
+        className="px-3 py-2 border-b border-slate-700 bg-slate-800/70 rounded-t-xl flex items-center justify-between cursor-move touch-none"
+        onPointerDown={(event) => onStartDrag(panelId, event)}
       >
         <h4 className="font-bold text-white uppercase tracking-wide text-xs">{title}</h4>
         <button
           type="button"
-          onMouseDown={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
           onClick={() => onToggleDock(panelId)}
           className="text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-200 hover:text-white hover:border-cyan-400"
         >
@@ -350,61 +335,95 @@ export default function App() {
   const [isPanelFullscreen, setIsPanelFullscreen] = useState(true);
   const [isSelectingIncidentPoint, setIsSelectingIncidentPoint] = useState(false);
   const [selectedIncidentPoint, setSelectedIncidentPoint] = useState<{ lat: number; lng: number } | null>(null);
-  const [floatingPanelPositions, setFloatingPanelPositions] = useState<Record<'global' | 'terrain', FloatingPanelPosition>>({
-    global: { top: 16, left: 930 },
-    terrain: { top: 16, left: 16 },
+  const mapOverlayRef = useRef<HTMLDivElement | null>(null);
+  const [floatingPanelPositions, setFloatingPanelPositions] = useState<Record<FloatingPanelId, FloatingPanelPosition>>({
+    global: { top: 16, left: 16 },
+    terrain: { top: 16, left: 320 },
   });
-  const [dockedPanels, setDockedPanels] = useState<Record<'global' | 'terrain', boolean>>({
+  const [dockedPanels, setDockedPanels] = useState<Record<FloatingPanelId, boolean>>({
     global: false,
     terrain: false,
   });
   const [dragState, setDragState] = useState<{
-    panelId: 'global' | 'terrain';
+    panelId: FloatingPanelId;
     offsetX: number;
     offsetY: number;
   } | null>(null);
 
   const flowPathLatLng = useMemo(() => flowResult?.mainPath.map((point) => [point.lat, point.lng] as [number, number]) ?? [], [flowResult]);
 
+  const clampPanelPosition = (panelId: FloatingPanelId, nextLeft: number, nextTop: number) => {
+    const mapRect = mapOverlayRef.current?.getBoundingClientRect();
+    if (!mapRect) return { left: Math.max(8, nextLeft), top: Math.max(8, nextTop) };
+
+    const maxLeft = Math.max(8, mapRect.width - FLOATING_PANEL_WIDTHS[panelId] - 8);
+    const maxTop = Math.max(8, mapRect.height - 120);
+
+    return {
+      left: Math.min(maxLeft, Math.max(8, nextLeft)),
+      top: Math.min(maxTop, Math.max(8, nextTop)),
+    };
+  };
+
   useEffect(() => {
     if (!dragState) return;
 
-    const handleMouseMove = (event: globalThis.MouseEvent) => {
-      const nextLeft = Math.max(8, event.clientX - dragState.offsetX);
-      const nextTop = Math.max(8, event.clientY - dragState.offsetY);
+    const handlePointerMove = (event: PointerEvent) => {
+      const mapRect = mapOverlayRef.current?.getBoundingClientRect();
+      if (!mapRect) return;
+
+      const rawLeft = event.clientX - mapRect.left - dragState.offsetX;
+      const rawTop = event.clientY - mapRect.top - dragState.offsetY;
+      const next = clampPanelPosition(dragState.panelId, rawLeft, rawTop);
+
       setFloatingPanelPositions((prev) => ({
         ...prev,
-        [dragState.panelId]: {
-          top: nextTop,
-          left: nextLeft,
-        },
+        [dragState.panelId]: next,
       }));
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       setDragState(null);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
     };
   }, [dragState]);
 
-  const startPanelDrag = (panelId: 'global' | 'terrain', event: MouseEvent<HTMLDivElement>) => {
+  useEffect(() => {
+    const handleResize = () => {
+      setFloatingPanelPositions((prev) => ({
+        global: clampPanelPosition('global', prev.global.left, prev.global.top),
+        terrain: clampPanelPosition('terrain', prev.terrain.left, prev.terrain.top),
+      }));
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const startPanelDrag = (panelId: FloatingPanelId, event: ReactPointerEvent<HTMLDivElement>) => {
     if (dockedPanels[panelId]) return;
+
+    const mapRect = mapOverlayRef.current?.getBoundingClientRect();
+    if (!mapRect) return;
+
     const current = floatingPanelPositions[panelId];
     setDragState({
       panelId,
-      offsetX: event.clientX - current.left,
-      offsetY: event.clientY - current.top,
+      offsetX: event.clientX - mapRect.left - current.left,
+      offsetY: event.clientY - mapRect.top - current.top,
     });
   };
 
-  const togglePanelDock = (panelId: 'global' | 'terrain') => {
+  const togglePanelDock = (panelId: FloatingPanelId) => {
     setDockedPanels((prev) => ({
       ...prev,
       [panelId]: !prev[panelId],
@@ -831,7 +850,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="w-2/3 h-full relative z-10">
+        <div ref={mapOverlayRef} className="w-2/3 h-full relative z-10">
           <MapContainer center={[-21.1215, -42.9427]} zoom={14} className="h-full w-full" zoomControl={false}>
             <LayersControl position="topright">
               <LayersControl.BaseLayer checked name="Mapa em relevo">
