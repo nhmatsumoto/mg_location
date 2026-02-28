@@ -1,17 +1,17 @@
-name: brumadinho-simulation
+name: mg-location-simulation
 
 services:
   frontend:
     build:
       context: ./frontend-react
       dockerfile: Dockerfile
-    container_name: simulador-brumadinho
+    container_name: simulador-mg-location
     ports:
       - "8000:8000"
     restart: unless-stopped
     networks:
-      - brumadinho-network
+      - mg-location-network
 
 networks:
-  brumadinho-network:
+  mg-location-network:
     driver: bridge

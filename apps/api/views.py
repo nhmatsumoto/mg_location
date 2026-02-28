@@ -101,6 +101,22 @@ RELATIVE_PHOTO_FEATURES = [
     {"id": "VF-003", "name": "Pessoa C", "faceEmbedding": [0.50, 0.12, 0.66, 0.19], "notes": "Nariz proeminente"},
 ]
 
+
+DEVICE_SUBSCRIPTIONS = []
+SPLAT_JOBS = []
+ATTENTION_ALERTS = [
+    {
+        "id": "AL-001",
+        "title": "Encosta com deslocamento recente",
+        "message": "Área com alta declividade e chuva acumulada; reforçar monitoramento em 2h.",
+        "severity": "high",
+        "lat": -21.1215,
+        "lng": -42.9427,
+        "radiusMeters": 500,
+        "createdAtUtc": datetime.now(timezone.utc).isoformat(),
+    }
+]
+
 CFD_REFERENCE = {
     "ideas": [
         "http://fluidityproject.github.io/",
@@ -125,6 +141,17 @@ def _parse_float(value):
     except (TypeError, ValueError):
         return None
 
+
+
+
+def _request_payload(request):
+    if request.content_type and 'application/json' in request.content_type:
+        try:
+            import json
+            return json.loads(request.body.decode('utf-8') or '{}')
+        except Exception:
+            return {}
+    return request.POST
 
 def _uploads_directory():
     base = getattr(settings, 'BASE_DIR', os.getcwd())
@@ -329,6 +356,16 @@ def collapse_reports(request):
     }
 
     COLLAPSE_REPORTS.append(report)
+    ATTENTION_ALERTS.append({
+        "id": "AL-{}".format(uuid.uuid4().hex[:8]),
+        "title": "Novo vídeo de deslizamento",
+        "message": "Relato enviado de {}. Priorizar revisão de campo e drone.".format(report["locationName"]),
+        "severity": "critical",
+        "lat": latitude,
+        "lng": longitude,
+        "radiusMeters": 500,
+        "createdAtUtc": datetime.now(timezone.utc).isoformat(),
+    })
     return JsonResponse(report, status=201)
 
 
@@ -494,3 +531,123 @@ def cfd_ideas(request):
         return HttpResponse(status=405)
 
     return JsonResponse(CFD_REFERENCE, safe=False)
+
+
+@csrf_exempt
+def splat_convert(request):
+    if request.method == 'GET':
+        return JsonResponse(sorted(SPLAT_JOBS, key=lambda j: j['createdAtUtc'], reverse=True), safe=False)
+
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+
+    video = request.FILES.get('video')
+    payload = _request_payload(request)
+
+    lat = _parse_float(payload.get('latitude'))
+    lng = _parse_float(payload.get('longitude'))
+
+    if video is None or video.size == 0:
+        return _json_error("Envie o vídeo na chave 'video'.")
+    if lat is None or lng is None:
+        return _json_error('latitude e longitude são obrigatórios para converter em .splat.')
+
+    job_id = 'SPLAT-{}'.format(uuid.uuid4().hex[:8])
+    safe_name = '{}-{}'.format(job_id, os.path.basename(video.name))
+    file_path = os.path.join(_uploads_directory(), safe_name)
+
+    with open(file_path, 'wb+') as destination:
+        for chunk in video.chunks():
+            destination.write(chunk)
+
+    splat_url = '/media/splats/{}.splat'.format(job_id.lower())
+    job = {
+        'id': job_id,
+        'status': 'Queued',
+        'videoFileName': video.name,
+        'storedVideoPath': file_path,
+        'latitude': lat,
+        'longitude': lng,
+        'radiusMeters': 500,
+        'splatUrl': splat_url,
+        'createdAtUtc': datetime.now(timezone.utc).isoformat(),
+        'pipeline': ['extract_frames', 'gaussian_splat_train', 'export_splat'],
+    }
+
+    SPLAT_JOBS.append(job)
+    ATTENTION_ALERTS.append({
+        'id': 'AL-{}'.format(uuid.uuid4().hex[:8]),
+        'title': 'Nova cena 3D em processamento',
+        'message': 'Conversão Gaussian Splatting iniciada para área demarcada.',
+        'severity': 'medium',
+        'lat': lat,
+        'lng': lng,
+        'radiusMeters': 500,
+        'createdAtUtc': datetime.now(timezone.utc).isoformat(),
+    })
+
+    return JsonResponse(job, status=201)
+
+
+@csrf_exempt
+def push_register(request):
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+
+    payload = _request_payload(request)
+    device_id = payload.get('deviceId')
+    token = payload.get('token')
+
+    if not device_id or not token:
+        return _json_error('deviceId e token são obrigatórios.')
+
+    record = {
+        'id': 'SUB-{}'.format(uuid.uuid4().hex[:8]),
+        'deviceId': device_id,
+        'token': token,
+        'platform': payload.get('platform') or 'unknown',
+        'topics': payload.get('topics') or ['attention-alerts'],
+        'registeredAtUtc': datetime.now(timezone.utc).isoformat(),
+    }
+
+    DEVICE_SUBSCRIPTIONS[:] = [sub for sub in DEVICE_SUBSCRIPTIONS if sub['deviceId'] != device_id]
+    DEVICE_SUBSCRIPTIONS.append(record)
+    return JsonResponse(record, status=201)
+
+
+@csrf_exempt
+def attention_alerts(request):
+    if request.method == 'GET':
+        ordered = sorted(ATTENTION_ALERTS, key=lambda alert: alert['createdAtUtc'], reverse=True)
+        return JsonResponse(ordered, safe=False)
+
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+
+    payload = _request_payload(request)
+    title = payload.get('title')
+    message = payload.get('message')
+    lat = _parse_float(payload.get('lat'))
+    lng = _parse_float(payload.get('lng'))
+
+    if not title or not message or lat is None or lng is None:
+        return _json_error('title, message, lat e lng são obrigatórios.')
+
+    alert = {
+        'id': 'AL-{}'.format(uuid.uuid4().hex[:8]),
+        'title': title,
+        'message': message,
+        'severity': payload.get('severity') or 'medium',
+        'lat': lat,
+        'lng': lng,
+        'radiusMeters': int(payload.get('radiusMeters') or 500),
+        'createdAtUtc': datetime.now(timezone.utc).isoformat(),
+    }
+
+    ATTENTION_ALERTS.append(alert)
+
+    return JsonResponse({
+        'alert': alert,
+        'registeredDevices': len(DEVICE_SUBSCRIPTIONS),
+        'delivery': 'Simulação local: envio via provedor push externo (FCM/APNs).',
+    }, status=201)
