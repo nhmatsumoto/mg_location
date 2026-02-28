@@ -327,6 +327,7 @@ export default function App() {
   const [riskError, setRiskError] = useState('');
   const [riskSuccess, setRiskSuccess] = useState('');
   const [riskForm, setRiskForm] = useState(initialRiskForm);
+  const [sidebarTab, setSidebarTab] = useState<'flood' | 'news' | 'missing' | 'hotspots'>('flood');
   const mapOverlayRef = useRef<HTMLDivElement | null>(null);
   const [floatingPanelPositions, setFloatingPanelPositions] = useState<Record<FloatingPanelId, FloatingPanelPosition>>({
     global: { top: 16, left: 16 },
@@ -548,12 +549,19 @@ export default function App() {
     loadAttentionAlerts();
     loadClimakiContext();
 
-    const interval = setInterval(() => {
-      loadNews();
+    const tacticalInterval = setInterval(() => {
       loadAttentionAlerts();
       loadClimakiContext();
     }, 120000);
-    return () => clearInterval(interval);
+
+    const publicSourcesInterval = setInterval(() => {
+      loadNews();
+    }, 1800000);
+
+    return () => {
+      clearInterval(tacticalInterval);
+      clearInterval(publicSourcesInterval);
+    };
   }, []);
 
   const handleUpload = async (event: FormEvent<HTMLFormElement>) => {
@@ -835,7 +843,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="px-4 py-3 border-b border-slate-700 bg-slate-800/50">
+          <div className={`px-4 py-3 border-b border-slate-700 bg-slate-800/50 transition-all duration-300 ${sidebarTab === 'flood' ? 'opacity-100 translate-y-0' : 'hidden opacity-0 -translate-y-1'}`}>
             <h2 className="text-xs uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
               <Droplets className="w-3 h-3" /> Simulação de Enchente (modo fácil)
             </h2>
@@ -888,7 +896,27 @@ export default function App() {
             </form>
           </div>
 
-          <div className="px-4 py-3 border-b border-slate-700 bg-slate-800/50">
+          <div className="px-4 py-2 border-b border-slate-700 bg-slate-900/60">
+            <div className="grid grid-cols-4 gap-2 text-[11px]">
+              {([
+                { key: 'flood', label: 'Enchente' },
+                { key: 'news', label: 'Notícias' },
+                { key: 'missing', label: 'Desaparecidos' },
+                { key: 'hotspots', label: 'Hotspots' },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setSidebarTab(tab.key)}
+                  className={`rounded-md px-2 py-1.5 border transition-all duration-200 ${sidebarTab === tab.key ? 'bg-cyan-600 border-cyan-400 text-white shadow-md shadow-cyan-900/30 scale-[1.02]' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={`px-4 py-3 border-b border-slate-700 bg-slate-800/50 transition-all duration-300 ${sidebarTab === 'news' ? 'opacity-100 translate-y-0' : 'hidden opacity-0 -translate-y-1'}`}>
             <h2 className="text-xs uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2"><Newspaper className="w-3 h-3" />Aba notícias • Chuvas (últimos 7 dias)</h2>
             <div className="grid grid-cols-2 gap-1 mb-2 text-[11px]">
               {(['Todas', 'Ubá', 'Juiz de Fora', 'Matias Barbosa'] as const).map((cityTab) => (
@@ -917,7 +945,7 @@ export default function App() {
             )}
           </div>
 
-          <div className="px-4 py-3 border-b border-slate-700 bg-slate-800/50">
+          <div className={`px-4 py-3 border-b border-slate-700 bg-slate-800/50 transition-all duration-300 ${sidebarTab === 'missing' ? 'opacity-100 translate-y-0' : 'hidden opacity-0 -translate-y-1'}`}>
             <h2 className="text-xs uppercase tracking-wider text-slate-400 mb-2">Pessoas desaparecidas</h2>
             {loadingMissing ? <p className="text-xs text-slate-500">Carregando cadastros...</p> : (
               <ul className="space-y-2 max-h-28 overflow-y-auto pr-1">
@@ -931,7 +959,7 @@ export default function App() {
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+          <div className={`flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar transition-all duration-300 ${sidebarTab === 'hotspots' ? 'opacity-100 translate-y-0' : 'hidden opacity-0 -translate-y-1'}`}>
             {loading ? <div className="flex items-center justify-center h-full"><Activity className="w-8 h-8 text-blue-500 animate-spin" /></div> : hotspots.map((hs, i) => (
               <div key={hs.id} className={`rounded-xl p-4 border transition-all ${hs.score > 90 ? 'bg-red-950/40 border-red-500/50 hover:bg-red-900/40' : 'bg-slate-700/50 border-orange-500/30 hover:bg-slate-700'}`}>
                 <div className="flex justify-between items-start mb-3">
