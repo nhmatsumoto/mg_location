@@ -230,6 +230,12 @@ const initialDonationForm = {
   location: 'Centro comunitário de Ubá',
 };
 
+const initialSplatForm = {
+  latitude: '-21.1215',
+  longitude: '-42.9427',
+  video: null as File | null,
+};
+
 interface SelectedPanel {
   hotspot?: Hotspot;
   mode: 'sim' | 'splat';
@@ -371,6 +377,10 @@ export default function App() {
     { id: 'DT-001', item: 'Cobertores', quantity: '80 unidades', location: 'Escola Municipal A', status: 'aberto' },
     { id: 'DT-002', item: 'Cestas básicas', quantity: '45 unidades', location: 'Paróquia Central', status: 'em_andamento' },
   ]);
+  const [splatForm, setSplatForm] = useState(initialSplatForm);
+  const [splatUploading, setSplatUploading] = useState(false);
+  const [splatError, setSplatError] = useState('');
+  const [splatPreview, setSplatPreview] = useState<{ splatUrl?: string | null; sourceVideoUrl?: string } | null>(null);
   const mapOverlayRef = useRef<HTMLDivElement | null>(null);
   const [floatingPanelPositions, setFloatingPanelPositions] = useState<Record<FloatingPanelId, FloatingPanelPosition>>({
     global: { top: 16, left: 16 },
@@ -840,6 +850,46 @@ export default function App() {
   };
 
 
+
+  const handleSplatUpload = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSplatError('');
+
+    if (!splatForm.video) {
+      setSplatError('Selecione um vídeo para gerar a cena 3D com gaussian splatting.');
+      return;
+    }
+
+    setSplatUploading(true);
+    try {
+      const payload = new FormData();
+      payload.append('latitude', splatForm.latitude);
+      payload.append('longitude', splatForm.longitude);
+      payload.append('video', splatForm.video);
+
+      const response = await fetch(resolveApiUrl('/api/splat/convert'), {
+        method: 'POST',
+        body: payload,
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error ?? 'Falha ao converter vídeo para .splat.');
+      }
+
+      setSplatPreview({
+        splatUrl: data?.splatUrl ? resolveApiUrl(data.splatUrl) : null,
+        sourceVideoUrl: data?.storedVideoPath,
+      });
+      setSplatForm((prev) => ({ ...prev, video: null }));
+      openPanel({ mode: 'splat', label: 'Render 3D (gaussian-splatting)' });
+    } catch (error) {
+      setSplatError(error instanceof Error ? error.message : 'Erro no pipeline gaussian-splatting.');
+    } finally {
+      setSplatUploading(false);
+    }
+  };
+
   const handleDonationSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setDonationTasks((prev) => ([{
@@ -1046,8 +1096,8 @@ export default function App() {
               </div>
               <button type="submit" className="w-full text-xs px-2 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white">Adicionar demanda de doação</button>
             </form>
-            <ul className="space-y-2 max-h-36 overflow-y-auto pr-1">
-              {donationTasks.slice(0, 8).map((task) => (
+            <ul className="space-y-2 max-h-24 overflow-y-auto pr-1">
+              {donationTasks.slice(0, 6).map((task) => (
                 <li key={task.id} className="text-xs bg-slate-900/60 border border-slate-700 rounded-md p-2">
                   <p className="font-semibold text-white">{task.item} • {task.quantity}</p>
                   <p className="text-slate-400">{task.location}</p>
@@ -1055,6 +1105,27 @@ export default function App() {
                 </li>
               ))}
             </ul>
+
+            <div className="mt-3 border-t border-slate-700 pt-3">
+              <h3 className="text-[11px] uppercase tracking-wide text-slate-400 mb-2">Renderizar cena 3D por vídeo (Gaussian Splatting)</h3>
+              <form className="space-y-2" onSubmit={handleSplatUpload}>
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={splatForm.latitude} onChange={(e) => setSplatForm((prev) => ({ ...prev, latitude: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Latitude" required />
+                  <input value={splatForm.longitude} onChange={(e) => setSplatForm((prev) => ({ ...prev, longitude: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Longitude" required />
+                </div>
+                <input type="file" accept="video/*" onChange={(e) => setSplatForm((prev) => ({ ...prev, video: e.target.files && e.target.files.length > 0 ? e.target.files[0] : null }))} className="text-xs w-full" required />
+                <button type="submit" disabled={splatUploading} className="w-full text-xs px-2 py-1.5 rounded bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-70">
+                  {splatUploading ? 'Processando pipeline 3D...' : 'Enviar vídeo e gerar cena 3D'}
+                </button>
+                {splatError && <p className="text-xs text-red-400">{splatError}</p>}
+              </form>
+
+              {splatPreview && (
+                <div className="mt-3 h-48 rounded border border-slate-700 overflow-hidden">
+                  <PostDisasterSplat splatUrl={splatPreview.splatUrl} sourceVideoUrl={splatPreview.sourceVideoUrl} />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className={`flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar transition-all duration-300 ${sidebarTab === 'hotspots' ? 'opacity-100 translate-y-0' : 'hidden opacity-0 -translate-y-1'}`}>
@@ -1363,7 +1434,7 @@ export default function App() {
               </div>
               <div className="flex-1 w-full h-full relative">
                 <Suspense fallback={<div className="h-full w-full flex items-center justify-center text-slate-400 text-sm">Carregando visualização 3D...</div>}>
-                  {selectedPanel.mode === 'sim' ? <LandslideSimulation sourceLat={selectedPanel.sourceLat ?? selectedPanel.hotspot?.lat} sourceLng={selectedPanel.sourceLng ?? selectedPanel.hotspot?.lng} radiusMeters={500} allowRadiusControl /> : <PostDisasterSplat />}
+                  {selectedPanel.mode === 'sim' ? <LandslideSimulation sourceLat={selectedPanel.sourceLat ?? selectedPanel.hotspot?.lat} sourceLng={selectedPanel.sourceLng ?? selectedPanel.hotspot?.lng} radiusMeters={500} allowRadiusControl /> : <PostDisasterSplat splatUrl={splatPreview?.splatUrl} sourceVideoUrl={splatPreview?.sourceVideoUrl} />}
                 </Suspense>
               </div>
             </div>
