@@ -2,10 +2,11 @@ import csv
 import io
 import json
 import os
+import re
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import googlemaps
 from django.conf import settings
@@ -135,6 +136,125 @@ CFD_REFERENCE = {
     ],
 }
 
+
+PUBLIC_ALERT_SOURCES = [
+    {
+        'id': 'defesa-civil-alerta',
+        'city': 'Brasil',
+        'label': 'Defesa Civil Alerta (MDR)',
+        'url': 'https://www.gov.br/mdr/pt-br/assuntos/protecao-e-defesa-civil/defesa-civil-alerta',
+        'thumbnailUrl': 'https://www.gov.br/mdr/++theme++padrao_govbr/img/logo.svg',
+        'kind': 'alert',
+    },
+    {
+        'id': 'portal-transparencia-acoes',
+        'city': 'Brasil',
+        'label': 'Portal da Transparência',
+        'url': 'https://portaldatransparencia.gov.br/busca?termo=defesa%20civil',
+        'thumbnailUrl': 'https://portaldatransparencia.gov.br/favicon.ico',
+        'kind': 'government_action',
+    },
+]
+
+NEWS_UPDATES_CACHE = {
+    'fetchedAtUtc': None,
+    'expiresAtUtc': None,
+    'items': [],
+}
+
+
+def _strip_html(text):
+    return re.sub(r'\s+', ' ', re.sub(r'<[^>]*>', ' ', text or '')).strip()
+
+
+def _extract_public_alert_news(source):
+    try:
+        with urlopen(source['url'], timeout=12) as response:
+            raw = response.read().decode('utf-8', errors='ignore')
+    except Exception:
+        return []
+
+    cleaned = _strip_html(raw)
+    snippets = re.findall(r'([^.]{40,220}(?:alerta|chuva|risco|desastre|emerg[eê]ncia)[^.]{0,180})', cleaned, flags=re.IGNORECASE)
+    unique = []
+    seen = set()
+    for chunk in snippets:
+        sentence = chunk.strip(' -:;')
+        if len(sentence) < 40:
+            continue
+        key = sentence.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append({
+            'id': f"{source['id']}-{len(unique)+1}",
+            'city': source['city'],
+            'title': sentence[:180],
+            'source': source['label'],
+            'url': source['url'],
+            'publishedAtUtc': datetime.now(timezone.utc).isoformat(),
+            'thumbnailUrl': source.get('thumbnailUrl'),
+            'kind': source.get('kind', 'alert'),
+        })
+        if len(unique) >= 8:
+            break
+
+    if unique:
+        return unique
+
+    title_match = re.search(r'<title>(.*?)</title>', raw, flags=re.IGNORECASE | re.DOTALL)
+    fallback_title = _strip_html(title_match.group(1)) if title_match else source['label']
+    return [{
+        'id': f"{source['id']}-fallback",
+        'city': source['city'],
+        'title': fallback_title[:180],
+        'source': source['label'],
+        'url': source['url'],
+        'publishedAtUtc': datetime.now(timezone.utc).isoformat(),
+        'thumbnailUrl': source.get('thumbnailUrl'),
+        'kind': source.get('kind', 'alert'),
+    }]
+
+
+def _load_public_news_updates(force_refresh=False):
+    now = datetime.now(timezone.utc)
+    expires_at = NEWS_UPDATES_CACHE.get('expiresAtUtc')
+    if not force_refresh and expires_at and now < expires_at and NEWS_UPDATES_CACHE.get('items'):
+        return NEWS_UPDATES_CACHE['items']
+
+    all_items = []
+    for source in PUBLIC_ALERT_SOURCES:
+        all_items.extend(_extract_public_alert_news(source))
+
+    if not all_items:
+        all_items = [{
+            'id': 'fallback-public-alert',
+            'city': 'Brasil',
+            'title': 'Monitoramento ativo de alertas públicos de defesa civil.',
+            'source': 'Fallback local',
+            'url': 'https://www.gov.br/mdr/pt-br/assuntos/protecao-e-defesa-civil/defesa-civil-alerta',
+            'publishedAtUtc': now.isoformat(),
+            'thumbnailUrl': 'https://portaldatransparencia.gov.br/favicon.ico',
+            'kind': 'government_action',
+        }]
+
+    dedup = []
+    seen = set()
+    for item in all_items:
+        key = (item.get('title', '').strip().lower(), item.get('source', '').strip().lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        dedup.append(item)
+
+    dedup.sort(key=lambda i: i.get('publishedAtUtc', ''), reverse=True)
+
+    NEWS_UPDATES_CACHE['items'] = dedup
+    NEWS_UPDATES_CACHE['fetchedAtUtc'] = now
+    NEWS_UPDATES_CACHE['expiresAtUtc'] = now + timedelta(minutes=30)
+    return dedup
+
+
 # Camadas simplificadas de terreno (fallback local) inspiradas em fontes abertas
 # de cobertura vegetal (Copernicus/ESA), textura de solo (SoilGrids),
 # e umidade antecedente por precipitação (Open-Meteo).
@@ -219,6 +339,98 @@ def _safe_fetch_json(url, timeout=3):
     except Exception:
         return None
 
+
+
+
+def _safe_fetch_json_with_headers(url, headers=None, timeout=4):
+    try:
+        request = Request(url, headers=headers or {})
+        with urlopen(request, timeout=timeout) as response:
+            return json.loads(response.read().decode('utf-8'))
+    except Exception:
+        return None
+
+
+def _metno_weather_snapshot(lat, lng):
+    query = 'https://api.met.no/weatherapi/locationforecast/2.0/compact?lat={}&lon={}'.format(lat, lng)
+    payload = _safe_fetch_json_with_headers(
+        query,
+        headers={'User-Agent': 'mg-location/1.0 (contact: open-source-demo)'},
+        timeout=5,
+    )
+    if not payload:
+        return None
+
+    timeseries = payload.get('properties', {}).get('timeseries') or []
+    if not timeseries:
+        return None
+
+    details = timeseries[0].get('data', {}).get('instant', {}).get('details', {})
+    temp = details.get('air_temperature')
+    humidity = details.get('relative_humidity')
+    wind = details.get('wind_speed')
+
+    return {
+        'provider': 'MET Norway',
+        'temperatureC': temp,
+        'relativeHumidityPercent': humidity,
+        'windSpeedMs': wind,
+    }
+
+
+def _open_meteo_weather_snapshot(lat, lng):
+    query = (
+        'https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}'
+        '&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation'
+        '&hourly=precipitation&past_days=1&forecast_days=1'
+    ).format(lat, lng)
+    payload = _safe_fetch_json(query, timeout=5)
+    if not payload:
+        return None
+
+    current = payload.get('current') or {}
+    rainfall_mm = _open_meteo_rainfall_mm(lat, lng)
+
+    return {
+        'provider': 'Open-Meteo',
+        'temperatureC': current.get('temperature_2m'),
+        'relativeHumidityPercent': current.get('relative_humidity_2m'),
+        'windSpeedMs': current.get('wind_speed_10m'),
+        'rainfallMm24h': rainfall_mm,
+    }
+
+
+def _climate_integrations_context(lat, lng):
+    providers = []
+
+    open_meteo = _open_meteo_weather_snapshot(lat, lng)
+    if open_meteo:
+        providers.append(open_meteo)
+
+    met_no = _metno_weather_snapshot(lat, lng)
+    if met_no:
+        providers.append(met_no)
+
+    summary = {
+        'temperatureC': None,
+        'relativeHumidityPercent': None,
+        'windSpeedMs': None,
+        'rainfallMm24h': None,
+    }
+
+    if providers:
+        summary['temperatureC'] = next((p.get('temperatureC') for p in providers if isinstance(p.get('temperatureC'), (int, float))), None)
+        summary['relativeHumidityPercent'] = next((p.get('relativeHumidityPercent') for p in providers if isinstance(p.get('relativeHumidityPercent'), (int, float))), None)
+        summary['windSpeedMs'] = next((p.get('windSpeedMs') for p in providers if isinstance(p.get('windSpeedMs'), (int, float))), None)
+        summary['rainfallMm24h'] = next((p.get('rainfallMm24h') for p in providers if isinstance(p.get('rainfallMm24h'), (int, float))), None)
+
+    return {
+        'lat': lat,
+        'lng': lng,
+        'providers': providers,
+        'summary': summary,
+        'fetchedAtUtc': datetime.now(timezone.utc).isoformat(),
+    }
 
 def _open_meteo_rainfall_mm(lat, lng):
     query = (
@@ -626,6 +838,61 @@ def location_flow_simulation(request):
 
 
 @csrf_exempt
+def unified_easy_simulation(request):
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+
+    payload = _request_payload(request)
+    lat = _parse_float(payload.get('lat', payload.get('sourceLat')))
+    lng = _parse_float(payload.get('lng', payload.get('sourceLng')))
+    area_m2 = _parse_float(payload.get('areaM2')) or 15000
+
+    if lat is None or lng is None:
+        return _json_error('lat/lng ou sourceLat/sourceLng são obrigatórios para simulação unificada.')
+
+    flow_response = location_flow_simulation(request)
+    if flow_response.status_code >= 400:
+        return flow_response
+
+    flow_payload = json.loads(flow_response.content.decode('utf-8'))
+
+    terrain = _terrain_open_data_context(
+        lat,
+        lng,
+        _parse_float(payload.get('rainfallMm', payload.get('rainfallMmPerHour'))),
+    )
+
+    return JsonResponse(
+        {
+            'generatedAtUtc': datetime.now(timezone.utc).isoformat(),
+            'input': {
+                'lat': lat,
+                'lng': lng,
+                'scenario': payload.get('scenario') or 'encosta',
+            },
+            'flowSimulation': flow_payload,
+            'terrainContext': terrain,
+            'rescueSupport': _build_rescue_support(area_m2),
+            'notes': 'Endpoint unificado para o modo fácil: fluxo + terreno + suporte tático.',
+        },
+        safe=False,
+    )
+
+
+@csrf_exempt
+def climate_integrations(request):
+    if request.method != 'GET':
+        return HttpResponse(status=405)
+
+    lat = _parse_float(request.GET.get('lat'))
+    lng = _parse_float(request.GET.get('lng'))
+    if lat is None or lng is None:
+        return _json_error('lat e lng são obrigatórios para integrações climáticas.')
+
+    return JsonResponse(_climate_integrations_context(lat, lng), safe=False)
+
+
+@csrf_exempt
 def terrain_context(request):
     if request.method != 'GET':
         return HttpResponse(status=405)
@@ -784,6 +1051,17 @@ def identify_victim(request):
         },
         safe=False,
     )
+
+
+
+@csrf_exempt
+def news_updates(request):
+    if request.method != 'GET':
+        return HttpResponse(status=405)
+
+    force_refresh = request.GET.get('refresh') == '1'
+    items = _load_public_news_updates(force_refresh=force_refresh)
+    return JsonResponse(items, safe=False)
 
 
 @csrf_exempt
