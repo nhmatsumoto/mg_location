@@ -12,5 +12,7 @@ Este diretório centraliza a documentação funcional e técnica do projeto.
 - [Política de uso](./USAGE_POLICY.md)
 - [Checklist de implementações](./IMPLEMENTATION_CHECKLIST.md)
 - [Checklist de testes de segurança](./SECURITY_TEST_CHECKLIST.md)
+- [Compliance e padrões](./COMPLIANCE_AND_STANDARDS.md)
+- [Política de resposta a incidentes](./INCIDENT_RESPONSE_POLICY.md)
 - [Integrações externas](./INTEGRATIONS.md)
 - [Diagramas](./diagrams/ARCHITECTURE.md)

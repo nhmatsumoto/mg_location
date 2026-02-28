@@ -71,6 +71,13 @@ Acesse: `http://localhost:8000`
 
 Consulte [SECURITY.md](./SECURITY.md) e [docs/SECURITY_TEST_CHECKLIST.md](./docs/SECURITY_TEST_CHECKLIST.md).
 
+## Compliance e segurança
+
+- [Normas e padrões adotados](./docs/COMPLIANCE_AND_STANDARDS.md)
+- [Política de resposta a incidentes](./docs/INCIDENT_RESPONSE_POLICY.md)
+- [Checklist de testes de segurança](./docs/SECURITY_TEST_CHECKLIST.md)
+
+
 ## Contribuição
 
 Veja [CONTRIBUTING.md](./CONTRIBUTING.md).
@@ -78,3 +85,11 @@ Veja [CONTRIBUTING.md](./CONTRIBUTING.md).
 ## Licença
 
 MIT.
+
+
+## Portas oficiais locais (sem legado)
+
+- Frontend atualizado: `http://localhost:8000`
+- API backend: `http://localhost:8001`
+
+A porta `8080` foi descontinuada para evitar duas versões concorrentes da interface.

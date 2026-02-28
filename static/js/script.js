@@ -15,6 +15,11 @@ const i18n = {
         quickActions: 'Ações rápidas',
         toolsTitle: 'Caixa de ferramentas',
         notificationsTitle: 'Notificações operacionais',
+        sidebarTitle: 'Central de alertas',
+        tabSecurity: 'Segurança civil',
+        tabMissing: 'Desaparecidos',
+        tabSystem: 'Sistema',
+        noItems: 'Sem itens no momento.',
         locationInfoTitle: 'Informações relevantes do local',
         refreshLocationInfo: 'Atualizar contexto local',
         updatedAt: 'Atualizado em',
@@ -79,6 +84,11 @@ const i18n = {
         quickActions: 'Quick actions',
         toolsTitle: 'Toolbox',
         notificationsTitle: 'Operational notifications',
+        sidebarTitle: 'Alerts center',
+        tabSecurity: 'Civil security',
+        tabMissing: 'Missing',
+        tabSystem: 'System',
+        noItems: 'No items at the moment.',
         locationInfoTitle: 'Relevant location information',
         refreshLocationInfo: 'Refresh local context',
         updatedAt: 'Updated at',
@@ -151,7 +161,10 @@ var app = new Vue({
             flowMobilityIndex: '-',
             updatedAt: ''
         },
-        notifications: []
+        notifications: [],
+        activeSidebarTab: 'security',
+        securityAlerts: [],
+        missingAlerts: []
     },
     computed: {
         t: function() { return i18n[this.locale]; }
@@ -162,7 +175,9 @@ var app = new Vue({
         setPreset: setPreset,
         registerMissingPerson: registerMissingPerson,
         refreshLocationInfo: refreshLocationInfo,
-        openTool: openTool
+        openTool: openTool,
+        setSidebarTab: setSidebarTab,
+        refreshAlertFeeds: refreshAlertFeeds
     },
     watch: {
         locale: function() {
@@ -181,6 +196,49 @@ function pushNotification(message, level) {
         time: now.toLocaleTimeString()
     });
     app.notifications = app.notifications.slice(0, 8);
+}
+
+
+
+function setSidebarTab(tab) {
+    app.activeSidebarTab = tab;
+}
+
+async function refreshAlertFeeds() {
+    try {
+        const civilRes = await fetch('/api/attention-alerts');
+        if (civilRes.ok) {
+            const civil = await civilRes.json();
+            app.securityAlerts = (civil || []).slice(0, 12).map(function(item) {
+                return {
+                    id: item.id || item.external_id || Math.random(),
+                    title: item.title || item.event || 'Alerta',
+                    message: item.message || item.summary || '-',
+                    severity: item.severity || 'medium',
+                    createdAtUtc: item.createdAtUtc || item.effective || ''
+                };
+            });
+        }
+    } catch (_) {
+        pushNotification(app.t.errors.requestFailed, 'error');
+    }
+
+    try {
+        const missingRes = await fetch('/api/missing-persons');
+        if (missingRes.ok) {
+            const missing = await missingRes.json();
+            app.missingAlerts = (missing || []).slice(0, 12).map(function(item) {
+                return {
+                    id: item.id || Math.random(),
+                    personName: item.personName || item.name || 'Desconhecido',
+                    lastSeenLocation: item.lastSeenLocation || item.lastSeen || '-',
+                    reportedAtUtc: item.reportedAtUtc || ''
+                };
+            });
+        }
+    } catch (_) {
+        pushNotification(app.t.errors.requestFailed, 'error');
+    }
 }
 
 function createMarker(name, point, markerStyle) {
@@ -346,6 +404,7 @@ async function registerMissingPerson() {
     app.statusMessage = app.t.status.missingSaved;
     app.savingMissing = false;
     pushNotification(app.t.status.missingSaved, 'info');
+    refreshAlertFeeds();
 }
 
 function createMissingMarker(item) {
@@ -437,6 +496,8 @@ function initMap() {
 
     loadMissingReports();
     refreshLocationInfo();
+    refreshAlertFeeds();
+    setInterval(refreshAlertFeeds, 60000);
     pushNotification('Centro de comando inicializado.', 'info');
     return map;
 }

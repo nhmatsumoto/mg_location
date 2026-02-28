@@ -95,13 +95,38 @@
                 </aside>
 
                 <aside class="map-panel panel-notifications">
-                    <h2 class="h6 mb-2">{{ t.notificationsTitle }}</h2>
-                    <ul class="notification-list mb-0">
+                    <h2 class="h6 mb-2">{{ t.sidebarTitle }}</h2>
+                    <div class="sidebar-tabs mb-2">
+                        <button type="button" class="btn btn-sm" :class="activeSidebarTab === 'security' ? 'btn-primary' : 'btn-outline-primary'" @click="setSidebarTab('security')">{{ t.tabSecurity }} <span class="badge badge-light">{{ securityAlerts.length }}</span></button>
+                        <button type="button" class="btn btn-sm" :class="activeSidebarTab === 'missing' ? 'btn-primary' : 'btn-outline-primary'" @click="setSidebarTab('missing')">{{ t.tabMissing }} <span class="badge badge-light">{{ missingAlerts.length }}</span></button>
+                        <button type="button" class="btn btn-sm" :class="activeSidebarTab === 'system' ? 'btn-primary' : 'btn-outline-primary'" @click="setSidebarTab('system')">{{ t.tabSystem }} <span class="badge badge-light">{{ notifications.length }}</span></button>
+                    </div>
+
+                    <ul v-if="activeSidebarTab === 'security'" class="notification-list mb-0">
+                        <li v-for="item in securityAlerts" :key="item.id">
+                            <span class="badge badge-pill" :class="item.severity === 'high' ? 'badge-danger' : 'badge-warning'">{{ item.severity }}</span>
+                            <span><strong>{{ item.title }}</strong> — {{ item.message }}</span>
+                            <small>{{ item.createdAtUtc || '-' }}</small>
+                        </li>
+                        <li v-if="securityAlerts.length === 0" class="muted-item">{{ t.noItems }}</li>
+                    </ul>
+
+                    <ul v-if="activeSidebarTab === 'missing'" class="notification-list mb-0">
+                        <li v-for="item in missingAlerts" :key="item.id">
+                            <span class="badge badge-pill badge-info">missing</span>
+                            <span><strong>{{ item.personName }}</strong> — {{ item.lastSeenLocation }}</span>
+                            <small>{{ item.reportedAtUtc || '-' }}</small>
+                        </li>
+                        <li v-if="missingAlerts.length === 0" class="muted-item">{{ t.noItems }}</li>
+                    </ul>
+
+                    <ul v-if="activeSidebarTab === 'system'" class="notification-list mb-0">
                         <li v-for="item in notifications" :key="item.id">
                             <span class="badge badge-pill" :class="item.level === 'error' ? 'badge-danger' : 'badge-primary'">{{ item.level }}</span>
                             <span>{{ item.message }}</span>
                             <small>{{ item.time }}</small>
                         </li>
+                        <li v-if="notifications.length === 0" class="muted-item">{{ t.noItems }}</li>
                     </ul>
                 </aside>
 
