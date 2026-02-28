@@ -1,5 +1,5 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
-import type { FormEvent } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
+import type { FormEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker, LayersControl, Polyline, Circle, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
@@ -20,7 +20,6 @@ import {
   Users,
   Play,
   Droplets,
-  CloudRain,
 } from 'lucide-react';
 const LandslideSimulation = lazy(() => import('./LandslideSimulation'));
 const PostDisasterSplat = lazy(() => import('./PostDisasterSplat'));
@@ -80,56 +79,6 @@ const LOCAL_WEEKLY_RAIN_NEWS: NewsUpdate[] = [
 ];
 
 
-const LOCAL_WEEKLY_RAIN_NEWS: NewsUpdate[] = [
-  {
-    id: 'news-uba-1',
-    city: 'Ubá',
-    title: 'Defesa Civil reforça alerta de chuva forte em bairros ribeirinhos de Ubá',
-    source: 'Boletim Regional MG',
-    url: 'https://exemplo.local/noticias/uba-alerta-chuva-forte',
-    publishedAtUtc: new Date(Date.now() - (1 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-uba-2',
-    city: 'Ubá',
-    title: 'Acumulado de chuva da semana eleva atenção para enxurradas no centro de Ubá',
-    source: 'Radar da Chuva Zona da Mata',
-    url: 'https://exemplo.local/noticias/uba-acumulado-semana',
-    publishedAtUtc: new Date(Date.now() - (3 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-jf-1',
-    city: 'Juiz de Fora',
-    title: 'Juiz de Fora registra pontos de alagamento após chuva intensa no fim da tarde',
-    source: 'Painel Metropolitano JF',
-    url: 'https://exemplo.local/noticias/jf-alagamento-chuva',
-    publishedAtUtc: new Date(Date.now() - (2 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-jf-2',
-    city: 'Juiz de Fora',
-    title: 'Nova frente de chuva mantém risco hidrológico moderado em Juiz de Fora',
-    source: 'Tempo e Cidade',
-    url: 'https://exemplo.local/noticias/jf-frente-de-chuva',
-    publishedAtUtc: new Date(Date.now() - (5 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-mb-1',
-    city: 'Matias Barbosa',
-    title: 'Matias Barbosa entra em observação após sequência de chuvas na última semana',
-    source: 'Monitor Mata Sul',
-    url: 'https://exemplo.local/noticias/matias-barbosa-sequencia-chuvas',
-    publishedAtUtc: new Date(Date.now() - (1.5 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-  {
-    id: 'news-mb-2',
-    city: 'Matias Barbosa',
-    title: 'Defesa local atualiza pontos críticos de drenagem devido à chuva acumulada',
-    source: 'Informe Municipal',
-    url: 'https://exemplo.local/noticias/matias-drenagem-chuva',
-    publishedAtUtc: new Date(Date.now() - (6 * 24 * 60 * 60 * 1000)).toISOString(),
-  },
-];
 
 const iconLandslide = new L.Icon({
   iconUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-orange.png',
@@ -240,28 +189,6 @@ interface ClimakiSnapshot {
   saturationRisk: string;
 }
 
-interface NewsUpdate {
-  id: string;
-  city: string;
-  title: string;
-  source: string;
-  url: string;
-  publishedAtUtc: string;
-}
-
-interface MissingPerson {
-  id: string;
-  personName: string;
-  age?: number | null;
-  city: string;
-  lastSeenLocation: string;
-  physicalDescription: string;
-  additionalInfo: string;
-  contactName: string;
-  contactPhone: string;
-  reportedAtUtc: string;
-}
-
 const initialFormState = {
   locationName: '',
   latitude: '',
@@ -302,6 +229,64 @@ function MapClickSelector({ enabled, onSelect }: { enabled: boolean; onSelect: (
   });
 
   return null;
+}
+
+
+interface FloatingPanelPosition {
+  top: number;
+  left: number;
+}
+
+type FloatingPanelId = 'global' | 'terrain';
+
+const FLOATING_PANEL_WIDTHS: Record<FloatingPanelId, number> = {
+  global: 288,
+  terrain: 320,
+};
+
+interface DraggablePanelProps {
+  title: string;
+  panelId: FloatingPanelId;
+  position: FloatingPanelPosition;
+  docked: boolean;
+  onStartDrag: (panelId: FloatingPanelId, event: ReactPointerEvent<HTMLDivElement>) => void;
+  onToggleDock: (panelId: FloatingPanelId) => void;
+  children: ReactNode;
+  widthClass?: string;
+}
+
+function DraggablePanel({
+  title,
+  panelId,
+  position,
+  docked,
+  onStartDrag,
+  onToggleDock,
+  children,
+  widthClass = 'w-72',
+}: DraggablePanelProps) {
+  return (
+    <div
+      className={`absolute bg-slate-900/85 backdrop-blur-md border border-slate-700 shadow-xl rounded-xl z-[410] text-sm ${widthClass} ${docked ? 'opacity-70' : ''}`}
+      style={{ top: `${position.top}px`, left: `${position.left}px` }}
+    >
+      <div
+        className="px-3 py-2 border-b border-slate-700 bg-slate-800/70 rounded-t-xl flex items-center justify-between cursor-move touch-none"
+        onPointerDown={(event) => onStartDrag(panelId, event)}
+      >
+        <h4 className="font-bold text-white uppercase tracking-wide text-xs">{title}</h4>
+        <button
+          type="button"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => onToggleDock(panelId)}
+          className="text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-200 hover:text-white hover:border-cyan-400"
+        >
+          {docked ? 'Soltar' : 'Integrar'}
+        </button>
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
 }
 
 const initialFlowForm = {
@@ -350,8 +335,101 @@ export default function App() {
   const [isPanelFullscreen, setIsPanelFullscreen] = useState(true);
   const [isSelectingIncidentPoint, setIsSelectingIncidentPoint] = useState(false);
   const [selectedIncidentPoint, setSelectedIncidentPoint] = useState<{ lat: number; lng: number } | null>(null);
+  const mapOverlayRef = useRef<HTMLDivElement | null>(null);
+  const [floatingPanelPositions, setFloatingPanelPositions] = useState<Record<FloatingPanelId, FloatingPanelPosition>>({
+    global: { top: 16, left: 16 },
+    terrain: { top: 16, left: 320 },
+  });
+  const [dockedPanels, setDockedPanels] = useState<Record<FloatingPanelId, boolean>>({
+    global: false,
+    terrain: false,
+  });
+  const [dragState, setDragState] = useState<{
+    panelId: FloatingPanelId;
+    offsetX: number;
+    offsetY: number;
+  } | null>(null);
 
   const flowPathLatLng = useMemo(() => flowResult?.mainPath.map((point) => [point.lat, point.lng] as [number, number]) ?? [], [flowResult]);
+
+  const clampPanelPosition = (panelId: FloatingPanelId, nextLeft: number, nextTop: number) => {
+    const mapRect = mapOverlayRef.current?.getBoundingClientRect();
+    if (!mapRect) return { left: Math.max(8, nextLeft), top: Math.max(8, nextTop) };
+
+    const maxLeft = Math.max(8, mapRect.width - FLOATING_PANEL_WIDTHS[panelId] - 8);
+    const maxTop = Math.max(8, mapRect.height - 120);
+
+    return {
+      left: Math.min(maxLeft, Math.max(8, nextLeft)),
+      top: Math.min(maxTop, Math.max(8, nextTop)),
+    };
+  };
+
+  useEffect(() => {
+    if (!dragState) return;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const mapRect = mapOverlayRef.current?.getBoundingClientRect();
+      if (!mapRect) return;
+
+      const rawLeft = event.clientX - mapRect.left - dragState.offsetX;
+      const rawTop = event.clientY - mapRect.top - dragState.offsetY;
+      const next = clampPanelPosition(dragState.panelId, rawLeft, rawTop);
+
+      setFloatingPanelPositions((prev) => ({
+        ...prev,
+        [dragState.panelId]: next,
+      }));
+    };
+
+    const handlePointerUp = () => {
+      setDragState(null);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [dragState]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setFloatingPanelPositions((prev) => ({
+        global: clampPanelPosition('global', prev.global.left, prev.global.top),
+        terrain: clampPanelPosition('terrain', prev.terrain.left, prev.terrain.top),
+      }));
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const startPanelDrag = (panelId: FloatingPanelId, event: ReactPointerEvent<HTMLDivElement>) => {
+    if (dockedPanels[panelId]) return;
+
+    const mapRect = mapOverlayRef.current?.getBoundingClientRect();
+    if (!mapRect) return;
+
+    const current = floatingPanelPositions[panelId];
+    setDragState({
+      panelId,
+      offsetX: event.clientX - mapRect.left - current.left,
+      offsetY: event.clientY - mapRect.top - current.top,
+    });
+  };
+
+  const togglePanelDock = (panelId: FloatingPanelId) => {
+    setDockedPanels((prev) => ({
+      ...prev,
+      [panelId]: !prev[panelId],
+    }));
+  };
+
 
   const filteredNewsUpdates = useMemo(() => {
     const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
@@ -745,7 +823,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="w-2/3 h-full relative z-10">
+        <div ref={mapOverlayRef} className="w-2/3 h-full relative z-10">
           <MapContainer center={[-21.1215, -42.9427]} zoom={14} className="h-full w-full" zoomControl={false}>
             <LayersControl position="topright">
               <LayersControl.BaseLayer checked name="Mapa em relevo">
@@ -824,72 +902,115 @@ export default function App() {
             )}
           </MapContainer>
 
-          <div className="absolute top-4 right-4 bg-slate-800/80 backdrop-blur-md border border-slate-700 shadow-xl rounded-xl p-4 w-72 z-[400] text-sm">
-            <h4 className="font-bold text-white mb-2 uppercase tracking-wide text-xs">Status Global</h4>
-            <div className="flex justify-between items-center mb-1"><span className="text-slate-400">Total Hotspots:</span><span className="font-semibold">{hotspots.length}</span></div>
-            <div className="flex justify-between items-center mb-1"><span className="text-slate-400">Pop. em Perigo:</span><span className="font-semibold text-yellow-500">{hotspots.reduce((a, b) => a + b.estimatedAffected, 0)}</span></div>
-            <div className="flex justify-between items-center mb-1"><span className="text-slate-400">Desaparecidos:</span><span className="font-semibold text-amber-400">{missingPeople.length}</span></div>
-            <div className="mt-2 border-t border-slate-700 pt-2">
-              <p className="text-[11px] uppercase tracking-wide text-slate-400 mb-1">Alertas de atenção</p>
-              {attentionAlerts.length === 0 ? (
-                <p className="text-xs text-slate-500">Sem alertas no momento.</p>
-              ) : (
-                <ul className="space-y-1 max-h-24 overflow-y-auto pr-1">
-                  {attentionAlerts.slice(0, 3).map((alert) => (
-                    <li key={alert.id} className="text-[11px] bg-slate-900/70 border border-slate-700 rounded px-2 py-1">
-                      <p className="font-semibold text-white truncate">{alert.title}</p>
-                      <p className="text-slate-400 truncate">{alert.message}</p>
-                    </li>
-                  ))}
-                </ul>
+          {dockedPanels.global || dockedPanels.terrain ? (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[420] bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 shadow-xl flex items-center gap-2 text-xs">
+              <span className="text-slate-300 uppercase tracking-wide">Barra flutuante</span>
+              {dockedPanels.global && (
+                <button
+                  type="button"
+                  onClick={() => togglePanelDock('global')}
+                  className="px-2 py-1 rounded border border-slate-600 text-slate-100 hover:border-cyan-400"
+                >
+                  Status Global
+                </button>
+              )}
+              {dockedPanels.terrain && (
+                <button
+                  type="button"
+                  onClick={() => togglePanelDock('terrain')}
+                  className="px-2 py-1 rounded border border-slate-600 text-slate-100 hover:border-cyan-400"
+                >
+                  Situação do Terreno
+                </button>
               )}
             </div>
-            {flowResult && (
-              <>
-                <div className="mt-2 border-t border-slate-700 pt-2 text-xs text-cyan-300">Flood-CFD (didático)</div>
-                <div className="flex justify-between items-center text-xs"><span className="text-slate-400">Prof. máxima:</span><span className="font-semibold text-cyan-300">{flowResult.maxDepth.toFixed(2)} m</span></div>
-                <div className="flex justify-between items-center text-xs"><span className="text-slate-400">Área estimada:</span><span className="font-semibold text-cyan-300">{Math.round(flowResult.estimatedAffectedAreaM2)} m²</span></div>
-              </>
-            )}
-          </div>
+          ) : null}
 
-          <div className="absolute top-4 left-4 bg-slate-900/85 backdrop-blur-md border border-cyan-700/70 shadow-xl rounded-xl p-4 w-80 z-[400] text-sm">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <h4 className="font-bold text-white uppercase tracking-wide text-xs flex items-center gap-1"><CloudRain className="w-3 h-3 text-cyan-300" /> Situação do Terreno</h4>
-              <a href="https://climaki.com/" target="_blank" rel="noreferrer" className="text-cyan-300 hover:text-cyan-100" title="Abrir Climaki">
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-            <p className="text-[11px] text-slate-400 mb-2">Referência visual do Climaki + séries meteorológicas recentes.</p>
+          {!dockedPanels.global && (
+            <DraggablePanel
+              title="Status Global"
+              panelId="global"
+              position={floatingPanelPositions.global}
+              docked={dockedPanels.global}
+              onStartDrag={startPanelDrag}
+              onToggleDock={togglePanelDock}
+              widthClass="w-72"
+            >
+              <div className="flex justify-between items-center mb-1"><span className="text-slate-400">Total Hotspots:</span><span className="font-semibold">{hotspots.length}</span></div>
+              <div className="flex justify-between items-center mb-1"><span className="text-slate-400">Pop. em Perigo:</span><span className="font-semibold text-yellow-500">{hotspots.reduce((a, b) => a + b.estimatedAffected, 0)}</span></div>
+              <div className="flex justify-between items-center mb-1"><span className="text-slate-400">Desaparecidos:</span><span className="font-semibold text-amber-400">{missingPeople.length}</span></div>
+              <div className="mt-2 border-t border-slate-700 pt-2">
+                <p className="text-[11px] uppercase tracking-wide text-slate-400 mb-1">Alertas de atenção</p>
+                {attentionAlerts.length === 0 ? (
+                  <p className="text-xs text-slate-500">Sem alertas no momento.</p>
+                ) : (
+                  <ul className="space-y-1 max-h-24 overflow-y-auto pr-1">
+                    {attentionAlerts.slice(0, 3).map((alert) => (
+                      <li key={alert.id} className="text-[11px] bg-slate-900/70 border border-slate-700 rounded px-2 py-1">
+                        <p className="font-semibold text-white truncate">{alert.title}</p>
+                        <p className="text-slate-400 truncate">{alert.message}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              {flowResult && (
+                <>
+                  <div className="mt-2 border-t border-slate-700 pt-2 text-xs text-cyan-300">Flood-CFD (didático)</div>
+                  <div className="flex justify-between items-center text-xs"><span className="text-slate-400">Prof. máxima:</span><span className="font-semibold text-cyan-300">{flowResult.maxDepth.toFixed(2)} m</span></div>
+                  <div className="flex justify-between items-center text-xs"><span className="text-slate-400">Área estimada:</span><span className="font-semibold text-cyan-300">{Math.round(flowResult.estimatedAffectedAreaM2)} m²</span></div>
+                </>
+              )}
+            </DraggablePanel>
+          )}
 
-            {loadingClimaki ? (
-              <p className="text-xs text-slate-400">Consultando chuva e umidade do solo...</p>
-            ) : climakiError ? (
-              <p className="text-xs text-amber-300">{climakiError}</p>
-            ) : climakiSnapshot ? (
-              <>
-                <p className="text-[11px] text-slate-400 mb-2">{climakiSnapshot.locationLabel}</p>
-                <div className="grid grid-cols-3 gap-2 mb-2">
-                  <div className="bg-slate-950/70 border border-slate-700 rounded p-2">
-                    <p className="text-[10px] text-slate-500">Chuva 24h</p>
-                    <p className="font-semibold text-cyan-200">{climakiSnapshot.rainLast24hMm.toFixed(1)} mm</p>
+          {!dockedPanels.terrain && (
+            <DraggablePanel
+              title="Situação do Terreno"
+              panelId="terrain"
+              position={floatingPanelPositions.terrain}
+              docked={dockedPanels.terrain}
+              onStartDrag={startPanelDrag}
+              onToggleDock={togglePanelDock}
+              widthClass="w-80"
+            >
+              <div className="flex items-center justify-end mb-2">
+                <a href="https://climaki.com/" target="_blank" rel="noreferrer" className="text-cyan-300 hover:text-cyan-100" title="Abrir Climaki">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+              <p className="text-[11px] text-slate-400 mb-2">Referência visual do Climaki + séries meteorológicas recentes.</p>
+
+              {loadingClimaki ? (
+                <p className="text-xs text-slate-400">Consultando chuva e umidade do solo...</p>
+              ) : climakiError ? (
+                <p className="text-xs text-amber-300">{climakiError}</p>
+              ) : climakiSnapshot ? (
+                <>
+                  <p className="text-[11px] text-slate-400 mb-2">{climakiSnapshot.locationLabel}</p>
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    <div className="bg-slate-950/70 border border-slate-700 rounded p-2">
+                      <p className="text-[10px] text-slate-500">Chuva 24h</p>
+                      <p className="font-semibold text-cyan-200">{climakiSnapshot.rainLast24hMm.toFixed(1)} mm</p>
+                    </div>
+                    <div className="bg-slate-950/70 border border-slate-700 rounded p-2">
+                      <p className="text-[10px] text-slate-500">Chuva 72h</p>
+                      <p className="font-semibold text-cyan-200">{climakiSnapshot.rainLast72hMm.toFixed(1)} mm</p>
+                    </div>
+                    <div className="bg-slate-950/70 border border-slate-700 rounded p-2">
+                      <p className="text-[10px] text-slate-500">Umid. Solo</p>
+                      <p className="font-semibold text-cyan-200">{climakiSnapshot.soilMoisturePercent.toFixed(0)}%</p>
+                    </div>
                   </div>
                   <div className="bg-slate-950/70 border border-slate-700 rounded p-2">
-                    <p className="text-[10px] text-slate-500">Chuva 72h</p>
-                    <p className="font-semibold text-cyan-200">{climakiSnapshot.rainLast72hMm.toFixed(1)} mm</p>
+                    <p className="font-semibold text-white">Saturação: <span className="text-cyan-200">{climakiSnapshot.saturationLevel}</span></p>
+                    <p className="text-[11px] text-slate-300 mt-1">{climakiSnapshot.saturationRisk}</p>
                   </div>
-                  <div className="bg-slate-950/70 border border-slate-700 rounded p-2">
-                    <p className="text-[10px] text-slate-500">Umid. Solo</p>
-                    <p className="font-semibold text-cyan-200">{climakiSnapshot.soilMoisturePercent.toFixed(0)}%</p>
-                  </div>
-                </div>
-                <div className="bg-slate-950/70 border border-slate-700 rounded p-2">
-                  <p className="font-semibold text-white">Saturação: <span className="text-cyan-200">{climakiSnapshot.saturationLevel}</span></p>
-                  <p className="text-[11px] text-slate-300 mt-1">{climakiSnapshot.saturationRisk}</p>
-                </div>
-              </>
-            ) : null}
-          </div>
+                </>
+              ) : null}
+            </DraggablePanel>
+          )}
+
 
           {selectedPanel && (
             <div className={`absolute z-50 bg-slate-900 shadow-2xl border border-slate-600 flex flex-col overflow-hidden animate-in fade-in ${isPanelFullscreen ? 'inset-0 rounded-none' : 'bottom-4 left-4 w-96 h-80 rounded-xl slide-in-from-bottom-4'}`}>
