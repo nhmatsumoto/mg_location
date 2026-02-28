@@ -32,11 +32,11 @@ const inferApiBaseUrl = () => {
   if (typeof window === 'undefined') return '';
 
   const { protocol, hostname, port } = window.location;
-  if (port === '8080') {
-    return `${protocol}//${hostname}:8001`;
-  }
+  if (port === '8080') return `${protocol}//${hostname}:8001`;
+  if (port === '5173') return `${protocol}//${hostname}:8000`;
+  if (port === '8000') return `${protocol}//${hostname}:8000`;
 
-  return '';
+  return `${protocol}//${hostname}:8000`;
 };
 
 const API_BASE_URL = inferApiBaseUrl();
@@ -143,6 +143,18 @@ const tryParseJson = async <T,>(response: Response): Promise<T | null> => {
     return null;
   }
 };
+
+
+const LOCAL_WEEKLY_RAIN_NEWS: NewsUpdate[] = [
+  {
+    id: 'local-1',
+    city: 'Ubá',
+    title: 'Defesa Civil mantém monitoramento de chuva intensa em áreas de encosta.',
+    source: 'Painel local',
+    url: '#',
+    publishedAtUtc: new Date().toISOString(),
+  },
+];
 
 interface ClimakiSnapshot {
   fetchedAtIso: string;
@@ -648,6 +660,8 @@ export default function App() {
     };
 
     const endpoints = Array.from(new Set([
+      resolveApiUrl('/api/simulation/easy'),
+      '/api/simulation/easy',
       resolveApiUrl('/api/location/flow-simulation'),
       '/api/location/flow-simulation',
     ]));
@@ -668,12 +682,13 @@ export default function App() {
             throw new Error(errorPayload?.error ?? `Falha na simulação (HTTP ${response.status}).`);
           }
 
-          const data = await tryParseJson<FlowSimulationResponse>(response);
-          if (!data) {
+          const data = await tryParseJson<FlowSimulationResponse & { flowSimulation?: FlowSimulationResponse }>(response);
+          const flowData = data?.flowSimulation ?? data;
+          if (!flowData) {
             throw new Error('Resposta inválida da simulação hidrodinâmica.');
           }
 
-          setFlowResult(data);
+          setFlowResult(flowData);
           setFlowError(`Cenário aplicado: ${activeScenario.label}. Ajuste a chuva e rode novamente para comparar.`);
           setRunningFlow(false);
           return;
