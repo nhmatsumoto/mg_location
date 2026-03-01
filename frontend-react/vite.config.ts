@@ -4,6 +4,11 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  resolve: {
+    alias: {
+      'react-router-dom': '/src/lib/react-router-dom.tsx',
+    },
+  },
   plugins: [
     tailwindcss(),
     react(),
