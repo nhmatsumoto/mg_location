@@ -42,7 +42,7 @@ const inferApiBaseUrl = () => {
 
 const API_BASE_URL = inferApiBaseUrl();
 const resolveApiUrl = (path: string) => (API_BASE_URL ? `${API_BASE_URL}${path}` : path);
-
+const ENABLE_SIMULATION = false;
 
 
 
@@ -773,6 +773,13 @@ export default function App() {
   const handleRunFlow = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFlowError('');
+
+    if (!ENABLE_SIMULATION) {
+      setFlowResult(null);
+      setFlowError('Simulações estão desabilitadas no momento. Priorize marcações de resgate e risco no mapa.');
+      return;
+    }
+
     setRunningFlow(true);
 
     const scenarioConfig: Record<typeof flowForm.scenario, { steps: number; gridSize: number; cellSizeMeters: number; manningCoefficient: number; infiltrationRate: number; volumeFactor: number; label: string }> = {
@@ -1027,7 +1034,7 @@ export default function App() {
             <h2 className="text-xs uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
               <Flame className="w-3 h-3" /> Catástrofe (modo operacional)
             </h2>
-            <p className="text-[11px] text-slate-400 mb-2">Onboard de catástrofes em tempo real + simulação rápida integrada ao mapa.</p>
+            <p className="text-[11px] text-slate-400 mb-2">Onboard de catástrofes em tempo real com foco em resgate e marcações no mapa.</p>
             <form className="space-y-2 mb-3" onSubmit={handleCreateCatastrophe}>
               <input value={catastropheForm.name} onChange={(e) => setCatastropheForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Nome da catástrofe" required />
               <div className="grid grid-cols-2 gap-2">
@@ -1075,7 +1082,7 @@ export default function App() {
               ) : null}
             </form>
 
-            <p className="text-[11px] text-slate-400 mb-2">Escolha um cenário, ajuste a chuva e clique em simular.</p>
+            <p className="text-[11px] text-slate-400 mb-2">Simulações estão temporariamente desabilitadas. Use o mapa para marcação de incidentes, riscos e pontos de apoio.</p>
             <form className="space-y-2" onSubmit={handleRunFlow}>
               <div className="grid grid-cols-2 gap-2">
                 <input value={flowForm.sourceLat} onChange={(e) => setFlowForm((prev) => ({ ...prev, sourceLat: e.target.value }))} className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" placeholder="Latitude" />
@@ -1086,6 +1093,7 @@ export default function App() {
                   type="button"
                   onClick={() => setFlowForm((prev) => ({ ...prev, sourceLat: selectedIncidentPoint.lat.toFixed(5), sourceLng: selectedIncidentPoint.lng.toFixed(5) }))}
                   className="w-full text-xs px-2 py-1 rounded border border-slate-600 text-slate-200 hover:border-cyan-400"
+                  disabled={!ENABLE_SIMULATION}
                 >
                   Usar ponto marcado no mapa
                 </button>
@@ -1105,8 +1113,8 @@ export default function App() {
                   <span className="text-cyan-300 font-semibold">{flowForm.rainfallMmPerHour} mm/h</span>
                 </label>
               </div>
-              <button type="submit" disabled={runningFlow} className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-70 text-white px-3 py-1.5 rounded text-xs font-semibold">
-                <Play className="w-3 h-3" /> {runningFlow ? 'Simulando...' : 'Simular área de alagamento'}
+              <button type="submit" disabled={!ENABLE_SIMULATION || runningFlow} className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-70 text-white px-3 py-1.5 rounded text-xs font-semibold">
+                <Play className="w-3 h-3" /> {ENABLE_SIMULATION ? (runningFlow ? 'Simulando...' : 'Simular área de alagamento') : 'Simulações temporariamente desabilitadas'}
               </button>
               {flowError && <p className="text-xs text-amber-300">{flowError}</p>}
               {flowResult && (
@@ -1316,7 +1324,6 @@ export default function App() {
                   setSelectedIncidentPoint({ lat, lng });
                   setFlowForm((prev) => ({ ...prev, sourceLat: lat.toFixed(5), sourceLng: lng.toFixed(5) }));
                   setMapActionMode('none');
-                  openPanel({ mode: 'sim', sourceLat: lat, sourceLng: lng, label: 'Ponto manual' });
                   return;
                 }
 
@@ -1385,7 +1392,7 @@ export default function App() {
                     <div className="bg-slate-100 p-2 rounded text-xs mb-2"><strong>Pessoas Risco:</strong> {hs.estimatedAffected}<br /><strong>Exposição:</strong> {hs.humanExposure}</div>
                     {hs.type === 'Landslide' && (
                       <div className="flex flex-col gap-1 mt-1">
-                        <button onClick={() => openPanel({ hotspot: hs, mode: 'sim', sourceLat: hs.lat, sourceLng: hs.lng })} className="w-full flex justify-center items-center gap-1 bg-orange-600 hover:bg-orange-700 text-white py-1.5 px-2 rounded text-xs font-bold transition-colors"><ExternalLink className="w-3 h-3" /> Ver Simulação 3D</button>
+                        <button type="button" disabled className="w-full flex justify-center items-center gap-1 bg-slate-600 text-slate-300 py-1.5 px-2 rounded text-xs font-bold cursor-not-allowed"><ExternalLink className="w-3 h-3" /> Simulação temporariamente desabilitada</button>
                         <button onClick={() => openPanel({ hotspot: hs, mode: 'splat' })} className="w-full flex justify-center items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-2 rounded text-xs font-bold transition-colors"><Camera className="w-3 h-3" /> Ver Drone Splatting</button>
                       </div>
                     )}
@@ -1400,7 +1407,7 @@ export default function App() {
                   <Popup className="custom-popup">
                     <div className="text-slate-900 text-xs">
                       <p><strong>Ponto selecionado:</strong> {selectedIncidentPoint.lat.toFixed(5)}, {selectedIncidentPoint.lng.toFixed(5)}</p>
-                      <p><strong>Raio de simulação:</strong> 500m</p>
+                      <p><strong>Raio de referência operacional:</strong> 500m</p>
                     </div>
                   </Popup>
                 </Marker>
@@ -1478,7 +1485,7 @@ export default function App() {
               <p className="text-[11px] text-slate-400 px-1">{mapQuickMenu.lat.toFixed(5)}, {mapQuickMenu.lng.toFixed(5)}</p>
               <button onClick={() => { setShowUploadModal(true); setUploadError(''); setUploadSuccess(''); setMapQuickMenu(null); }} className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-slate-800"><Upload className="w-4 h-4 text-blue-400" /> Enviar vídeo</button>
               <button onClick={() => { setShowMissingModal(true); setMissingError(''); setMissingSuccess(''); setMapQuickMenu(null); }} className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-slate-800"><Users className="w-4 h-4 text-amber-400" /> Cadastrar desaparecido</button>
-              <button onClick={() => { setSelectedIncidentPoint({ lat: mapQuickMenu.lat, lng: mapQuickMenu.lng }); setFlowForm((prev) => ({ ...prev, sourceLat: mapQuickMenu.lat.toFixed(5), sourceLng: mapQuickMenu.lng.toFixed(5) })); openPanel({ mode: 'sim', sourceLat: mapQuickMenu.lat, sourceLng: mapQuickMenu.lng, label: 'Ponto manual' }); setMapQuickMenu(null); }} className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-slate-800"><MapPin className="w-4 h-4 text-emerald-400" /> Marcar incidente</button>
+              <button onClick={() => { setSelectedIncidentPoint({ lat: mapQuickMenu.lat, lng: mapQuickMenu.lng }); setFlowForm((prev) => ({ ...prev, sourceLat: mapQuickMenu.lat.toFixed(5), sourceLng: mapQuickMenu.lng.toFixed(5) })); setMapQuickMenu(null); }} className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-slate-800"><MapPin className="w-4 h-4 text-emerald-400" /> Marcar incidente de resgate</button>
               <button onClick={() => { setRiskDraftPoint({ lat: mapQuickMenu.lat, lng: mapQuickMenu.lng }); setShowRiskModal(true); setRiskForm((prev) => ({ ...prev, message: `Risco reportado próximo a ${mapQuickMenu.lat.toFixed(5)}, ${mapQuickMenu.lng.toFixed(5)}.` })); setMapQuickMenu(null); }} className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-slate-800"><Siren className="w-4 h-4 text-rose-400" /> Marcar risco</button>
               <button onClick={() => { setSupportPoints((prev) => ([{ id: `SP-${Date.now()}`, type: 'Abrigo', lat: mapQuickMenu.lat, lng: mapQuickMenu.lng, notes: 'Marcado pelo menu contextual.', createdAtUtc: new Date().toISOString() }, ...prev])); setMapQuickMenu(null); }} className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-slate-800"><Building2 className="w-4 h-4 text-cyan-400" /> Novo ponto de apoio</button>
               <button onClick={() => setMapQuickMenu(null)} className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-slate-800"><X className="w-4 h-4 text-slate-400" /> Fechar menu</button>
@@ -1596,7 +1603,7 @@ export default function App() {
           )}
 
 
-          {selectedPanel && (
+          {selectedPanel && ENABLE_SIMULATION && (
             <div className={`absolute z-50 bg-slate-900 shadow-2xl border border-slate-600 flex flex-col overflow-hidden animate-in fade-in ${isPanelFullscreen ? 'inset-0 rounded-none' : 'bottom-4 left-4 w-96 h-80 rounded-xl slide-in-from-bottom-4'}`}>
               <div className="flex justify-between items-center p-2 border-b border-slate-700 bg-slate-800">
                 <span className="text-xs font-bold text-slate-200 flex items-center gap-1">{selectedPanel.mode === 'sim' ? <MapPin className="w-3 h-3 text-orange-500" /> : <Camera className="w-3 h-3 text-blue-500" />}{selectedPanel.mode === 'sim' ? 'Simulação' : 'Drone (Splat)'}: {selectedPanel.label ?? selectedPanel.hotspot?.id ?? 'Sem identificação'}</span>
