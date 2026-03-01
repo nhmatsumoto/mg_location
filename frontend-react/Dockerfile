@@ -1,9 +1,9 @@
 # Etapa 1: Build da aplicação React/Vite localmente no container Node
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 ARG VITE_API_BASE_URL="http://localhost:8001"
