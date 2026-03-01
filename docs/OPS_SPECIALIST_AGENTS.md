@@ -38,8 +38,8 @@ Padronizar decisões rápidas com qualidade operacional para reduzir tempo de re
 - Garante consumo correto da API por `VITE_API_BASE_URL`.
 - Revisa impacto de mudanças em acessibilidade e legibilidade operacional.
 
-### 7) Chakra UI Specialist
-- Padroniza design system e tokens quando Chakra estiver em uso.
+### 7) Tailwind CSS Specialist
+- Padroniza design system e tokens quando Tailwind estiver em uso.
 - Evita regressões visuais e inconsistências de tema.
 - Mantém componentes acessíveis para uso em cenários críticos.
 
