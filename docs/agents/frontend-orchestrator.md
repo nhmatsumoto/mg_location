@@ -8,8 +8,8 @@ Orquestrar melhorias contínuas no frontend para operação em desastres, priori
    - Simplifica navegação entre mapa tático e central operacional.
    - Define fluxos de “ação em 1 clique” para responder ocorrência.
 
-2. **Chakra Design Agent**
-   - Padroniza componentes com Chakra UI (cards, formulários, tabelas, estados visuais).
+2. **Tailwind Design Agent**
+   - Padroniza componentes com Tailwind CSS (cards, formulários, tabelas, estados visuais).
    - Garante consistência visual e contraste para uso em campo.
 
 3. **Rescue Ops Agent**

@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 
 type RouterContextValue = {
   path: string;
@@ -73,4 +73,26 @@ export function Routes({ children }: { children: ReactNode }) {
 
   const wildcard = routeElements.find((child) => child?.props?.path === '*');
   return <>{wildcard?.props?.element ?? null}</>;
+}
+
+
+export function Link({ to, replace = false, children, ...props }: { to: string; replace?: boolean; children: ReactNode } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>) {
+  const context = useContext(RouterContext);
+  if (!context) throw new Error('Link must be used within BrowserRouter');
+
+  return (
+    <a
+      {...props}
+      href={to}
+      onClick={(event) => {
+        props.onClick?.(event);
+        if (event.defaultPrevented) return;
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        context.navigate(to, replace);
+      }}
+    >
+      {children}
+    </a>
+  );
 }
