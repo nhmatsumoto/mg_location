@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import type { FormEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker, LayersControl, Polyline, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -410,7 +411,13 @@ export default function App() {
   const [riskError, setRiskError] = useState('');
   const [riskSuccess, setRiskSuccess] = useState('');
   const [riskForm, setRiskForm] = useState(initialRiskForm);
-  const [sidebarTab, setSidebarTab] = useState<'news' | 'hotspots' | 'support' | 'volunteers'>('hotspots');
+  const location = useLocation();
+  const sidebarTab = useMemo<'news' | 'hotspots' | 'support' | 'volunteers'>(() => {
+    if (location.pathname === '/news') return 'news';
+    if (location.pathname === '/support') return 'support';
+    if (location.pathname === '/volunteers') return 'volunteers';
+    return 'hotspots';
+  }, [location.pathname]);
   const [mapActionMode, setMapActionMode] = useState<'none' | 'incident' | 'risk' | 'support'>('none');
   const [mapQuickMenu, setMapQuickMenu] = useState<{
     visible: boolean;
@@ -1123,35 +1130,6 @@ export default function App() {
                 </div>
               )}
             </form>
-          </div>
-
-          <div className="px-4 py-2 border-b border-slate-700 bg-slate-900/95 sticky top-[52px] z-30">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <nav className="flex items-center gap-2 text-[11px]">
-                {([
-                  { key: 'news', label: 'Notícias' },
-                  { key: 'hotspots', label: 'Hotspots' },
-                  { key: 'support', label: 'Apoio' },
-                  { key: 'volunteers', label: 'Voluntários' },
-                ] as const).map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setSidebarTab(tab.key)}
-                    className={`rounded-md px-2 py-1.5 border transition-all duration-200 ${sidebarTab === tab.key ? 'bg-cyan-600 border-cyan-400 text-white shadow-md shadow-cyan-900/30 scale-[1.02]' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </nav>
-              <button
-                type="button"
-                onClick={() => setShowCatastropheModal(true)}
-                className="text-xs px-2 py-1 rounded bg-fuchsia-600 hover:bg-fuchsia-500 text-white"
-              >
-                Catástrofes (modal)
-              </button>
-            </div>
           </div>
 
           <div className={`px-4 py-3 border-b border-slate-700 bg-slate-800/50 transition-all duration-300 ${sidebarTab === 'news' ? 'opacity-100 translate-y-0' : 'hidden opacity-0 -translate-y-1'}`}>
