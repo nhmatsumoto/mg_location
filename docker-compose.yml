@@ -3,6 +3,7 @@ name: mg-location-simulation
 services:
   postgres:
     image: postgres:15-alpine
+    pull_policy: always
     container_name: mg-location-postgres
     restart: unless-stopped
     environment:
@@ -21,6 +22,7 @@ services:
 
   backend:
     image: python:3.11-slim
+    pull_policy: always
     container_name: mg-location-backend
     restart: unless-stopped
     working_dir: /app
