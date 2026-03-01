@@ -411,7 +411,6 @@ export default function App() {
   const [riskForm, setRiskForm] = useState(initialRiskForm);
   const [sidebarTab, setSidebarTab] = useState<'flood' | 'news' | 'missing' | 'hotspots' | 'support' | 'volunteers'>('flood');
   const [mapActionMode, setMapActionMode] = useState<'none' | 'incident' | 'risk' | 'support'>('none');
-  const [lastMapClick, setLastMapClick] = useState<{ lat: number; lng: number } | null>(null);
   const [mapQuickMenu, setMapQuickMenu] = useState<{
     visible: boolean;
     x: number;
@@ -1015,23 +1014,11 @@ export default function App() {
   return (
     <>
       <div className="flex h-screen w-full bg-slate-900 text-slate-200 font-sans overflow-hidden">
-        <div className="w-1/3 h-full border-r border-slate-700 bg-slate-800 flex flex-col z-20 shadow-2xl">
-          <div className="p-6 border-b border-slate-700 bg-slate-800/80 backdrop-blur-md space-y-2">
-            <div className="flex items-center gap-3 mb-2">
-              <ShieldAlert className="text-red-500 w-8 h-8" />
-              <h1 className="text-2xl font-bold tracking-tight text-white">Centro de Comando</h1>
-            </div>
-            <p className="text-sm text-slate-400">Triagem tática: onde agir primeiro para maximizar vidas salvas.</p>
-            <div className="space-y-2">
-              <p className="text-[11px] text-slate-400">
-                O menu de ações rápidas abre no mapa, no local clicado pelo usuário.
-              </p>
-              <p className="text-[11px] text-slate-400">
-                Último clique: {lastMapClick ? `${lastMapClick.lat.toFixed(5)}, ${lastMapClick.lng.toFixed(5)}` : 'nenhum ponto selecionado'}.
-              </p>
-              <p className="text-[11px] text-cyan-300">
-                {mapActionMode !== 'none' ? `Ferramenta ativa: ${mapActionMode}.` : 'Ferramenta ativa: menu contextual no mapa.'}
-              </p>
+        <div className="w-1/3 h-full border-r border-slate-700 bg-slate-800 flex flex-col z-20 shadow-2xl overflow-y-auto custom-scrollbar">
+          <div className="px-4 py-3 border-b border-slate-700 bg-slate-800/95 backdrop-blur-md sticky top-0 z-40">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="text-red-500 w-5 h-5" />
+              <h1 className="text-base font-bold tracking-tight text-white">Centro de comando</h1>
             </div>
           </div>
 
@@ -1136,7 +1123,7 @@ export default function App() {
             </form>
           </div>
 
-          <div className="px-4 py-2 border-b border-slate-700 bg-slate-900/60">
+          <div className="px-4 py-2 border-b border-slate-700 bg-slate-900/85 sticky top-[52px] z-30">
             <div className="grid grid-cols-6 gap-2 text-[11px]">
               {([
                 { key: 'flood', label: 'Catástrofe' },
@@ -1281,7 +1268,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className={`flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar transition-all duration-300 ${sidebarTab === 'hotspots' ? 'opacity-100 translate-y-0' : 'hidden opacity-0 -translate-y-1'}`}>
+          <div className={`p-4 space-y-4 transition-all duration-300 ${sidebarTab === 'hotspots' ? 'opacity-100 translate-y-0' : 'hidden opacity-0 -translate-y-1'}`}>
             {loading ? <div className="flex items-center justify-center h-full"><Activity className="w-8 h-8 text-blue-500 animate-spin" /></div> : displayedHotspots.map((hs, i) => (
               <div key={hs.id} className={`rounded-xl p-4 border transition-all ${hs.score > 90 ? 'bg-red-950/40 border-red-500/50 hover:bg-red-900/40' : 'bg-slate-700/50 border-orange-500/30 hover:bg-slate-700'}`}>
                 <div className="flex justify-between items-start mb-3">
@@ -1317,7 +1304,6 @@ export default function App() {
             <MapClickSelector
               enabled
               onSelect={(lat, lng, clientX, clientY) => {
-                setLastMapClick({ lat, lng });
 
                 const mapRect = mapOverlayRef.current?.getBoundingClientRect();
                 const x = mapRect ? Math.max(12, Math.min(mapRect.width - 220, clientX - mapRect.left)) : 24;
