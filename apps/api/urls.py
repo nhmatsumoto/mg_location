@@ -28,6 +28,7 @@ from apps.api.views import (
 )
 
 from apps.api.views_risk import risk_assessment, risk_pipeline_sync
+from apps.api.views_disasters import disasters_events, disasters_by_country, disasters_timeseries
 
 from apps.api.views_integrations import (
     alerts as alerts_feed,
@@ -46,6 +47,9 @@ from apps.api.views_integrations import (
 app_name = 'api'
 
 urlpatterns = [
+    path('disasters/events', disasters_events, name='disasters_events'),
+    path('disasters/stats/by-country', disasters_by_country, name='disasters_by_country'),
+    path('disasters/stats/timeseries', disasters_timeseries, name='disasters_timeseries'),
     path('calculate', calculatecoordinate, name='coordinate_calculate'),
     path('hotspots', hotspots, name='hotspots'),
     path('collapse-reports', collapse_reports, name='collapse_reports'),
