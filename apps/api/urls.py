@@ -27,6 +27,8 @@ from apps.api.views import (
     map_annotations,
 )
 
+from apps.api.views_risk import risk_assessment, risk_pipeline_sync
+
 from apps.api.views_integrations import (
     alerts as alerts_feed,
     satellite_goes_recent,
@@ -67,6 +69,8 @@ urlpatterns = [
     path('risk-areas', risk_areas, name='risk_areas'),
     path('rescue-groups', rescue_groups, name='rescue_groups'),
     path('supply-logistics', supply_logistics, name='supply_logistics'),
+    path('risk/assessment', risk_assessment, name='risk_assessment'),
+    path('risk/pipeline-sync', risk_pipeline_sync, name='risk_pipeline_sync'),
     path('weather/forecast', weather_forecast, name='weather_forecast'),
     path('weather/archive', weather_archive, name='weather_archive'),
     path('alerts', alerts_feed, name='alerts_feed'),

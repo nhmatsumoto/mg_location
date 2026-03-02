@@ -93,6 +93,7 @@ docker compose up --build
 Portas padrão:
 - Frontend: `http://localhost:8088`
 - Backend/API: `http://localhost:8001`
+- Agente de risco (ML): `http://localhost:8091`
 
 As portas são configuráveis por ambiente no `docker-compose`:
 
@@ -104,6 +105,16 @@ Exemplo para evitar conflito de porta já ocupada:
 ```bash
 FRONTEND_PORT=8090 BACKEND_PORT=8002 docker compose up --build
 ```
+
+### Agente de avaliação de risco (novo)
+
+O serviço `risk-agent` coleta dados de APIs públicas configuráveis (AlphaGeo, OGC e NGFS Guide), aplica cálculos físicos simplificados (incluindo fator de segurança geotécnico), treina um modelo de ML (`RandomForestRegressor`) e devolve um mapa de risco com relatório analítico.
+
+Integrações no backend:
+- `GET /api/risk/assessment`: consulta o agente e retorna mapa/analytics.
+- `POST /api/risk/pipeline-sync`: ingere células de risco alto/crítico no banco (`MapAnnotation`).
+- `python manage.py sync_risk_agent`: comando para atualização contínua em pipeline/cron.
+
 
 ---
 
@@ -146,6 +157,8 @@ docker compose ps
 - `GET,POST /api/map-annotations`
 - `GET,POST /api/support-points`
 - `GET,POST /api/risk-areas`
+- `GET /api/risk/assessment`
+- `POST /api/risk/pipeline-sync`
 - `GET,POST /api/rescue-groups`
 - `GET,POST /api/supply-logistics`
 
