@@ -1,38 +1,35 @@
 # Disaster Crawler 24/7
 
-## Visão geral
-Crawler contínuo para eventos globais de desastres usando fontes públicas/oficiais:
-- GDACS
-- USGS Earthquake
-- INMET (quando disponível)
+Serviço contínuo de ingestão de desastres com providers plugáveis (GDACS, USGS, INMET).
 
-Os eventos são normalizados, deduplicados (`provider + provider_event_id`), enriquecidos com país e persistidos em `DisasterEvent`.
+## Como rodar
 
-## Execução 24/7
-Ative no backend:
-- `DISASTERS_CRAWLER_ENABLED=true`
-- `DISASTERS_CRAWLER_INTERVAL_SECONDS=900` (opcional)
-
-Também existe endpoint para disparo manual:
-- `POST /api/disasters/crawl-trigger`
+- One-shot:
+  - `python manage.py crawl_disasters`
+- Loop 24/7:
+  - `python manage.py crawl_disasters --loop --interval 300`
 
 ## Endpoints
+
 - `GET /api/disasters/events`
+  - filtros: `from`, `to`, `country`, `types`, `minSeverity`, `providers`, `bbox`, `page`, `pageSize`
 - `GET /api/disasters/stats/by-country`
 - `GET /api/disasters/stats/timeseries`
 
-## Filtros
-- `from`, `to` (ISO datetime)
-- `country` (ISO2)
-- `types` (csv)
-- `minSeverity`
-- `providers` (csv)
-- `bbox=minLon,minLat,maxLon,maxLat`
-- `page`, `pageSize`
+## Providers
 
-## Retenção
-- Eventos mais antigos que 90 dias são removidos durante o ciclo de ingestão.
+- GDACS (global multi-hazard)
+- USGS Earthquake
+- INMET RSS
+- FIRMS: reservado por feature flag
 
-## Limitações atuais
-- Resolução de país usa heurística/cache (fallback para `XX/Unknown` em casos não resolvidos).
-- INMET pode variar em disponibilidade/formato.
+## Persistência e deduplicação
+
+- tabela `DisasterEvent` (`provider`, `provider_event_id`) único
+- upsert em cada ciclo
+- retenção de 90 dias
+
+## Resolução de país
+
+- `lat/lon` resolvido via Nominatim com cache LRU em memória.
+

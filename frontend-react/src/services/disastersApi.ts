@@ -1,31 +1,59 @@
 import { apiClient } from './apiClient';
 
-export interface DisasterEventDto {
-  id: number;
-  provider: string;
-  provider_event_id: string;
-  event_type: string;
-  severity: number;
-  title: string;
-  start_at: string;
-  lat?: number | null;
-  lon?: number | null;
-  country_code: string;
-  country_name: string;
-  source_url?: string;
+export type DisasterFilters = {
+  from?: string;
+  to?: string;
+  country?: string;
+  types?: string[];
+  minSeverity?: number;
+  providers?: string[];
+  page?: number;
+  pageSize?: number;
+};
+
+export async function getEvents(filters: DisasterFilters) {
+  const { data } = await apiClient.get('/api/disasters/events', {
+    params: {
+      ...filters,
+      types: filters.types?.join(','),
+      providers: filters.providers?.join(','),
+    },
+  });
+  return data as { items: any[]; total: number; page: number; pageSize: number };
 }
 
-export const disastersApi = {
-  async getEvents(params: Record<string, string | number | undefined>) {
-    const response = await apiClient.get<{ items: DisasterEventDto[]; total: number }>('/api/disasters/events', { params });
-    return response.data;
-  },
-  async getByCountry(params: Record<string, string | number | undefined>) {
-    const response = await apiClient.get<{ items: Array<{ country_code: string; country_name: string; count: number; maxSeverity: number }> }>('/api/disasters/stats/by-country', { params });
-    return response.data;
-  },
-  async getTimeseries(params: Record<string, string | number | undefined>) {
-    const response = await apiClient.get<{ items: Array<{ t: string; count: number; maxSeverity: number }> }>('/api/disasters/stats/timeseries', { params });
-    return response.data;
-  },
+export async function getByCountry(filters: DisasterFilters) {
+  const { data } = await apiClient.get('/api/disasters/stats/by-country', {
+    params: { ...filters, types: filters.types?.join(',') },
+  });
+  return data as { items: any[] };
+}
+
+export async function getTimeseries(filters: DisasterFilters & { bucket?: 'hour' | 'day' }) {
+  const { data } = await apiClient.get('/api/disasters/stats/timeseries', {
+    params: { ...filters, types: filters.types?.join(',') },
+  });
+  return data as { items: any[] };
+}
+
+export type DisasterCreateInput = {
+  provider?: string;
+  providerEventId?: string;
+  eventType: string;
+  severity: number;
+  title: string;
+  description?: string;
+  startAt?: string;
+  endAt?: string;
+  lat: number;
+  lon: number;
+  countryCode?: string;
+  countryName?: string;
+  sourceUrl?: string;
+  geometry?: unknown;
 };
+
+export async function createEvent(payload: DisasterCreateInput) {
+  const { data } = await apiClient.post('/api/disasters/events', payload);
+  return data as { id: number; message: string };
+}

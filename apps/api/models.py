@@ -120,29 +120,41 @@ class SupplyLogistics(TimestampedModel):
         indexes = [models.Index(fields=['status', '-created_at'])]
 
 
-class DisasterEvent(TimestampedModel):
-    provider = models.CharField(max_length=32)
+class DisasterEvent(models.Model):
+    EVENT_TYPE_CHOICES = [
+        ('Flood', 'Flood'),
+        ('Earthquake', 'Earthquake'),
+        ('Cyclone', 'Cyclone'),
+        ('Volcano', 'Volcano'),
+        ('Wildfire', 'Wildfire'),
+        ('Storm', 'Storm'),
+        ('Tsunami', 'Tsunami'),
+        ('Landslide', 'Landslide'),
+        ('Other', 'Other'),
+    ]
+
+    provider = models.CharField(max_length=20)
     provider_event_id = models.CharField(max_length=120)
-    event_type = models.CharField(max_length=32, default='Other')
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPE_CHOICES, default='Other')
     severity = models.PositiveSmallIntegerField(default=1)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     start_at = models.DateTimeField()
     end_at = models.DateTimeField(null=True, blank=True)
     provider_updated_at = models.DateTimeField(null=True, blank=True)
-    lat = models.FloatField(null=True, blank=True)
-    lon = models.FloatField(null=True, blank=True)
-    country_code = models.CharField(max_length=2, default='XX')
-    country_name = models.CharField(max_length=120, default='Unknown')
-    geometry = models.JSONField(null=True, blank=True)
-    source_url = models.URLField(blank=True)
-    raw_payload = models.TextField(blank=True)
-    ingested_at = models.DateTimeField()
+    lat = models.FloatField()
+    lon = models.FloatField()
+    country_code = models.CharField(max_length=2, blank=True)
+    country_name = models.CharField(max_length=120, blank=True)
+    geometry = models.JSONField(default=dict, blank=True)
+    source_url = models.URLField(max_length=500, blank=True)
+    raw_payload = models.JSONField(default=dict, blank=True)
+    ingested_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = [('provider', 'provider_event_id')]
+        unique_together = ('provider', 'provider_event_id')
         indexes = [
-            models.Index(fields=['country_code', '-start_at']),
-            models.Index(fields=['event_type', '-start_at']),
-            models.Index(fields=['severity', '-start_at']),
+            models.Index(fields=['country_code', 'event_type', 'start_at']),
+            models.Index(fields=['start_at']),
         ]
