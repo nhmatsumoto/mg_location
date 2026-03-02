@@ -2,6 +2,12 @@ import axios from 'axios';
 import { inferApiBaseUrl } from '../lib/apiBaseUrl';
 import { frontendLogger } from '../lib/logger';
 
+let notifyError: ((title: string, message: string) => void) | null = null;
+
+export const setApiNotifier = (handler: (title: string, message: string) => void) => {
+  notifyError = handler;
+};
+
 export const apiClient = axios.create({
   baseURL: inferApiBaseUrl(),
   timeout: 10000,
@@ -33,6 +39,10 @@ apiClient.interceptors.response.use(
       status: error.response?.status,
       message: error.message,
     });
+
+    if (notifyError) {
+      notifyError('Falha na integração com backend', error.response?.data?.error ?? error.message ?? 'Erro inesperado na API.');
+    }
 
     return Promise.reject(error);
   },
