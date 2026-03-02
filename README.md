@@ -6,9 +6,15 @@ Plataforma open-source para apoio operacional em desastres (enchentes, deslizame
 
 ## DEMO
 
-> Assim que você adicionar a imagem, coloque em `docs/assets/demo.png`.
+### Painel operacional
+![DEMO - Painel operacional](docs/assets/demo-war-room.png)
 
-![DEMO MG Location](docs/assets/demo.png)
+### Registro contextual no mapa (one-click)
+![DEMO - Registro contextual no mapa](docs/assets/demo-map-click-menu.png)
+
+> Arquivos esperados:
+> - `docs/assets/demo-war-room.png`
+> - `docs/assets/demo-map-click-menu.png`
 
 ---
 
