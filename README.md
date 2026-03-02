@@ -179,6 +179,18 @@ docker compose ps
 - `GET /api/satellite/stac/search`
 - `GET /api/satellite/goes/recent`
 
+### Módulo unificado de integrações
+- `GET /api/integrations/weather/forecast`
+- `GET /api/integrations/weather/history`
+- `GET /api/integrations/alerts`
+- `GET /api/integrations/transparency/transfers`
+- `GET /api/integrations/transparency/summary`
+- `GET /api/integrations/satellite/layers`
+
+## Documentação adicional
+
+- `docs/integrations.md`
+
 ## Licença
 
 MIT.
