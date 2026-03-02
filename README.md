@@ -7,10 +7,10 @@ Plataforma open-source para apoio operacional em desastres (enchentes, deslizame
 ## DEMO
 
 ### Painel operacional
-![DEMO - Painel operacional](docs/assets/demo-war-room.png)
+![DEMO - Painel operacional](docs/assets/command-center-operational-map.png)
 
 ### Registro contextual no mapa (one-click)
-![DEMO - Registro contextual no mapa](docs/assets/demo-map-click-menu.png)
+![DEMO - Registro contextual no mapa](docs/assets/command-center-click-menu.png)
 
 > Arquivos esperados:
 > - `docs/assets/demo-war-room.png`
