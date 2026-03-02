@@ -28,3 +28,28 @@ body,
   width: 100%;
   z-index: 10;
 }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px) translateX(12px); }
+  to { opacity: 1; transform: translateY(0) translateX(0); }
+}
+
+@keyframes panel-in {
+  from { opacity: 0; transform: translateX(22px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.98) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-toast { animation: toast-in 180ms ease-out; }
+.animate-panel { animation: panel-in 180ms ease-out; }
+.animate-modal { animation: modal-in 180ms ease-out; }
+.animate-fade-in { animation: fade-in 220ms ease-out; }
