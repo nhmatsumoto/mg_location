@@ -67,19 +67,7 @@ DEFAULT_HOTSPOTS = [
     },
 ]
 
-COLLAPSE_REPORTS = []
 SEARCHED_AREAS = []
-
-INITIAL_UBA_COLLAPSE_SEED = {
-    "locationName": "Bairro Aeroporto (ponto inicial)",
-    "latitude": -21.1149,
-    "longitude": -42.9342,
-    "description": "Seed inicial em ponto aleatório de Ubá para iniciar fluxo de ingestão.",
-    "reporterName": "Seed Automático",
-    "reporterPhone": "",
-    "videoFileName": "Teste.mp4",
-    "processingStatus": "Published",
-}
 MISSING_REPORTS = []
 MISSING_PEOPLE = [
     {"name": "Maria Silva", "age": 34, "category": "person", "lastSeen": "Córrego do Feijão", "status": "missing"},
@@ -95,19 +83,6 @@ RELATIVE_PHOTO_FEATURES = [
 
 DEVICE_SUBSCRIPTIONS = []
 SPLAT_JOBS = []
-ATTENTION_ALERTS = [
-    {
-        "id": "AL-001",
-        "title": "Encosta com deslocamento recente",
-        "message": "Área com alta declividade e chuva acumulada; reforçar monitoramento em 2h.",
-        "severity": "high",
-        "lat": -21.1215,
-        "lng": -42.9427,
-        "radiusMeters": 500,
-        "createdAtUtc": datetime.now(timezone.utc).isoformat(),
-    }
-]
-
 CFD_REFERENCE = {
     "ideas": [
         "http://fluidityproject.github.io/",
@@ -578,43 +553,13 @@ def _uploads_directory():
         os.makedirs(uploads)
     return uploads
 
-
-def _seed_initial_collapse_report():
-    safe_name = "seed-initial-{}".format(INITIAL_UBA_COLLAPSE_SEED["videoFileName"])
-    file_path = os.path.join(_uploads_directory(), safe_name)
-
-    if not os.path.exists(file_path):
-        with open(file_path, 'wb+') as seed_file:
-            seed_file.write(b"SEED_VIDEO_PLACEHOLDER_TESTE_MP4")
-
-    report = {
-        "id": "RP-SEED-UBA-001",
-        "locationName": INITIAL_UBA_COLLAPSE_SEED["locationName"],
-        "latitude": INITIAL_UBA_COLLAPSE_SEED["latitude"],
-        "longitude": INITIAL_UBA_COLLAPSE_SEED["longitude"],
-        "description": INITIAL_UBA_COLLAPSE_SEED["description"],
-        "reporterName": INITIAL_UBA_COLLAPSE_SEED["reporterName"],
-        "reporterPhone": INITIAL_UBA_COLLAPSE_SEED["reporterPhone"],
-        "videoFileName": INITIAL_UBA_COLLAPSE_SEED["videoFileName"],
-        "storedVideoPath": file_path,
-        "videoSizeBytes": os.path.getsize(file_path),
-        "uploadedAtUtc": datetime.now(timezone.utc).isoformat(),
-        "processingStatus": INITIAL_UBA_COLLAPSE_SEED["processingStatus"],
-        "splatPipelineHint": 'Fluxo seed concluído: convert.py -> train.py -> publish.py',
-    }
-
-    COLLAPSE_REPORTS.append(report)
-
-
-_seed_initial_collapse_report()
-
-
 def _build_rescue_support(area_m2):
     bounded_area = max(area_m2, 3000.0)
     hotspots = _load_hotspots_from_risk_areas()
     total_people_at_risk = sum(h.get("estimatedAffected", 0) for h in hotspots)
     severity_factor = sum(h.get("score", 0) / 100.0 for h in hotspots) / max(len(hotspots), 1)
-    reports_bonus = max(0.15, len(COLLAPSE_REPORTS) * 0.05)
+    reports_count = CollapseReport.objects.count()
+    reports_bonus = max(0.15, reports_count * 0.05)
     estimated_trapped = round(total_people_at_risk * (0.38 + severity_factor * 0.22 + reports_bonus))
     density = round(estimated_trapped / bounded_area, 4)
 
@@ -635,13 +580,13 @@ def _build_rescue_support(area_m2):
             }
         )
 
-    if COLLAPSE_REPORTS:
-        latest = sorted(COLLAPSE_REPORTS, key=lambda r: r["uploadedAtUtc"], reverse=True)[0]
+    latest_report = CollapseReport.objects.order_by('-created_at').first()
+    if latest_report:
         probable_locations.append(
             {
-                "label": "Upload cidadão - {}".format(latest["locationName"]),
-                "latitude": latest["latitude"],
-                "longitude": latest["longitude"],
+                "label": "Upload cidadão - {}".format(latest_report.location_name),
+                "latitude": latest_report.latitude,
+                "longitude": latest_report.longitude,
                 "priority": len(probable_locations) + 1,
                 "probability": 0.64,
                 "estimatedPeople": 4,
@@ -662,7 +607,7 @@ def _build_rescue_support(area_m2):
             "specialty": "Dispersão de pessoas por metro quadrado",
             "mission": "Estimar densidade populacional em área de impacto com hotspots + uploads.",
             "recommendation": "Densidade {:.4f} pessoas/m² em {:.0f} m². Buscar por grid 20x20m.".format(density, bounded_area),
-            "confidence": round(0.72 + len(COLLAPSE_REPORTS) * 0.03, 2),
+            "confidence": round(0.72 + reports_count * 0.03, 2),
         },
         {
             "name": "SurvivorLocator",
@@ -682,7 +627,6 @@ def _build_rescue_support(area_m2):
         "agents": agents,
         "probableLocations": sorted(probable_locations, key=lambda p: p["priority"]),
     }
-
 
 def _simulate_tailing_flow(lat, lng, slope_factor, steps, terrain_context):
     path = []
@@ -1210,16 +1154,15 @@ def splat_convert(request):
     }
 
     SPLAT_JOBS.append(job)
-    ATTENTION_ALERTS.append({
-        'id': 'AL-{}'.format(uuid.uuid4().hex[:8]),
-        'title': 'Nova cena 3D em processamento',
-        'message': 'Conversão Gaussian Splatting iniciada para área demarcada.',
-        'severity': 'medium',
-        'lat': lat,
-        'lng': lng,
-        'radiusMeters': 500,
-        'createdAtUtc': datetime.now(timezone.utc).isoformat(),
-    })
+    AttentionAlert.objects.create(
+        external_id='AL-{}'.format(uuid.uuid4().hex[:8]),
+        title='Nova cena 3D em processamento',
+        message='Conversão Gaussian Splatting iniciada para área demarcada.',
+        severity='medium',
+        lat=lat,
+        lng=lng,
+        radius_meters=500,
+    )
 
     return JsonResponse(job, status=201)
 
@@ -1254,9 +1197,6 @@ def push_register(request):
 def attention_alerts(request):
     if request.method == 'GET':
         alerts = [_attention_alert_to_dict(item) for item in AttentionAlert.objects.order_by('-created_at')[:500]]
-        if not alerts:
-            for seed in ATTENTION_ALERTS:
-                alerts.append(seed)
         return JsonResponse(alerts, safe=False)
 
     if request.method != 'POST':

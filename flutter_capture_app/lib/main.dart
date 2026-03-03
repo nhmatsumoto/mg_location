@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'deviceId': 'flutter-local-device',
-        'token': 'mock-fcm-token',
+        'token': 'flutter-${Platform.operatingSystem}-${DateTime.now().millisecondsSinceEpoch}',
         'platform': Platform.operatingSystem,
         'topics': ['attention-alerts', 'splat-jobs'],
       }),
