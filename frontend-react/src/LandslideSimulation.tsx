@@ -202,7 +202,13 @@ const RunoutParticles = ({ radiusMeters, postSlideIntensity, terrainGrid }: Runo
   );
 };
 
-async function fetchTopographyGrid(sourceLat: number, sourceLng: number, radiusMeters: number, gridSize: number): Promise<TerrainGrid> {
+async function fetchTopographyGrid(
+  sourceLat: number,
+  sourceLng: number,
+  radiusMeters: number,
+  gridSize: number,
+  signal?: AbortSignal,
+): Promise<TerrainGrid> {
   const { latStep, lngStep } = computeDegreesStep(sourceLat, radiusMeters, gridSize);
 
   const allLat: number[] = [];
@@ -227,7 +233,11 @@ async function fetchTopographyGrid(sourceLat: number, sourceLng: number, radiusM
       longitude: lngBatch,
     });
 
-    const response = await fetch(`https://api.open-meteo.com/v1/elevation?${params.toString()}`);
+    if (signal?.aborted) {
+      throw new DOMException('Topography request cancelled.', 'AbortError');
+    }
+
+    const response = await fetch(`https://api.open-meteo.com/v1/elevation?${params.toString()}`, { signal });
 
     if (!response.ok) {
       throw new Error('Falha ao consultar elevação para o ponto selecionado.');
@@ -273,26 +283,28 @@ export default function LandslideSimulation({
   }, [radiusMeters]);
 
   useEffect(() => {
-    let active = true;
-    setLoadingTopography(true);
-    setTopographyError('');
+    const controller = new AbortController();
+    const loadDelay = window.setTimeout(() => {
+      setLoadingTopography(true);
+      setTopographyError('');
 
-    fetchTopographyGrid(sourceLat, sourceLng, localRadiusMeters, 33)
-      .then((grid) => {
-        if (!active) return;
-        setTerrainGrid(grid);
-      })
-      .catch((error) => {
-        if (!active) return;
-        setTerrainGrid(buildTerrainFallback(33));
-        setTopographyError(error instanceof Error ? error.message : 'Erro ao carregar topografia.');
-      })
-      .finally(() => {
-        if (active) setLoadingTopography(false);
-      });
+      fetchTopographyGrid(sourceLat, sourceLng, localRadiusMeters, 33, controller.signal)
+        .then((grid) => {
+          setTerrainGrid(grid);
+        })
+        .catch((error) => {
+          if (controller.signal.aborted) return;
+          setTerrainGrid(buildTerrainFallback(33));
+          setTopographyError(error instanceof Error ? error.message : 'Erro ao carregar topografia.');
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoadingTopography(false);
+        });
+    }, 250);
 
     return () => {
-      active = false;
+      controller.abort();
+      window.clearTimeout(loadDelay);
     };
   }, [localRadiusMeters, sourceLat, sourceLng]);
 
