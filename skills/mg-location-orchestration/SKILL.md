@@ -1,6 +1,6 @@
 ---
 name: mg-location-orchestration
-description: Use when translating MG Location natural-language requests into structured requirement cards, specialist-agent execution plans, and validation checklists across React, Django, integrations, and Keycloak.
+description: Use when translating MG Location natural-language requests into structured requirement cards, specialist-agent execution plans, routing matrices, and validation checklists across software, operations, and domain experts.
 ---
 
 # MG Location Orchestration
@@ -9,22 +9,24 @@ description: Use when translating MG Location natural-language requests into str
 Use esta skill quando a demanda vier em linguagem natural e precisar virar plano técnico executável no contexto MG Location.
 
 ## Workflow padrão
-1. Mapear a solicitação para domínios: `frontend`, `backend`, `iam`, `integrations`, `observability`.
-2. Preencher Requirement Card usando o template em `references/requirement-card-template.md`.
-3. Delegar o trabalho para especialistas por domínio e definir ordem de execução.
-4. Criar checklist de validação com comandos objetivos.
-5. Registrar decisão e trade-off no learning log.
+1. Classificar a demanda por domínios (software, operação, ciência aplicada, emergência).
+2. Preencher Requirement Card usando `references/requirement-card-template.md`.
+3. Selecionar agentes + skills usando `references/agent-skill-routing-matrix.md`.
+4. Definir plano de execução com dependências explícitas e sincronização entre especialistas.
+5. Criar checklist de validação com comandos objetivos.
+6. Registrar decisão, trade-off e aprendizado no learning log.
 
-## Matriz de especialistas
-- **Frontend Modernization Agent:** React/TypeScript, componentes, UX operacional.
-- **Django Domain Agent:** APIs, modelagem, regras de domínio e testes.
-- **Keycloak IAM Agent:** SSO, roles/scopes, proteção de endpoints.
-- **Disaster Integrations Agent:** providers, normalização e resiliência.
-- **Observability & Incident Agent:** logs estruturados, auditoria e incident response.
+## Sincronização obrigatória do orquestrador
+- Consolidar backlog técnico em uma fila única por prioridade.
+- Declarar handoff entre agentes (entrada esperada -> saída esperada).
+- Evitar execução paralela quando houver dependência bloqueante.
+- Validar cobertura completa de skills para cada requisito.
+- Publicar estado final: entregue, pendente, risco e rollback.
 
 ## Saída mínima obrigatória
 - Requirement Card com escopo **in/out**.
 - Plano por etapas com dependências explícitas.
+- Matriz agente-skill usada no roteamento.
 - Checklist de validação (comandos reproduzíveis).
 - Riscos, mitigação e estratégia de rollback.
 
@@ -32,4 +34,4 @@ Use esta skill quando a demanda vier em linguagem natural e precisar virar plano
 - Não implementar sem critérios de aceite verificáveis.
 - Não liberar endpoint crítico sem autenticação/autorização testada.
 - Não publicar fluxo novo sem observabilidade mínima (logs + erro explícito).
-- Não fechar tarefa sem registrar aprendizado reutilizável.
+- Não fechar tarefa sem registro de aprendizado reutilizável.
