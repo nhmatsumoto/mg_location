@@ -15,6 +15,7 @@ Este diretório centraliza a documentação funcional e técnica do projeto.
 - [Regras de domínio](./DOMAIN_RULES.md)
 - [Funcionalidades](./FEATURES.md)
 - [Consolidado funcional do projeto](./PROJECT_CONSOLIDATION_MG_LOCATION.md)
+- [Análise profunda e plano consolidado de implementação](./DEEP_IMPLEMENTATION_GAP_PLAN.md)
 - [Implementações e integrações](./IMPLEMENTATIONS.md)
 - [Ideias e roadmap](./IDEAS.md)
 - [Política de uso](./USAGE_POLICY.md)

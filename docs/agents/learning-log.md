@@ -60,3 +60,13 @@ Centralizar aprendizados operacionais e arquiteturais para reduzir retrabalho, a
 - Aprendizado reutilizável: Sempre que aumentar cobertura de especialistas, adicionar protocolo de sincronização e matriz de roteamento para evitar lacunas de coordenação.
 - Tipo: melhoria arquitetural
 - Próximo passo: ajustar checklist
+
+## [2026-03-03] deep-gap-analysis-orchestrator
+- Contexto da tarefa: Consolidar análise profunda de todos os projetos e mapear backlog de implementação por funcionalidade com uso coordenado de agentes.
+- Sintoma/erro observado: Evolução anterior criou catálogo de agentes/skills, mas faltava um plano único e priorizado de execução por funcionalidade.
+- Causa raiz: Ausência de documento central com diagnóstico cross-stack, lacunas P0/P1/P2 e cronograma de implementação por especialistas.
+- Ação aplicada: Criação do plano consolidado `docs/DEEP_IMPLEMENTATION_GAP_PLAN.md` com diagnóstico por projeto (backend/frontend/mobile/risk/legado/infra), matriz funcional por agentes e plano macro de 90 dias.
+- Validação executada: `python manage.py check`, `python manage.py test apps.api.tests -v 1`, verificação de links/documentação e consistência markdown.
+- Aprendizado reutilizável: Após expandir agentes/skills, o próximo passo obrigatório deve ser um plano consolidado por funcionalidade com prioridade e responsável explícito.
+- Tipo: otimização de fluxo
+- Próximo passo: monitorar

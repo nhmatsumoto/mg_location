@@ -125,3 +125,4 @@ Quando um agente concluir uma tarefa, ele deve:
 ## Catálogo expandido
 - Agentes: `docs/agents/specialist-agents-catalog.md`.
 - Skills: `skills/README.md`.
+- Plano consolidado de gaps e implementação: `docs/DEEP_IMPLEMENTATION_GAP_PLAN.md`.
