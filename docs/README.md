@@ -9,6 +9,7 @@ Este diretório centraliza a documentação funcional e técnica do projeto.
 - [Learning log dos agentes](./agents/learning-log.md)
 - [Regras de domínio](./DOMAIN_RULES.md)
 - [Funcionalidades](./FEATURES.md)
+- [Consolidado funcional do projeto](./PROJECT_CONSOLIDATION_MG_LOCATION.md)
 - [Implementações e integrações](./IMPLEMENTATIONS.md)
 - [Ideias e roadmap](./IDEAS.md)
 - [Política de uso](./USAGE_POLICY.md)
