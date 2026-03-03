@@ -19,7 +19,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from werkzeug.utils import secure_filename
 
-from apps.api.models import AttentionAlert, CollapseReport, MapAnnotation, MissingPerson, RescueGroup, SupplyLogistics
+from apps.api.models import AttentionAlert, CollapseReport, DisasterEvent, MapAnnotation, MissingPerson, RescueGroup, SupplyLogistics
 from apps.api.serializers import (
     CoordinateSerializer,
     RescueGroupSerializer,
@@ -1672,6 +1672,47 @@ def _load_hotspots_from_risk_areas():
     return DEFAULT_HOTSPOTS
 
 
+def _build_rain_timeline(limit=80):
+    rain_events = DisasterEvent.objects.filter(event_type__in=['Flood', 'Storm', 'Landslide']).order_by('-start_at')[:limit]
+    timeline = []
+    for event in rain_events:
+        timeline.append({
+            'id': f"{event.provider}-{event.provider_event_id}",
+            'at': event.start_at.isoformat(),
+            'title': event.title,
+            'eventType': event.event_type,
+            'severity': event.severity,
+            'lat': event.lat,
+            'lng': event.lon,
+            'countryCode': event.country_code,
+            'countryName': event.country_name,
+            'sourceUrl': event.source_url,
+        })
+    return timeline
+
+
+def _event_to_map_risk_area(event):
+    severity = 'critical' if event.severity >= 4 else 'high' if event.severity >= 3 else 'medium'
+    radius = 1400 if event.event_type == 'Flood' else 900
+    return {
+        'id': f"EV-{event.provider}-{event.provider_event_id}",
+        'recordType': 'risk_area',
+        'title': event.title[:180],
+        'lat': event.lat,
+        'lng': event.lon,
+        'severity': severity,
+        'radiusMeters': radius,
+        'status': 'active',
+        'metadata': {
+            'source': event.provider,
+            'eventType': event.event_type,
+            'sourceUrl': event.source_url,
+            'createdFromCrawler': True,
+        },
+        'createdAtUtc': event.start_at.isoformat(),
+    }
+
+
 @csrf_exempt
 def operations_snapshot(request):
     if request.method != 'GET':
@@ -1679,6 +1720,9 @@ def operations_snapshot(request):
 
     support_points_rows = [_annotation_to_dict(a) for a in MapAnnotation.objects.filter(record_type=MapAnnotation.TYPE_SUPPORT_POINT).order_by('-created_at')[:500]]
     risk_area_rows = [_annotation_to_dict(a) for a in MapAnnotation.objects.filter(record_type=MapAnnotation.TYPE_RISK_AREA).order_by('-created_at')[:500]]
+    crawler_rain_events = DisasterEvent.objects.filter(event_type__in=['Flood', 'Storm', 'Landslide']).order_by('-start_at')[:200]
+    crawler_risk_areas = [_event_to_map_risk_area(event) for event in crawler_rain_events]
+    combined_risk_areas = (risk_area_rows + crawler_risk_areas)[:700]
     rescue_group_rows = [_rescue_group_to_dict(g) for g in RescueGroup.objects.order_by('-created_at')[:500]]
     supply_rows = [_supply_to_dict(s) for s in SupplyLogistics.objects.order_by('-created_at')[:500]]
 
@@ -1689,18 +1733,19 @@ def operations_snapshot(request):
     payload = {
         'generatedAtUtc': datetime.now(timezone.utc).isoformat(),
         'kpis': {
-            'criticalAlerts': critical_risk,
+            'criticalAlerts': critical_risk + len([e for e in crawler_rain_events if e.severity >= 4]),
             'activeTeams': len([g for g in rescue_group_rows if g.get('status') in ['em_campo', 'pronto']]),
             'rain24hMm': rain_mm_24h,
             'suppliesInTransit': len([s for s in supply_rows if s.get('status') == 'em_transporte']),
         },
         'layers': {
             'supportPoints': support_points_rows,
-            'riskAreas': risk_area_rows,
+            'riskAreas': combined_risk_areas,
             'rescueGroups': rescue_group_rows,
             'flowPaths': FLOW_PATHS,
             'missingPersons': [_missing_person_to_dict(item) for item in MissingPerson.objects.order_by('-created_at')[:500]],
             'hotspots': sorted(_load_hotspots_from_risk_areas(), key=lambda h: h.get('score', 0), reverse=True),
+            'timeline': _build_rain_timeline(),
         },
         'weather': {
             'summary': 'Resumo climático baseado em integração Open-Meteo.',
