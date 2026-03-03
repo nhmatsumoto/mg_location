@@ -70,3 +70,13 @@ Centralizar aprendizados operacionais e arquiteturais para reduzir retrabalho, a
 - Aprendizado reutilizável: Após expandir agentes/skills, o próximo passo obrigatório deve ser um plano consolidado por funcionalidade com prioridade e responsável explícito.
 - Tipo: otimização de fluxo
 - Próximo passo: monitorar
+
+## [2026-03-03] p0-hardening-implementation-agent
+- Contexto da tarefa: Implementar o plano com foco nos itens P0 de backend e mobile.
+- Sintoma/erro observado: Seed em import-time e fallback em memória mascaravam estado real do sistema.
+- Causa raiz: Dependência de estruturas in-memory (`COLLAPSE_REPORTS`, `ATTENTION_ALERTS`) e bootstrap automático sem controle de ambiente.
+- Ação aplicada: Remoção do seed automático em runtime, migração da lógica de suporte para dados persistidos (`CollapseReport`/`AttentionAlert`) e remoção de fallback em memória na API de alertas.
+- Validação executada: `python manage.py test apps.api.tests -v 1` e revisão de endpoint com base em banco.
+- Aprendizado reutilizável: Itens de demonstração devem ser ativados por comando explícito, nunca no import-time da aplicação.
+- Tipo: melhoria arquitetural
+- Próximo passo: ajustar checklist
