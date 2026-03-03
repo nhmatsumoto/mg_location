@@ -66,14 +66,29 @@ def weather_forecast(request):
         lon = _float_param(request, 'lon')
         _validate_lat_lon(lat, lon)
         days = int(request.GET.get('days', 3))
-    except (ValueError, TypeError):
+        if days < 1 or days > 16:
+            raise ValueError('days fora do intervalo [1, 16]')
+    except (ValueError, TypeError) as exc:
         return JsonResponse(
-            {'error': 'Parâmetros inválidos: lat, lon e days devem ser numéricos.'},
+            {'error': f'Parâmetros inválidos: {exc}'},
             status=400,
         )
 
+    temperature_unit = request.GET.get('temperature_unit', 'fahrenheit')
+    wind_speed_unit = request.GET.get('wind_speed_unit', 'mph')
+    precipitation_unit = request.GET.get('precipitation_unit', 'inch')
+    tz = request.GET.get('timezone', 'auto')
+
     try:
-        data, cache_hit = fetch_forecast(lat=lat, lon=lon, days=days)
+        data, cache_hit = fetch_forecast(
+            lat=lat,
+            lon=lon,
+            days=days,
+            temperature_unit=temperature_unit,
+            wind_speed_unit=wind_speed_unit,
+            precipitation_unit=precipitation_unit,
+            timezone=tz,
+        )
     except Exception as exc:
         return _integration_error(exc)
     data['cacheHit'] = cache_hit
