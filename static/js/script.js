@@ -340,112 +340,31 @@ async function calculate() {
     app.statusMessage = app.t.status.calculating;
 
     const srcPoint = new L.LatLng(lat, lng);
-    const result = await fetch('/api/calculate', {
-        method: 'POST',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify(srcPoint)
-    });
 
-    if (!result.ok) {
-        app.loading = false;
-        app.errorMessage = app.t.errors.requestFailed;
-        pushNotification(app.t.errors.requestFailed, 'error');
-        return;
-    }
+    try {
+        const result = await fetch('/api/calculate', {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(srcPoint)
+        });
 
-    const data = await result.json();
-    drawVector(srcPoint, new L.LatLng(data.lat, data.lng));
-    window.map.panTo([data.lat, data.lng]);
-    app.statusMessage = app.t.status.success;
-    app.loading = false;
-    pushNotification(app.t.status.success, 'info');
-    refreshLocationInfo();
-}
-
-async function registerMissingPerson() {
-    const lat = Number(app.lat);
-    const lng = Number(app.lng);
-
-    if (!app.missingForm.name || !app.missingForm.lastSeen || !Number.isFinite(lat) || !Number.isFinite(lng)) {
-        app.errorMessage = app.t.errors.missingFields;
-        pushNotification(app.t.errors.missingFields, 'error');
-        return;
-    }
-
-    app.savingMissing = true;
-    app.errorMessage = '';
-
-    const payload = {
-        personName: app.missingForm.name,
-        lastSeenLocation: app.missingForm.lastSeen,
-        city: app.locale === 'por' ? 'Não informado' : 'Not informed',
-        additionalInfo: `Registro via mapa em lat=${lat}, lng=${lng}`,
-        lat: lat,
-        lng: lng,
-        source: 'map-ui-simplified'
-    };
-
-    const result = await fetch('/api/missing-persons', {
-        method: 'POST',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-
-    if (!result.ok) {
-        app.savingMissing = false;
-        app.errorMessage = app.t.errors.requestFailed;
-        pushNotification(app.t.errors.requestFailed, 'error');
-        return;
-    }
-
-    createMissingMarker({ name: app.missingForm.name, lat: lat, lng: lng, lastSeen: app.missingForm.lastSeen });
-    app.missingForm.name = '';
-    app.missingForm.lastSeen = '';
-    app.statusMessage = app.t.status.missingSaved;
-    app.savingMissing = false;
-    pushNotification(app.t.status.missingSaved, 'info');
-    refreshAlertFeeds();
-}
-
-function createMissingMarker(item) {
-    const safeName = escapeHtml(item.name);
-    const safeLastSeen = escapeHtml(item.lastSeen);
-    const marker = L.marker([item.lat, item.lng], {
-        title: app.t.markerLabels.missing
-    }).bindPopup(
-        '<b>' + app.t.markerLabels.missing + '</b>' +
-        '<br/>' + safeName +
-        '<br/>' + safeLastSeen +
-        '<br/>Lat: ' + item.lat + ' / Lng: ' + item.lng
-    );
-    marker.addTo(window.missingGroup);
-}
-
-function escapeHtml(value) {
-    return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-async function loadMissingReports() {
-    const result = await fetch('/api/missing-persons');
-    if (!result.ok) return;
-    const list = await result.json();
-    list.forEach(function(item) {
-        const lat = Number(item.lat);
-        const lng = Number(item.lng);
-        if (Number.isFinite(lat) && Number.isFinite(lng)) {
-            createMissingMarker({
-                name: item.personName || item.name || 'Desconhecido',
-                lastSeenLocation: item.lastSeenLocation || item.lastSeen || '-',
-                lat: lat,
-                lng: lng
-            });
+        if (!result.ok) {
+            throw new Error('Calculation request failed with a non-OK status');
         }
-    });
+
+        const data = await result.json();
+        const destPoint = new L.LatLng(data.lat, data.lng);
+        drawVector(srcPoint, destPoint);
+        window.map.panTo(destPoint);
+        app.statusMessage = app.t.status.success;
+    } catch (error) {
+        app.errorMessage = app.t.errors.requestFailed;
+    } finally {
+        app.loading = false;
+    }
 }
 
 function clearMap() {
