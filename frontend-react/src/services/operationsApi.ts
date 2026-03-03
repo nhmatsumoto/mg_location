@@ -72,11 +72,25 @@ export interface OperationsSnapshot {
     flowPaths: FlowPath[];
     missingPersons: MissingPersonLite[];
     hotspots: Array<{ id: string; lat: number; lng: number; score: number; type: string }>;
+    timeline?: Array<{
+      id: string;
+      at: string;
+      title: string;
+      eventType: string;
+      severity: number | string;
+      lat: number;
+      lng: number;
+      sourceUrl?: string;
+    }>;
   };
   weather: {
     summary: string;
     rain24hMm: number;
+    rainNext24hMm?: number;
+    stormRisk?: string;
+    windGustKmh?: number | null;
     soilSaturation: string;
+    providers?: Array<Record<string, unknown>>;
   };
   logistics: Array<{ id: string; item: string; quantity: number; status: string; priority: string }>;
 }
@@ -85,7 +99,7 @@ export interface OperationsSnapshot {
 const fallbackSnapshot: OperationsSnapshot = {
   generatedAtUtc: new Date().toISOString(),
   kpis: { criticalAlerts: 0, activeTeams: 0, rain24hMm: 0, suppliesInTransit: 0 },
-  layers: { supportPoints: [], riskAreas: [], rescueGroups: [], flowPaths: [], missingPersons: [], hotspots: [] },
+  layers: { supportPoints: [], riskAreas: [], rescueGroups: [], flowPaths: [], missingPersons: [], hotspots: [], timeline: [] },
   weather: { summary: 'Backend indisponível no momento. Exibindo modo resiliente.', rain24hMm: 0, soilSaturation: 'N/D' },
   logistics: [],
 };

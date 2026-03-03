@@ -60,8 +60,10 @@ services:
       GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
       MIGRATE_MAX_ATTEMPTS: ${MIGRATE_MAX_ATTEMPTS:-24}
       RISK_AGENT_URL: ${RISK_AGENT_URL:-http://risk-agent:8091}
+      RISK_AGENT_INTERNAL_TOKEN: ${RISK_AGENT_INTERNAL_TOKEN:-mg-location-internal-token}
       GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
       SEED_ON_STARTUP: ${SEED_ON_STARTUP:-true}
+      RUN_INTEGRATIONS_ON_STARTUP: ${RUN_INTEGRATIONS_ON_STARTUP:-true}
     depends_on:
       postgres:
         condition: service_healthy
@@ -86,8 +88,9 @@ services:
       ALPHAGEO_API_URL: ${ALPHAGEO_API_URL:-}
       OGC_API_URL: ${OGC_API_URL:-https://demo.pygeoapi.io/master/collections/obs/items}
       NGFS_GUIDE_URL: ${NGFS_GUIDE_URL:-}
-    ports:
-      - "${RISK_AGENT_PORT:-8091}:8091"
+      RISK_AGENT_INTERNAL_TOKEN: ${RISK_AGENT_INTERNAL_TOKEN:-mg-location-internal-token}
+    expose:
+      - "8091"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8091/health', timeout=5)\""]
       interval: 20s
