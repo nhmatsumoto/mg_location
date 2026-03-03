@@ -1,60 +1,77 @@
 from django.urls import path
 
 from apps.api.views import (
-    calculatecoordinate,
     attention_alerts,
+    calculatecoordinate,
     cfd_ideas,
-    collapse_reports,
     climate_integrations,
+    collapse_reports,
+    health_check,
     hotspots,
     identify_victim,
     location_flow_simulation,
     location_flow_simulation_stream,
-    unified_easy_simulation,
+    map_annotations,
     missing_people_csv,
-    news_updates,
     missing_persons,
+    news_updates,
+    operations_snapshot,
     push_register,
     report_info,
-    rescue_support,
-    splat_convert,
-    searched_areas,
-    terrain_context,
-    support_points,
-    risk_areas,
     rescue_groups,
+    rescue_support,
+    risk_areas,
+    searched_areas,
+    splat_convert,
     supply_logistics,
-    operations_snapshot,
-    map_annotations,
-    health_check,
+    support_points,
+    terrain_context,
+    unified_easy_simulation,
 )
 from apps.api.views_auth import (
+    auth_login,
+    auth_logout,
+    auth_me,
+    auth_register,
+    google_oauth2_login_view,
     login_view,
     logout_view,
     session_view,
-    google_oauth2_login_view,
 )
-
-from apps.api.views_risk import risk_assessment, risk_pipeline_sync
-from apps.api.views_auth import auth_login, auth_logout, auth_me, auth_register
-
+from apps.api.views_disasters import disasters_by_country, disasters_crawl_trigger, disasters_events, disasters_timeseries
 from apps.api.views_integrations import (
     alerts as alerts_feed,
+    disaster_intelligence,
     satellite_goes_recent,
     satellite_layers,
     satellite_stac_search,
     transparency_search,
-    transparency_transfers,
     transparency_summary,
+    transparency_transfers,
     weather_archive,
     weather_forecast,
-    disaster_intelligence,
 )
-
+from apps.api.views_modules import (
+    incident_detail,
+    incidents_collection,
+    public_incidents,
+    public_latest_snapshot,
+    public_search_areas,
+    public_support_summary,
+    rescue_assignments,
+    rescue_search_area_update,
+    rescue_search_areas,
+    support_campaigns,
+    support_donations,
+    support_expenses,
+)
+from apps.api.views_risk import risk_assessment, risk_pipeline_sync
 
 app_name = 'api'
 
 urlpatterns = [
+    path('health', health_check, name='health_check'),
+
     path('incidents', incidents_collection, name='incidents_collection'),
     path('incidents/<int:incident_id>', incident_detail, name='incident_detail'),
     path('incidents/<int:incident_id>/support/campaigns', support_campaigns, name='support_campaigns'),
@@ -68,14 +85,22 @@ urlpatterns = [
     path('public/incidents/<int:incident_id>/support/summary', public_support_summary, name='public_support_summary'),
     path('public/incidents/<int:incident_id>/rescue/search-areas', public_search_areas, name='public_search_areas'),
 
-    path('auth/login', login_view, name='auth_login'),
-    path('auth/logout', logout_view, name='auth_logout'),
+    path('auth/register', auth_register, name='auth_register'),
+    path('auth/login', auth_login, name='auth_login'),
+    path('auth/me', auth_me, name='auth_me'),
+    path('auth/logout', auth_logout, name='auth_logout'),
+    path('auth/session-login', login_view, name='auth_session_login'),
+    path('auth/session-logout', logout_view, name='auth_session_logout'),
     path('auth/session', session_view, name='auth_session'),
     path('auth/google', google_oauth2_login_view, name='auth_google'),
-    path('health', health_check, name='health_check'),
+
     path('disasters/events', disasters_events, name='disasters_events'),
     path('disasters/stats/by-country', disasters_by_country, name='disasters_by_country'),
+    path('disasters/stats/by-country', disasters_by_country, name='disasters_stats_by_country'),
     path('disasters/stats/timeseries', disasters_timeseries, name='disasters_timeseries'),
+    path('disasters/stats/timeseries', disasters_timeseries, name='disasters_stats_timeseries'),
+    path('disasters/crawl', disasters_crawl_trigger, name='disasters_crawl_trigger'),
+
     path('calculate', calculatecoordinate, name='coordinate_calculate'),
     path('hotspots', hotspots, name='hotspots'),
     path('collapse-reports', collapse_reports, name='collapse_reports'),
@@ -104,16 +129,18 @@ urlpatterns = [
     path('risk/assessment', risk_assessment, name='risk_assessment'),
     path('risk/pipeline-sync', risk_pipeline_sync, name='risk_pipeline_sync'),
     path('weather/forecast', weather_forecast, name='weather_forecast'),
+    path('weather/forecast', weather_forecast, name='integrations_weather_forecast'),
     path('weather/archive', weather_archive, name='weather_archive'),
+    path('weather/archive', weather_archive, name='integrations_weather_history'),
     path('alerts', alerts_feed, name='alerts_feed'),
+    path('alerts', alerts_feed, name='integrations_alerts'),
     path('alerts/intelligence', disaster_intelligence, name='disaster_intelligence'),
     path('transparency/transfers', transparency_transfers, name='transparency_transfers'),
+    path('transparency/transfers', transparency_transfers, name='integrations_transparency_transfers'),
     path('transparency/search', transparency_search, name='transparency_search'),
+    path('transparency/summary', transparency_summary, name='integrations_transparency_summary'),
     path('satellite/layers', satellite_layers, name='satellite_layers'),
+    path('satellite/layers', satellite_layers, name='integrations_satellite_layers'),
     path('satellite/stac/search', satellite_stac_search, name='satellite_stac_search'),
     path('satellite/goes/recent', satellite_goes_recent, name='satellite_goes_recent'),
-    path('auth/register', auth_register, name='auth_register'),
-    path('auth/login', auth_login, name='auth_login'),
-    path('auth/me', auth_me, name='auth_me'),
-    path('auth/logout', auth_logout, name='auth_logout'),
 ]
