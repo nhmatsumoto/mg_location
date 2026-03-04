@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.api.models import Assignment, Campaign, DonationMoney, Expense, Incident, SearchArea
+from apps.api.models import Assignment, Campaign, DomainEvent, DonationMoney, Expense, Incident, SearchArea
 
 
 class IncidentSerializer(serializers.ModelSerializer):

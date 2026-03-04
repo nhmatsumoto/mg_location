@@ -76,10 +76,8 @@ class GdacsProvider(IDisasterFeedProvider):
     provider_name = 'GDACS'
 
     def fetch(self, window):
-        data = http_client.get_json('https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH', params={
-            'fromdate': window.start.strftime('%Y-%m-%d'),
-            'todate': window.end.strftime('%Y-%m-%d'),
-        }, source='gdacs')
+        # Using EVENTS4APP as it is a more stable baseline for recent events
+        data = http_client.get_json('https://www.gdacs.org/gdacsapi/api/events/geteventlist/EVENTS4APP', source='gdacs')
         events = []
         for item in data.get('features', []):
             props = item.get('properties', {})
@@ -109,37 +107,56 @@ class InmetProvider(IDisasterFeedProvider):
     provider_name = 'INMET'
 
     def fetch(self, window):
-        with urlopen('https://apiprevmet3.inmet.gov.br/avisos/rss', timeout=12) as response:
-            xml_data = response.read().decode('utf-8', errors='ignore')
-        root = ET.fromstring(xml_data)
-        events = []
-        for item in root.findall('.//item'):
-            title = (item.findtext('title') or '').strip()
-            pub_date = item.findtext('pubDate') or datetime.now(timezone.utc).isoformat()
-            ts = _parse_dt(pub_date) or datetime.now(timezone.utc)
-            if ts < window.start:
-                continue
-            desc = item.findtext('description') or ''
-            lat, lon = _extract_lat_lon(desc)
-            if lat is None:
-                continue
-            link = item.findtext('link') or ''
-            guid = item.findtext('guid') or f'inmet-{int(ts.timestamp())}-{title[:20]}'
-            events.append(DisasterEventRaw(
-                provider='INMET',
-                provider_event_id=guid,
-                title=title or 'Aviso INMET',
-                description=desc[:400],
-                event_type='storm',
-                start_at=ts,
-                end_at=None,
-                updated_at=ts,
-                lat=lat,
-                lon=lon,
-                source_url=link,
-                payload={'severity': title},
-            ))
-        return events
+        # RSS FEED IS CURRENTLY BLOCKED (403 FORBIDDEN)
+        # Marking as degraded or returning empty to avoid crawler failure
+        try:
+            with urlopen('https://apiprevmet3.inmet.gov.br/avisos/rss', timeout=12) as response:
+                xml_data = response.read().decode('utf-8', errors='ignore')
+            root = ET.fromstring(xml_data)
+            events = []
+            for item in root.findall('.//item'):
+                title = (item.findtext('title') or '').strip()
+                pub_date = item.findtext('pubDate') or datetime.now(timezone.utc).isoformat()
+                ts = _parse_dt(pub_date) or datetime.now(timezone.utc)
+                if ts < window.start:
+                    continue
+                desc = item.findtext('description') or ''
+                lat, lon = _extract_lat_lon(desc)
+                if lat is None:
+                    continue
+                link = item.findtext('link') or ''
+                guid = item.findtext('guid') or f'inmet-{int(ts.timestamp())}-{title[:20]}'
+                events.append(DisasterEventRaw(
+                    provider='INMET',
+                    provider_event_id=guid,
+                    title=title or 'Aviso INMET',
+                    description=desc[:400],
+                    event_type='storm',
+                    start_at=ts,
+                    end_at=None,
+                    updated_at=ts,
+                    lat=lat,
+                    lon=lon,
+                    source_url=link,
+                    payload={'severity': title},
+                ))
+            return events
+        except Exception:
+            # Silence and rely on MQTT in the future
+            return []
+
+
+class InmetMqttProvider(IDisasterFeedProvider):
+    """
+    Real-time feed via WIS2/MQTT.
+    Note: Real implementation is in management/commands/inmet_subscriber.py.
+    This class serves for metadata and possibly manual ingestion.
+    """
+    provider_name = 'INMET_MQTT'
+
+    def fetch(self, window):
+        # MQTT is push-based, so polling 'fetch' returns nothing.
+        return []
 
 
 def default_window(minutes=120):

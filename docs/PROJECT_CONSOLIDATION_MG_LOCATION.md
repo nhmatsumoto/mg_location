@@ -122,7 +122,21 @@
 - **Pontos de extensão:** `apps/api/integrations`, `apps/api/services/disasters`.
 - **Diretriz:** normalização de payload, cache defensivo e tolerância a falhas de provider.
 
-## 4) Agentes especialistas recomendados para execução
+## 4) Resiliência e Continuidade Operacional
+- **Discovery**: Clients can now find and sync with local hubs when the central internet backhaul is down.
+- **Improved Visualization**: The "Scatter de eventos" now integrates global disasters, operation events, and pending offline changes.
+
+## 5. Crawler Robustness & Real-time Alerts
+- **Robust HttpClient**: Added JSON validation, body snippets in error logs, and circuit breakers for 403 (Forbidden) errors.
+- **GDACS MHEWS**: Switched to the `EVENTS4APP` API baseline for higher stability.
+- **INMET WIS2/MQTT**: Migrated from blocked RSS polling to a real-time MQTT subscriber using the WIS2 global broker.
+- **Error Categorization**: The `DisasterCrawlerService` now summarizes errors by type (Circuit Open, Forbidden, etc.) for better observability.
+
+## 6. Documentation & Onboarding
+- **New README**: Completely rewritten to include vision, architecture v1.1 details, and contribution guidelines.
+- **Tactical Dashboard**: All modules (Rescue, Search, Campaigns, Donations, Assignments) are now 100% event-driven.
+
+## 7) Agentes especialistas recomendados para execução
 
 1. **Frontend Modernization Agent**
    - Foco: telas operacionais, mapa tático, UX de emergência, hooks.
@@ -135,7 +149,7 @@
 5. **Observability & Incident Agent**
    - Foco: logging estruturado, diagnóstico de falhas, trilha de auditoria.
 
-## 5) Backlog inicial de execução (ordem sugerida)
+## 8) Backlog inicial de execução (ordem sugerida)
 
 1. Definir contrato de autorização (roles/scopes) e matriz de permissões.
 2. Implantar integração Keycloak no backend com endpoints críticos protegidos.

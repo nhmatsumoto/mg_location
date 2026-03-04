@@ -4,22 +4,31 @@ from datetime import timedelta
 from django.db import transaction
 from django.utils import timezone
 
-from apps.api.integrations.disasters.providers import GdacsProvider, InmetProvider, UsgsProvider, default_window
+from apps.api.integrations.disasters.providers import (
+    GdacsProvider, InmetProvider, InmetMqttProvider, UsgsProvider, default_window
+)
 from apps.api.models import DisasterEvent
 from apps.api.services.disasters.constants import normalize_event_type, normalize_severity
 from apps.api.services.disasters.country_resolver import CountryResolver
+from apps.api.integrations.core.http_client import CircuitOpenError
 
 logger = logging.getLogger(__name__)
 
 
 class DisasterCrawlerService:
     def __init__(self, providers=None):
-        self.providers = providers or [GdacsProvider(), UsgsProvider(), InmetProvider()]
+        self.providers = providers or [
+            GdacsProvider(), 
+            UsgsProvider(), 
+            InmetProvider(),
+            InmetMqttProvider()
+        ]
         self.country_resolver = CountryResolver()
 
     def crawl_once(self, window=None):
         window = window or default_window()
-        totals = {'fetched': 0, 'inserted': 0, 'updated': 0, 'errors': 0}
+        totals = {'fetched': 0, 'inserted': 0, 'updated': 0, 'errors': 0, 'forbidden': 0, 'circuit_open': 0}
+        
         for provider in self.providers:
             try:
                 raw_events = provider.fetch(window)
@@ -28,15 +37,27 @@ class DisasterCrawlerService:
                 totals['inserted'] += inserted
                 totals['updated'] += updated
                 logger.info(
-                    'disaster_crawler provider=%s fetched=%s inserted=%s updated=%s',
+                    'disaster_crawler provider=%s status=success fetched=%s inserted=%s updated=%s',
                     provider.provider_name,
                     len(raw_events),
                     inserted,
                     updated,
                 )
+            except CircuitOpenError:
+                totals['circuit_open'] += 1
+                logger.warning('disaster_crawler provider=%s status=circuit_open', provider.provider_name)
             except Exception as exc:
+                from urllib.error import HTTPError
                 totals['errors'] += 1
-                logger.exception('disaster_crawler provider=%s failed err=%s', provider.provider_name, type(exc).__name__)
+                status_code = getattr(exc, 'code', 'unknown')
+                
+                if isinstance(exc, HTTPError) and status_code == 403:
+                    totals['forbidden'] += 1
+                    logger.error('disaster_crawler provider=%s status=forbidden (blocked)', provider.provider_name)
+                else:
+                    logger.exception('disaster_crawler provider=%s status=failed err=%s code=%s', 
+                                     provider.provider_name, type(exc).__name__, status_code)
+        
         self._cleanup_retention(days=90)
         return totals
 

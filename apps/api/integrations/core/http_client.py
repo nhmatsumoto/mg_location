@@ -30,7 +30,13 @@ class HttpClient:
 
     def get_json(self, url, params=None, headers=None, source='unknown'):
         params = params or {}
-        headers = headers or {}
+        default_headers = {
+            'User-Agent': 'MG-Location-Tactical/1.1 (+https://github.com/nhmatsumoto/mg_location)',
+            'Accept': 'application/json, application/geo+json',
+        }
+        if headers:
+            default_headers.update(headers)
+        
         qs = urlencode(params, doseq=True)
         final_url = f"{url}?{qs}" if qs else url
         self._check_breaker(source)
@@ -39,22 +45,46 @@ class HttpClient:
         for attempt in range(1, attempts + 1):
             started = time.time()
             try:
-                req = Request(final_url, headers=headers, method='GET')
+                req = Request(final_url, headers=default_headers, method='GET')
                 with urlopen(req, timeout=self.timeout) as response:
-                    body = response.read().decode('utf-8', errors='ignore')
-                    payload = json.loads(body)
-                    duration_ms = int((time.time() - started) * 1000)
-                    logger.info('integration_request source=%s status=%s durationMs=%s cacheHit=false', source, response.status, duration_ms)
-                    return payload
+                    status = response.status
+                    content_type = response.headers.get('Content-Type', '')
+                    
+                    if status != 200:
+                        raise HTTPError(final_url, status, f"Unexpected status {status}", response.headers, None)
+
+                    body_bytes = response.read()
+                    if not body_bytes:
+                        logger.warning('http_empty_body source=%s url=%s', source, final_url)
+                        return {}
+
+                    body = body_bytes.decode('utf-8', errors='ignore')
+                    
+                    try:
+                        payload = json.loads(body)
+                        duration_ms = int((time.time() - started) * 1000)
+                        logger.info('integration_request source=%s status=%s durationMs=%s', source, status, duration_ms)
+                        return payload
+                    except json.JSONDecodeError:
+                        snippet = body[:200].replace('\n', ' ')
+                        logger.error('http_json_decode_error source=%s url=%s ct=%s body_start="%s"', 
+                                     source, final_url, content_type, snippet)
+                        raise
             except HTTPError as err:
                 code = getattr(err, 'code', 500)
+                # Circuit breaker for 403 Forbidden (Auth/Policy issues)
+                if code == 403:
+                    logger.error('http_forbidden source=%s url=%s', source, final_url)
+                    self._trip_breaker(source)
+                    raise
+                
                 if code >= 500 and attempt < attempts:
                     time.sleep(self.backoff_base * (2 ** (attempt - 1)))
                     continue
                 if code >= 500:
                     self._trip_breaker(source)
                 raise
-            except (URLError, TimeoutError, json.JSONDecodeError):
+            except (URLError, TimeoutError):
                 if attempt < attempts:
                     time.sleep(self.backoff_base * (2 ** (attempt - 1)))
                     continue
