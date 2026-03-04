@@ -1,4 +1,7 @@
+import logging
 from apps.api.integrations.core.cache import shared_cache
+
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_LAYERS = [
@@ -30,9 +33,11 @@ DEFAULT_LAYERS = [
 
 
 def get_layers_manifest():
+    logger.info("integration.gibs.layers.request")
     key = 'satellite:gibs:layers'
     cached, hit = shared_cache.get(key)
     if hit:
+        logger.info("integration.cache.hit", extra={"module": __name__})
         return cached, True
     shared_cache.set(key, DEFAULT_LAYERS, ttl=86400)
     return DEFAULT_LAYERS, False

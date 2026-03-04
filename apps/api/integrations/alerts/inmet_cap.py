@@ -1,8 +1,11 @@
+import logging
 import os
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from urllib.error import URLError
 from urllib.request import urlopen
+
+logger = logging.getLogger(__name__)
 
 from apps.api.integrations.core.cache import shared_cache
 from apps.api.integrations.core.normalize_schemas import normalize_alert
@@ -152,6 +155,7 @@ class AlertFeedRegistry:
         self.feeds = [part.strip() for part in feeds_env.split(',') if part.strip()] if feeds_env else [DEFAULT_INMET_FEED]
 
     def fetch(self, bbox=None, since=None):
+        logger.info("integration.inmet.fetch.request", extra={"feeds": len(self.feeds)})
         key = f"alerts:{','.join(self.feeds)}:{bbox}:{since}"
         cached, hit = shared_cache.get(key)
         if hit:

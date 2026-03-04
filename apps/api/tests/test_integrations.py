@@ -126,3 +126,22 @@ class IntegrationsApiViewTestCase(TestCase):
         response = self.client.get(reverse('api:disaster_intelligence'))
         self.assertEqual(response.status_code, 400)
         self.assertIn('lat/lon', response.json()['error'])
+
+
+    @patch('apps.api.views_integrations.fetch_municipios')
+    def test_ibge_municipios_endpoint(self, mock_fetch):
+        mock_fetch.return_value = ({'source': 'ibge-localidades', 'items': [{'id': 1, 'name': 'Juiz de Fora', 'uf': 'MG'}]}, False)
+        response = self.client.get(reverse('api:integrations_ibge_municipios'), {'uf': 'MG', 'nome': 'Juiz', 'limit': 10})
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['source'], 'ibge-localidades')
+        self.assertEqual(payload['items'][0]['name'], 'Juiz de Fora')
+
+    @patch('apps.api.views_integrations.fetch_landsat_catalog')
+    def test_landsat_catalog_endpoint(self, mock_fetch):
+        mock_fetch.return_value = ({'source': 'nasa-landsat', 'collections': [{'id': 'landsat-c2l2-sr'}]}, True)
+        response = self.client.get(reverse('api:integrations_satellite_landsat_catalog'))
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['source'], 'nasa-landsat')
+        self.assertTrue(payload['cacheHit'])
