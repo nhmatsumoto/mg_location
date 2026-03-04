@@ -102,6 +102,80 @@ def weather_forecast(request):
 
 
 @require_GET
+def weather_nowcast(request):
+    """Simplified weather endpoint for map click widgets.
+
+    Contract: GET /api/weather?lat=...&lon=...&hours=...
+    """
+
+    logger.info('integration.weather.nowcast.request', extra={'query': dict(request.GET)})
+    try:
+        lat = _float_param(request, 'lat')
+        lon = _float_param(request, 'lon')
+        _validate_lat_lon(lat, lon)
+        hours = int(request.GET.get('hours', 6))
+        if hours < 1 or hours > 24:
+            raise ValueError('hours fora do intervalo [1, 24]')
+    except ValueError as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
+
+    try:
+        data, cache_hit = fetch_forecast(
+            lat=lat,
+            lon=lon,
+            days=1,
+            temperature_unit='celsius',
+            wind_speed_unit='kmh',
+            precipitation_unit='mm',
+            timezone='auto',
+        )
+    except Exception as exc:
+        return _integration_error(exc)
+
+    def _value_at(values, idx):
+        if not isinstance(values, list):
+            return None
+        if idx < 0 or idx >= len(values):
+            return None
+        return values[idx]
+
+    hourly_payload = data.get('hourly') or {}
+    hourly_rows = []
+    if isinstance(hourly_payload, dict):
+        time_values = hourly_payload.get('time') or []
+        for index, timestamp in enumerate(time_values[:hours]):
+            hourly_rows.append(
+                {
+                    'time': timestamp,
+                    'temperatureC': _value_at(hourly_payload.get('temperature_2m'), index),
+                    'humidityPercent': _value_at(hourly_payload.get('relative_humidity_2m'), index),
+                    'precipitationMm': _value_at(hourly_payload.get('precipitation'), index),
+                    'windKmh': _value_at(hourly_payload.get('wind_speed_10m'), index),
+                    'weatherCode': _value_at(hourly_payload.get('weather_code'), index),
+                }
+            )
+    current = data.get('current') or {}
+    payload = {
+        'source': 'open-meteo',
+        'cacheHit': cache_hit,
+        'lastUpdated': datetime.utcnow().isoformat() + 'Z',
+        'location': {'lat': lat, 'lon': lon},
+        'now': {
+            'temperatureC': current.get('temperature'),
+            'humidityPercent': current.get('humidity'),
+            'precipitationMm': current.get('precipitation'),
+            'windKmh': current.get('windSpeed'),
+            'pressureHpa': current.get('surfacePressure'),
+            'cloudCoverPercent': current.get('cloudCover'),
+            'weatherCode': current.get('weatherCode'),
+        },
+        'nextHours': hourly_rows,
+    }
+    logger.info('integration.weather.nowcast.success', extra={'cache_hit': cache_hit, 'hours': len(hourly_rows)})
+    return JsonResponse(payload)
+
+
+@require_GET
 def weather_archive(request):
     logger.info('integration.weather.archive.request', extra={'query': dict(request.GET)})
     start = request.GET.get('start')

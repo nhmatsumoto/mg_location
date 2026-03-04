@@ -95,23 +95,10 @@ export interface OperationsSnapshot {
   logistics: Array<{ id: string; item: string; quantity: number; status: string; priority: string }>;
 }
 
-
-const fallbackSnapshot: OperationsSnapshot = {
-  generatedAtUtc: new Date().toISOString(),
-  kpis: { criticalAlerts: 0, activeTeams: 0, rain24hMm: 0, suppliesInTransit: 0 },
-  layers: { supportPoints: [], riskAreas: [], rescueGroups: [], flowPaths: [], missingPersons: [], hotspots: [], timeline: [] },
-  weather: { summary: 'Backend indisponível no momento. Exibindo modo resiliente.', rain24hMm: 0, soilSaturation: 'N/D' },
-  logistics: [],
-};
-
 export const operationsApi = {
   async snapshot() {
-    try {
-      const response = await apiClient.get<OperationsSnapshot>('/api/operations/snapshot', { __skipGlobalNotify: true } as any);
-      return response.data;
-    } catch {
-      return fallbackSnapshot;
-    }
+    const response = await apiClient.get<OperationsSnapshot>('/api/operations/snapshot', { __skipGlobalNotify: true } as any);
+    return response.data;
   },
 
   async listSupportPoints() {

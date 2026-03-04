@@ -19,14 +19,18 @@ const severityFromScore = (score: number) => {
 export function CommandCenterPage() {
   const [snapshot, setSnapshot] = useState<OperationsSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { pushNotice } = useNotifications();
 
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
       setSnapshot(await operationsApi.snapshot());
     } catch {
-      pushNotice({ type: 'warning', title: 'Modo resiliente', message: 'Sem conexão com backend. Exibindo dados mínimos.' });
+      setSnapshot(null);
+      setError('Falha ao consultar o backend. Verifique o serviço da API e CORS/proxy no frontend.');
+      pushNotice({ type: 'warning', title: 'Falha de integração', message: 'Não foi possível carregar o snapshot operacional.' });
     } finally {
       setLoading(false);
     }
@@ -37,11 +41,20 @@ export function CommandCenterPage() {
   }, []);
 
   const hotspots = useMemo(() => snapshot?.layers.hotspots.slice(0, 5) ?? [], [snapshot]);
+  const isEmpty = Boolean(snapshot && hotspots.length === 0 && snapshot.layers.missingPersons.length === 0 && snapshot.layers.riskAreas.length === 0);
 
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.7fr_1fr]">
       <div className="space-y-4">
         <QuickActions />
+        {error ? (
+          <div className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-sm text-rose-100">{error}</div>
+        ) : null}
+        {isEmpty ? (
+          <div className="rounded-xl border border-amber-500/40 bg-amber-950/30 p-3 text-sm text-amber-100">
+            Snapshot carregado sem registros operacionais. Rode o seed local (`python manage.py seed_rain_flood_map`).
+          </div>
+        ) : null}
         <OperationalMap data={snapshot} onRefresh={load} />
       </div>
 
@@ -58,6 +71,7 @@ export function CommandCenterPage() {
             <h3 className="text-sm font-semibold text-slate-100">Hotspots prioritários</h3>
             <button onClick={() => void load()} className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-200 hover:bg-slate-800">{loading ? 'Atualizando…' : 'Atualizar'}</button>
           </div>
+          <p className="mb-2 text-xs text-slate-400">Última atualização: {snapshot?.generatedAtUtc ? new Date(snapshot.generatedAtUtc).toLocaleString() : 'n/d'}</p>
           <ul className="space-y-2">
             {hotspots.map((spot) => (
               <li key={spot.id} className="rounded-lg border border-slate-700 bg-slate-950/50 p-2">

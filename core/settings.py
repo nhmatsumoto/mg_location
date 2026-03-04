@@ -168,7 +168,8 @@ SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
-CORS_ALLOWED_ORIGINS = config(
+_api_cors_origins = config('API_CORS_ORIGINS', default='', cast=Csv())
+CORS_ALLOWED_ORIGINS = _api_cors_origins or config(
     'CORS_ALLOWED_ORIGINS',
     default=(
         'http://localhost:8088,http://127.0.0.1:8088'
