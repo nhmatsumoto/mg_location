@@ -28,6 +28,24 @@ export interface TransferRecordDto {
   program?: string;
 }
 
+
+export interface IbgeMunicipioDto {
+  id: number;
+  name: string;
+  uf?: string;
+  state?: string;
+  region?: string;
+  microregion?: string;
+  mesoregion?: string;
+}
+
+export interface LandsatCollectionDto {
+  id: string;
+  title: string;
+  provider: string;
+  description?: string;
+}
+
 export interface SatelliteLayerDto {
   id: string;
   title: string;
@@ -60,6 +78,16 @@ export const integrationsApi = {
   },
   async getSatelliteLayers() {
     const response = await apiClient.get<{ items: SatelliteLayerDto[]; cacheHit?: boolean }>('/api/integrations/satellite/layers');
+    return response.data;
+  },
+  async getLandsatCatalog() {
+    const response = await apiClient.get<{ source: string; missionUrl: string; stacApi: string; collections: LandsatCollectionDto[]; cacheHit?: boolean }>('/api/integrations/satellite/landsat/catalog');
+    return response.data;
+  },
+  async getIbgeMunicipios(uf?: string, nome?: string, limit = 20) {
+    const response = await apiClient.get<{ source: string; items: IbgeMunicipioDto[]; cacheHit?: boolean }>('/api/integrations/ibge/municipios', {
+      params: { uf, nome, limit },
+    });
     return response.data;
   },
 };

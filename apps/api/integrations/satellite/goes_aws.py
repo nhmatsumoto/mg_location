@@ -1,5 +1,8 @@
+import logging
 import os
 from datetime import datetime, timedelta, timezone
+
+logger = logging.getLogger(__name__)
 
 from apps.api.integrations.core.cache import shared_cache
 from apps.api.integrations.core.http_client import http_client
@@ -9,9 +12,11 @@ REGISTRY_URL = 'https://registry.opendata.aws/noaa-goes/'
 
 
 def list_recent(minutes=60):
+    logger.info("integration.goes.recent.request", extra={"minutes": minutes})
     key = f'goes:recent:{minutes}'
     cached, hit = shared_cache.get(key)
     if hit:
+        logger.info("integration.cache.hit", extra={"module": __name__})
         return cached, True
 
     now = datetime.now(timezone.utc)

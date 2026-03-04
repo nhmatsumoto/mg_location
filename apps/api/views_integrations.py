@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime
 
@@ -6,9 +7,11 @@ from django.views.decorators.http import require_GET
 
 from apps.api.integrations.alerts.inmet_cap import alert_feed_registry
 from apps.api.integrations.core.http_client import CircuitOpenError
+from apps.api.integrations.geo.ibge import fetch_municipios
 from apps.api.integrations.satellite.gibs import get_layers_manifest
 from apps.api.integrations.satellite.goes_aws import enabled as goes_enabled
 from apps.api.integrations.satellite.goes_aws import list_recent
+from apps.api.integrations.satellite.landsat import fetch_landsat_catalog
 from apps.api.integrations.satellite.planetary_stac import search_stac
 from apps.api.integrations.transparency.cgu import (
     TransparencyApiKeyMissing,
@@ -18,6 +21,8 @@ from apps.api.integrations.transparency.cgu import (
 from apps.api.integrations.weather.open_meteo import fetch_archive, fetch_forecast
 from apps.api.services.disaster_intelligence import build_disaster_intelligence
 
+logger = logging.getLogger(__name__)
+
 
 def _float_param(request, name, required=True, default=None):
     raw = request.GET.get(name)
@@ -26,8 +31,6 @@ def _float_param(request, name, required=True, default=None):
             raise ValueError(f'Parâmetro obrigatório ausente: {name}')
         return default
     return float(raw)
-
-
 
 
 def _validate_lat_lon(lat, lon):
@@ -53,7 +56,9 @@ def _validate_bbox_tuple(bbox_tuple):
     if min_lon < -180 or max_lon > 180 or min_lat < -90 or max_lat > 90:
         raise ValueError('bbox fora dos limites geográficos válidos')
 
+
 def _integration_error(exc):
+    logger.exception('integration.provider.error', extra={'provider_error_type': type(exc).__name__})
     if isinstance(exc, CircuitOpenError):
         return JsonResponse({'error': 'Fonte temporariamente indisponível (circuit breaker ativo).'}, status=503)
     return JsonResponse({'error': f'Falha ao consultar provedor externo: {type(exc).__name__}'}, status=502)
@@ -61,6 +66,7 @@ def _integration_error(exc):
 
 @require_GET
 def weather_forecast(request):
+    logger.info('integration.weather.forecast.request', extra={'query': dict(request.GET)})
     try:
         lat = _float_param(request, 'lat')
         lon = _float_param(request, 'lon')
@@ -68,7 +74,9 @@ def weather_forecast(request):
         days = int(request.GET.get('days', 3))
         if days < 1 or days > 16:
             raise ValueError('days fora do intervalo [1, 16]')
-    except (ValueError, TypeError):
+    except ValueError as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
+    except TypeError:
         return JsonResponse({'error': 'Parâmetros de entrada inválidos.'}, status=400)
 
     temperature_unit = request.GET.get('temperature_unit', 'fahrenheit')
@@ -89,11 +97,13 @@ def weather_forecast(request):
     except Exception as exc:
         return _integration_error(exc)
     data['cacheHit'] = cache_hit
+    logger.info('integration.weather.forecast.success', extra={'cache_hit': cache_hit})
     return JsonResponse(data)
 
 
 @require_GET
 def weather_archive(request):
+    logger.info('integration.weather.archive.request', extra={'query': dict(request.GET)})
     start = request.GET.get('start')
     end = request.GET.get('end')
     if not start or not end:
@@ -110,45 +120,41 @@ def weather_archive(request):
         lon = _float_param(request, 'lon')
         _validate_lat_lon(lat, lon)
     except (ValueError, TypeError):
-        return JsonResponse(
-            {'error': 'Parâmetros inválidos: lat e lon devem ser numéricos.'},
-            status=400,
-        )
+        return JsonResponse({'error': 'Parâmetros inválidos: lat e lon devem ser numéricos.'}, status=400)
 
     try:
         data, cache_hit = fetch_archive(lat=lat, lon=lon, start=start, end=end)
     except Exception as exc:
         return _integration_error(exc)
     data['cacheHit'] = cache_hit
+    logger.info('integration.weather.archive.success', extra={'cache_hit': cache_hit})
     return JsonResponse(data)
 
 
 @require_GET
 def alerts(request):
+    logger.info('integration.alerts.request', extra={'query': dict(request.GET)})
     bbox = request.GET.get('bbox')
     bbox_tuple = None
     if bbox:
         try:
             bbox_tuple = tuple(float(v) for v in bbox.split(','))
             _validate_bbox_tuple(bbox_tuple)
-        except ValueError as exc:
-            return JsonResponse(
-                {
-                    'error': "Parâmetro 'bbox' inválido. Use o formato minLon,minLat,maxLon,maxLat."
-                },
-                status=400,
-            )
+        except ValueError:
+            return JsonResponse({'error': "Parâmetro 'bbox' inválido. Use o formato minLon,minLat,maxLon,maxLat."}, status=400)
 
     since = request.GET.get('since')
     try:
         items, cache_hit = alert_feed_registry.fetch(bbox=bbox_tuple, since=since)
     except Exception as exc:
         return _integration_error(exc)
+    logger.info('integration.alerts.success', extra={'cache_hit': cache_hit, 'items': len(items)})
     return JsonResponse({'items': items, 'cacheHit': cache_hit})
 
 
 @require_GET
 def transparency_transfers(request):
+    logger.info('integration.transparency.transfers.request', extra={'query': dict(request.GET)})
     try:
         data, cache_hit = fetch_transfers(
             uf=request.GET.get('uf'),
@@ -156,39 +162,37 @@ def transparency_transfers(request):
             start=request.GET.get('start'),
             end=request.GET.get('end'),
         )
-    except TransparencyApiKeyMissing as exc:
-        return JsonResponse(
-            {'error': 'Configuração de chave de API de transparência ausente.'},
-            status=400,
-        )
+    except TransparencyApiKeyMissing:
+        return JsonResponse({'error': 'Configuração de chave de API de transparência ausente.'}, status=400)
     except Exception as exc:
         return _integration_error(exc)
     data['cacheHit'] = cache_hit
+    logger.info('integration.transparency.transfers.success', extra={'cache_hit': cache_hit})
     return JsonResponse(data)
 
 
 @require_GET
 def transparency_search(request):
+    logger.info('integration.transparency.search.request', extra={'query': dict(request.GET)})
     query = request.GET.get('query')
     if not query:
         return JsonResponse({'error': 'Parâmetro obrigatório: query'}, status=400)
 
     try:
         data, cache_hit = search(query, request.GET.get('start'), request.GET.get('end'))
-    except TransparencyApiKeyMissing as exc:
-        return JsonResponse(
-            {'error': 'Configuração de chave de API de transparência ausente.'},
-            status=400,
-        )
+    except TransparencyApiKeyMissing:
+        return JsonResponse({'error': 'Configuração de chave de API de transparência ausente.'}, status=400)
     except Exception as exc:
         return _integration_error(exc)
 
     data['cacheHit'] = cache_hit
+    logger.info('integration.transparency.search.success', extra={'cache_hit': cache_hit})
     return JsonResponse(data)
 
 
 @require_GET
 def transparency_summary(request):
+    logger.info('integration.transparency.summary.request', extra={'query': dict(request.GET)})
     start = request.GET.get('start')
     end = request.GET.get('end')
 
@@ -216,17 +220,30 @@ def transparency_summary(request):
         return _integration_error(exc)
 
     totals = data.get('totals', {}) if isinstance(data, dict) else {}
+    logger.info('integration.transparency.summary.success', extra={'cache_hit': cache_hit})
     return JsonResponse({'source': data.get('source', 'cgu'), 'summary': totals, 'cacheHit': cache_hit})
 
 
 @require_GET
 def satellite_layers(request):
+    logger.info('integration.satellite.layers.request')
     layers, cache_hit = get_layers_manifest()
+    logger.info('integration.satellite.layers.success', extra={'cache_hit': cache_hit, 'items': len(layers)})
     return JsonResponse({'source': 'nasa-gibs', 'items': layers, 'cacheHit': cache_hit})
 
 
 @require_GET
+def satellite_landsat_catalog(request):
+    logger.info('integration.satellite.landsat.request')
+    data, cache_hit = fetch_landsat_catalog()
+    data['cacheHit'] = cache_hit
+    logger.info('integration.satellite.landsat.success', extra={'cache_hit': cache_hit, 'items': len(data.get('collections', []))})
+    return JsonResponse(data)
+
+
+@require_GET
 def satellite_stac_search(request):
+    logger.info('integration.satellite.stac.request', extra={'query': dict(request.GET)})
     if os.getenv('ENABLE_STAC', 'true').lower() != 'true':
         return JsonResponse({'error': 'STAC desabilitado por config (ENABLE_STAC=false).'}, status=403)
 
@@ -244,11 +261,13 @@ def satellite_stac_search(request):
     except Exception as exc:
         return _integration_error(exc)
     data['cacheHit'] = cache_hit
+    logger.info('integration.satellite.stac.success', extra={'cache_hit': cache_hit})
     return JsonResponse(data)
 
 
 @require_GET
 def satellite_goes_recent(request):
+    logger.info('integration.satellite.goes.request', extra={'query': dict(request.GET)})
     if not goes_enabled():
         return JsonResponse({'error': 'GOES desabilitado por config (ENABLE_GOES=false).'}, status=403)
 
@@ -258,11 +277,32 @@ def satellite_goes_recent(request):
     except Exception as exc:
         return _integration_error(exc)
     data['cacheHit'] = cache_hit
+    logger.info('integration.satellite.goes.success', extra={'cache_hit': cache_hit})
+    return JsonResponse(data)
+
+
+@require_GET
+def ibge_municipios(request):
+    logger.info('integration.ibge.municipios.request', extra={'query': dict(request.GET)})
+    uf = request.GET.get('uf')
+    nome = request.GET.get('nome')
+    limit = int(request.GET.get('limit', 20))
+    if limit < 1 or limit > 200:
+        return JsonResponse({'error': 'Parâmetro limit fora do intervalo [1, 200].'}, status=400)
+
+    try:
+        data, cache_hit = fetch_municipios(uf=uf, nome=nome, limit=limit)
+    except Exception as exc:
+        return _integration_error(exc)
+
+    data['cacheHit'] = cache_hit
+    logger.info('integration.ibge.municipios.success', extra={'cache_hit': cache_hit, 'items': len(data.get('items', []))})
     return JsonResponse(data)
 
 
 @require_GET
 def disaster_intelligence(request):
+    logger.info('integration.alerts.intelligence.request', extra={'query': dict(request.GET)})
     city = request.GET.get('city')
     state = request.GET.get('state')
     since = request.GET.get('since')
@@ -279,17 +319,11 @@ def disaster_intelligence(request):
     try:
         lat = _float_param(request, 'lat', required=False, default=None)
         lon = _float_param(request, 'lon', required=False, default=None)
-        payload = build_disaster_intelligence(
-            city=city,
-            state=state,
-            lat=lat,
-            lon=lon,
-            bbox=bbox_tuple,
-            since=since,
-        )
+        payload = build_disaster_intelligence(city=city, state=state, lat=lat, lon=lon, bbox=bbox_tuple, since=since)
     except ValueError as exc:
         return JsonResponse({'error': str(exc)}, status=400)
     except Exception as exc:
         return _integration_error(exc)
 
+    logger.info('integration.alerts.intelligence.success')
     return JsonResponse(payload)

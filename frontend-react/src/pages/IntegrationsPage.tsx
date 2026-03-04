@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Button } from '../components/ui/Button';
 import { TextInput } from '../components/ui/Field';
-import { integrationsApi, type AlertDto, type SatelliteLayerDto, type TransferRecordDto, type WeatherForecastDto } from '../services/integrationsApi';
+import { integrationsApi, type AlertDto, type IbgeMunicipioDto, type LandsatCollectionDto, type SatelliteLayerDto, type TransferRecordDto, type WeatherForecastDto } from '../services/integrationsApi';
 import { useNotifications } from '../context/NotificationsContext';
 
-type Tab = 'weather' | 'alerts' | 'transparency' | 'satellite';
+type Tab = 'weather' | 'alerts' | 'transparency' | 'satellite' | 'catalogs';
 
 export function IntegrationsPage() {
   const [tab, setTab] = useState<Tab>('weather');
@@ -24,6 +24,11 @@ export function IntegrationsPage() {
 
   const [layers, setLayers] = useState<SatelliteLayerDto[]>([]);
   const [activeLayers, setActiveLayers] = useState<Record<string, boolean>>({});
+
+  const [ibgeUf, setIbgeUf] = useState('MG');
+  const [ibgeNome, setIbgeNome] = useState('Juiz');
+  const [municipios, setMunicipios] = useState<IbgeMunicipioDto[]>([]);
+  const [landsat, setLandsat] = useState<LandsatCollectionDto[]>([]);
 
   const loadWeather = async () => {
     try {
@@ -65,6 +70,19 @@ export function IntegrationsPage() {
     }
   };
 
+  const loadCatalogs = async () => {
+    try {
+      const [ibgeData, landsatData] = await Promise.all([
+        integrationsApi.getIbgeMunicipios(ibgeUf, ibgeNome),
+        integrationsApi.getLandsatCatalog(),
+      ]);
+      setMunicipios(ibgeData.items || []);
+      setLandsat(landsatData.collections || []);
+    } catch {
+      pushNotice({ type: 'error', title: 'Integrações abertas', message: 'Falha ao carregar catálogos do IBGE e Landsat.' });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2 flex-wrap">
@@ -72,6 +90,7 @@ export function IntegrationsPage() {
         <Button onClick={() => setTab('alerts')}>Alertas</Button>
         <Button onClick={() => setTab('transparency')}>Transparência</Button>
         <Button onClick={() => setTab('satellite')}>Satélite</Button>
+        <Button onClick={() => setTab('catalogs')}>Catálogos</Button>
       </div>
 
       {tab === 'weather' && (
@@ -135,6 +154,20 @@ export function IntegrationsPage() {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+
+      {tab === 'catalogs' && (
+        <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-4 space-y-3">
+          <h2 className="text-sm font-semibold">IBGE + Landsat</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <TextInput value={ibgeUf} onChange={(e) => setIbgeUf(e.target.value)} placeholder="UF (ex: MG)" />
+            <TextInput value={ibgeNome} onChange={(e) => setIbgeNome(e.target.value)} placeholder="Nome do município" />
+            <Button onClick={() => void loadCatalogs()}>Carregar catálogos</Button>
+          </div>
+          <pre className="text-xs text-slate-300 overflow-auto">Municípios IBGE: {JSON.stringify(municipios.slice(0, 10), null, 2)}</pre>
+          <pre className="text-xs text-slate-300 overflow-auto">Coleções Landsat: {JSON.stringify(landsat, null, 2)}</pre>
         </section>
       )}
     </div>

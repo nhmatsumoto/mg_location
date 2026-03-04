@@ -1,4 +1,7 @@
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 from apps.api.integrations.core.cache import shared_cache
 from apps.api.integrations.core.http_client import http_client
@@ -8,6 +11,7 @@ STAC_URL = os.getenv('PLANETARY_STAC_URL', 'https://planetarycomputer.microsoft.
 
 
 def search_stac(collection, bbox, start, end, limit=20):
+    logger.info("integration.stac.search.request", extra={"collection": collection, "bbox": bbox})
     bbox_parts = [float(v) for v in bbox.split(',')]
     params = {
         'collections': collection,
@@ -18,6 +22,7 @@ def search_stac(collection, bbox, start, end, limit=20):
     key = f"stac:{collection}:{bbox}:{start}:{end}:{limit}"
     cached, hit = shared_cache.get(key)
     if hit:
+        logger.info("integration.cache.hit", extra={"module": __name__})
         return cached, True
 
     payload = http_client.get_json(STAC_URL, params=params, source='planetary-stac')

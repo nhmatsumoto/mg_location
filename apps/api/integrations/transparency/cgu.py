@@ -1,5 +1,8 @@
+import logging
 import os
 from urllib.parse import urlencode
+
+logger = logging.getLogger(__name__)
 
 from apps.api.integrations.core.cache import shared_cache
 from apps.api.integrations.core.http_client import http_client
@@ -30,6 +33,7 @@ def _compact_params(data):
 
 
 def fetch_transfers(uf=None, municipio=None, start=None, end=None):
+    logger.info("integration.cgu.transfers.request", extra={"uf": uf, "municipio": municipio})
     params = _compact_params({
         'uf': uf,
         'municipio': municipio,
@@ -40,16 +44,19 @@ def fetch_transfers(uf=None, municipio=None, start=None, end=None):
     key = f"transfers:{urlencode(sorted(params.items()))}"
     cached, hit = shared_cache.get(key)
     if hit:
+        logger.info("integration.cache.hit", extra={"module": __name__})
         return cached, True
 
     payload = http_client.get_json(_build_url(TRANSFERS_PATH), params=params, headers=_headers(), source='cgu-transfers')
     items = payload if isinstance(payload, list) else payload.get('data', []) if isinstance(payload, dict) else []
     normalized = normalize_transparency(items)
     shared_cache.set(key, normalized, ttl=21600)
+    logger.info("integration.cgu.success", extra={"items": len(normalized.get("items", [])) if isinstance(normalized, dict) else None})
     return normalized, False
 
 
 def search(query, start=None, end=None):
+    logger.info("integration.cgu.search.request", extra={"query": query})
     params = _compact_params({
         'termo': query,
         'dataInicio': start,
@@ -59,6 +66,7 @@ def search(query, start=None, end=None):
     key = f"transparency-search:{urlencode(sorted(params.items()))}"
     cached, hit = shared_cache.get(key)
     if hit:
+        logger.info("integration.cache.hit", extra={"module": __name__})
         return cached, True
 
     payload = http_client.get_json(_build_url(SEARCH_PATH), params=params, headers=_headers(), source='cgu-search')
@@ -71,4 +79,5 @@ def search(query, start=None, end=None):
 
     normalized = normalize_transparency(items)
     shared_cache.set(key, normalized, ttl=21600)
+    logger.info("integration.cgu.success", extra={"items": len(normalized.get("items", [])) if isinstance(normalized, dict) else None})
     return normalized, False

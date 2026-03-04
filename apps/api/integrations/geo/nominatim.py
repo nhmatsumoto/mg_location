@@ -1,14 +1,19 @@
+import logging
 from apps.api.integrations.core.cache import shared_cache
 from apps.api.integrations.core.http_client import http_client
+
+logger = logging.getLogger(__name__)
 
 NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
 
 
 def geocode_city(city, state=None, country='Brasil'):
+    logger.info("integration.nominatim.request", extra={"city": city, "state": state})
     query = ', '.join(part for part in [city, state, country] if part)
     key = f'geo:nominatim:{query.lower()}'
     cached, hit = shared_cache.get(key)
     if hit:
+        logger.info("integration.cache.hit", extra={"module": __name__})
         return cached, True
 
     payload = http_client.get_json(

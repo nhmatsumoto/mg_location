@@ -1,4 +1,7 @@
+import logging
 from urllib.parse import urlencode
+
+logger = logging.getLogger(__name__)
 
 from apps.api.integrations.core.cache import shared_cache
 from apps.api.integrations.core.http_client import http_client
@@ -21,6 +24,7 @@ def fetch_forecast(
     precipitation_unit='inch',
     timezone='auto',
 ):
+    logger.info("integration.open_meteo.forecast.request", extra={"lat": lat, "lon": lon, "days": days})
     # Payload alinhado ao contrato recomendado da Open-Meteo para operação de campo.
     params = {
         'latitude': lat,
@@ -37,15 +41,18 @@ def fetch_forecast(
     key = _cache_key('weather-forecast', params)
     cached, hit = shared_cache.get(key)
     if hit:
+        logger.info("integration.cache.hit", extra={"module": __name__})
         return cached, True
 
     payload = http_client.get_json(f'{BASE_URL}/forecast', params=params, source='open-meteo-forecast')
     normalized = normalize_weather(payload, lat=float(lat), lon=float(lon))
     shared_cache.set(key, normalized, ttl=900)
+    logger.info("integration.open_meteo.forecast.success")
     return normalized, False
 
 
 def fetch_archive(lat, lon, start, end):
+    logger.info("integration.open_meteo.archive.request", extra={"lat": lat, "lon": lon, "start": start, "end": end})
     params = {
         'latitude': lat,
         'longitude': lon,
@@ -58,9 +65,11 @@ def fetch_archive(lat, lon, start, end):
     key = _cache_key('weather-archive', params)
     cached, hit = shared_cache.get(key)
     if hit:
+        logger.info("integration.cache.hit", extra={"module": __name__})
         return cached, True
 
     payload = http_client.get_json(ARCHIVE_URL, params=params, source='open-meteo-archive')
     normalized = normalize_weather(payload, lat=float(lat), lon=float(lon))
     shared_cache.set(key, normalized, ttl=1800)
+    logger.info("integration.open_meteo.archive.success")
     return normalized, False
