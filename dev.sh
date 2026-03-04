@@ -13,16 +13,21 @@ case "$CMD" in
   logs)
     docker compose logs -f --tail=200
     ;;
+  logs-ui)
+    echo "Dozzle disponível em http://localhost:${DOZZLE_PORT:-9999}"
+    docker compose up -d dozzle
+    ;;
   seed)
     python manage.py seed_rain_flood_map
     python manage.py seed_incident
+    python manage.py seed_auth
     ;;
   reset)
     docker compose down -v --remove-orphans
     docker compose up -d --build
     ;;
   *)
-    echo "Uso: ./dev.sh {up|down|logs|seed|reset}"
+    echo "Uso: ./dev.sh {up|down|logs|logs-ui|seed|reset}"
     exit 1
     ;;
 esac

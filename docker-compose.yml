@@ -156,6 +156,27 @@ services:
     networks:
       - mg-location-network
 
+
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: sos-location-logs-dozzle
+    restart: unless-stopped
+    environment:
+      DOZZLE_LEVEL: ${DOZZLE_LEVEL:-info}
+      DOZZLE_TAILSIZE: ${DOZZLE_TAILSIZE:-300}
+      DOZZLE_NO_ANALYTICS: "true"
+    ports:
+      - "${DOZZLE_PORT:-9999}:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - mg-location-network
+
 volumes:
   postgres_data:
 

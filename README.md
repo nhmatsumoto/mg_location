@@ -12,6 +12,7 @@ Serviços esperados:
 - Frontend: http://localhost:8088
 - Backend/API: http://localhost:8001
 - Keycloak: http://localhost:8080
+- Logs (Dozzle): http://localhost:9999
 
 ### Opção 2: Execução local sem Docker
 ```bash
@@ -54,9 +55,14 @@ Variáveis principais:
 ./dev.sh up
 ./dev.sh down
 ./dev.sh logs
+./dev.sh logs-ui
 ./dev.sh seed
 ./dev.sh reset
 ```
+
+## Observabilidade de logs (Dozzle)
+- Abra `http://localhost:9999` para visualizar logs em tempo real dos containers.
+- Filtros recomendados: `mg-location-api-backend`, `mg-location-web-frontend`, `mg-location-sso-keycloak`.
 
 ## Troubleshooting
 - **Tudo em zero no Command Center**: rode `python manage.py seed_rain_flood_map`.
@@ -69,3 +75,16 @@ Variáveis principais:
 - `docs/PLAN_IMPLEMENTATION.md`
 - `docs/DECISIONS.md`
 - `agents/README.md`
+
+
+## Usuários seed de acesso
+- Django API:
+  - `admin` / `admin123456`
+  - `governo` / `governo123456`
+  - `voluntario` / `voluntario123456`
+  - `usuario` / `usuario123456`
+- Keycloak realm `sos-location`:
+  - `admin1` / `admin123`
+  - `governo1` / `governo123`
+  - `volunteer1` / `volunteer123`
+  - `publico1` / `publico123`

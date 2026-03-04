@@ -20,10 +20,24 @@
 | CORS por env | Inconsistente (`CORS_ALLOWED_ORIGINS` apenas) | padronização faltando | adicionado suporte a `API_CORS_ORIGINS` |
 
 ## Usuários locais
-- Django local: `admin` / `admin123456`.
-- Keycloak (quando disponível via compose): admin `admin/admin`; realm/client em `infra/keycloak/realm-export.json`.
+- Perfis locais (Django):
+  - `admin` / `admin123456`
+  - `governo` / `governo123456`
+  - `voluntario` / `voluntario123456`
+  - `usuario` / `usuario123456`
+- Perfis locais (Keycloak):
+  - `admin1` / `admin123`
+  - `governo1` / `governo123`
+  - `volunteer1` / `volunteer123`
+  - `publico1` / `publico123`
 
 ## Troubleshooting
 1. Se tudo aparecer zero: rode `python manage.py seed_rain_flood_map`.
 2. Se erro CORS: configure `API_CORS_ORIGINS=http://localhost:8088`.
 3. Se front não alcança API: confirme proxy Vite (`VITE_DEV_API_TARGET=http://localhost:8001`).
+
+
+## Visualização de logs com Dozzle
+- Serviço adicionado no `docker-compose.yml` como `dozzle`.
+- URL local esperada: `http://localhost:9999` (configurável via `DOZZLE_PORT`).
+- Pré-requisito: Docker Engine com socket disponível em `/var/run/docker.sock`.
