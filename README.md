@@ -1,114 +1,160 @@
-# MG Location: Plataforma Tática de Resposta a Desastres v1.1
+# MG Location: Tactical Disaster Response Platform v1.1
 
 ![MG Location Banner](https://img.shields.io/badge/MG--Location-Resilience--v1.1-blueviolet?style=for-the-badge)
 ![Status Build](https://img.shields.io/badge/Build-Passing-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-**MG Location** é um sistema de suporte à decisão e coordenação operacional para cenários de desastres naturais (enchentes, deslizamentos, crises humanitárias). O objetivo principal é garantir **100% de disponibilidade operacional**, mesmo sob falha catastrófica de infraestrutura de rede.
+**English** | [日本語](./README.ja.md) | [Português](./README.pt.md)
+
+**MG Location** is a decision support and operational coordination system for natural disaster scenarios (floods, landslides, humanitarian crises). The primary goal is to ensure **100% operational availability**, even under catastrophic network infrastructure failure.
 
 ---
 
-## 🎯 Nossa Missão
-Transformar dados complexos em ações táticas imediatas. O MG Location não é apenas um dashboard, é uma ferramenta de campo projetada para funcionar onde a internet não chega.
+## 🎯 Our Mission
+To transform complex data into immediate tactical actions. MG Location is not just a dashboard; it is a field tool designed to work where the internet does not reach.
 
 ---
 
-## 🏗️ Arquitetura de Resiliência (v1.1)
+## 🏗️ Resilience Architecture (v1.1)
 
-A versão 1.1 introduziu o redesenho **Resilience-First**, focado em quatro pilares fundamentais:
+Version 1.1 introduced the **Resilience-First** redesign, focused on four fundamental pillars:
 
-1. **Local-first (Offline Outbox)**: O app PWA funciona sem internet usando IndexedDB. Ações são enfileiradas e sincronizadas automaticamente quando houver conectividade.
-2. **Protocolo Binário (MessagePack + Zstd)**: Substituímos o JSON pesado por MessagePack comprimido com Zstandard, reduzindo o tráfego de dados em até 80% — vital para links via rádio ou satélite.
-3. **Event-Souring (DDD)**: Todas as alterações no sistema são tratadas como eventos imutáveis. Isso permite reconciliação automática de conflitos (CRDT-lite) e auditoria completa.
-4. **Edge Hubs (Decentralized Command)**: Suporte a servidores locais (como Raspberry Pi) que servem como proxies táticos em áreas isoladas.
+```mermaid
+graph TD
+    subgraph "Field / Offline"
+        UI[PWA Frontend] --> DB[(IndexedDB)]
+        DB --> OB[Outbox Queue]
+    end
+
+    subgraph "Tactical Proxy"
+        EH[Edge Hub / RPi] 
+        EH -->|Local Sync| OB
+    end
+
+    subgraph "Global Infrastructure"
+        API[Django REST API]
+        MP[MessagePack + Zstd]
+        EV[Event Store / DDD]
+        
+        API --> EV
+    end
+
+    OB -.->|Binary Sync| MP
+    MP -.-> API
+    EH -.->|Backhaul| API
+```
+
+1. **Local-first (Offline Outbox)**: The PWA app works without internet using IndexedDB. Actions are queued and automatically synchronized when connectivity is restored.
+2. **Binary Protocol (MessagePack + Zstd)**: We replaced heavy JSON with MessagePack compressed with Zstandard, reducing data traffic by up to 80% — vital for radio or satellite links.
+3. **Event-Souring (DDD)**: All system changes are treated as immutable events. This allows for automatic conflict reconciliation (CRDT-lite) and a full audit trail.
+4. **Edge Hubs (Decentralized Command)**: Support for local servers (like Raspberry Pi) that serve as tactical proxies in isolated areas.
 
 ---
 
-## 🚀 Como Funciona
+## 🚀 How It Works
 
-### 1. Centro de Comando
-Visualização em tempo real de alertas de chuva, áreas de risco e status de equipes de resgate. Integra inteligência do **GDACS**, **USGS** e **INMET**.
+### 1. Command Center
+Real-time visualization of rain alerts, risk areas, and rescue team status. Integrates intelligence from **GDACS**, **USGS**, and **INMET**.
 
-### 2. Operações de Busca e Resgate
-Módulo tático para atribuição de tarefas, demarcação de áreas de busca e acompanhamento de equipes em campo.
+### 2. Search & Rescue Operations
+Tactical module for task assignment, search area demarcation, and tracking teams in the field.
 
-### 3. Logística e Doações
-Gestão transparente de recursos, campanhas de arrecadação e controle de despesas operacionais.
+### 3. Logistics & Donations
+Transparent resource management, fundraising campaigns, and operational expense control.
 
-### 4. Análise Temporal (Scatter Plot)
-Um gráfico tático de dispersão que permite analisar a severidade dos eventos versus o tempo, integrando eventos locais e globais em uma única visão estratégica.
-
----
-
-## 🛠️ Stack Tecnológica
-
-- **Frontend**: React 19, Vite, Tailwind CSS (Design tático moderno).
-- **Backend**: Django 5.x, Django REST Framework (Core robusto).
-- **Dados**: Postgres + Redis (Central) | IndexedDB (Local/App).
-- **Protocolos**: MessagePack, Zstandard, RESTful Events.
-- **SSO/Auth**: Keycloak (Gerenciamento de identidades nível Enterprise).
+### 4. Temporal Analysis (Scatter Plot)
+A tactical scatter plot that allows analyzing the severity of events versus time, integrating local and global events into a single strategic view.
 
 ---
 
-## 💻 Iniciando o Desenvolvimento
+## 🛠️ Technology Stack
 
-### Pré-requisitos
+- **Frontend**: React 19, Vite, Tailwind CSS (Modern tactical design).
+- **Backend**: Django 5.x, Django REST Framework (Robust core).
+- **Data**: Postgres + Redis (Central) | IndexedDB (Local/App).
+- **Protocols**: MessagePack, Zstandard, RESTful Events.
+- **SSO/Auth**: Keycloak (Enterprise-level identity management).
+
+---
+
+## 📉 Operation Flow
+
+```mermaid
+sequenceDiagram
+    participant User as Field Officer
+    participant App as PWA (Offline)
+    participant Hub as Edge Hub
+    participant Cloud as Central Cloud
+    
+    User->>App: Create Rescue Task
+    App->>App: Store in IndexedDB (Outbox)
+    Note over App: No Internet
+    App->>Hub: Local Discovery (WiFi/BLE)
+    App->>Hub: Push Binary Events
+    Hub->>Cloud: Forward Sync (when backhaul active)
+    Cloud->>Cloud: Replicate to Event Store
+    Cloud-->>Hub: Ack
+    Hub-->>App: Sync Complete
+```
+
+---
+
+## 💻 Getting Started
+
+### Prerequisites
 - Docker & Docker Compose
-- Node.js / Bun (opcional para local)
-- Python 3.11+ (opcional para local)
+- Node.js / Bun (optional for local)
+- Python 3.11+ (optional for local)
 
-### Rápido (Docker)
+### Quick Start (Docker)
 ```bash
 ./dev.sh up
 ```
 - **App**: `http://localhost:8088`
 - **API**: `http://localhost:8001`
 
-### Semente de Dados (Importante)
-Para ver o sistema populado com dados de simulação de enchentes em Ubá (MG):
+### Seed Data (Important)
+To see the system populated with flood simulation data in Ubá (MG, Brazil):
 ```bash
 ./dev.sh seed
 ```
 
 ---
 
-## 🤝 Convite para Contribuição
+## 🤝 Invite for Contribution
 
-Este é um projeto **Open Source** com impacto social real. Precisamos de ajuda em várias frentes:
+This is an **Open Source** project with real social impact. We need help in several areas:
 
-- **Desenvolvedores**: Otimização de algoritmos de sincronização, novos módulos de IA.
-- **Especialistas em UX**: Melhoria da interface para uso sob stress e alta luminosidade.
-- **Especialistas em GIS**: Integração de mais modelos de terreno e camadas de satélite.
-- **Analistas de Dados**: Criação de modelos preditivos de risco.
+- **Developers**: Optimization of synchronization algorithms, new AI modules.
+- **UX Specialists**: Improving the interface for use under stress and high brightness.
+- **GIS Specialists**: Integration of more terrain models and satellite layers.
+- **Data Analysts**: Creation of predictive risk models.
 
-### Como ingressar?
-1. Leia nosso [Guia de Onboarding](docs/PROJECT_CONSOLIDATION_MG_LOCATION.md).
-2. Explore os [Gaps de Implementação](docs/DEEP_IMPLEMENTATION_GAP_PLAN.md).
-3. Abra uma *Issue* ou submeta um *Pull Request* com suas ideias.
+### How to join?
+1. Read our [Onboarding Guide](docs/PROJECT_CONSOLIDATION_MG_LOCATION.md).
+2. Explore the [Implementation Gaps](docs/DEEP_IMPLEMENTATION_GAP_PLAN.md).
+3. Open an *Issue* or submit a *Pull Request* with your ideas.
 
 ---
 
-## 📂 Organização do Projeto
+## 📂 Project Structure
 
 ```bash
-├── apps/               # Aplicações Django (Backend)
-├── frontend-react/     # Aplicação React (Frontend)
-├── agents/             # Agentes de IA e Automação
-├── docs/               # Documentação profunda e planos
-├── dev.sh              # Canivete suíço tático para DX
-└── Dockerfile.*        # Definições de ambiente
+├── apps/               # Django Applications (Backend)
+├── frontend-react/     # React Application (Frontend)
+├── agents/             # AI Agents & Automation
+├── docs/               # Deep documentation & plans
+├── dev.sh              # Tactical pocket knife for DX
+└── Dockerfile.*        # Environment definitions
 ```
 
 ---
 
-## 📑 Documentação Detalhada
-- 📖 [Arquitetura Atual](docs/ARCHITECTURE_CURRENT.md)
-- ⚖️ [Políticas de Transparência](docs/PRIVACY_TRANSPARENCY_POLICY.md)
-- 🧪 [Plano de Testes](docs/SECURITY_TEST_CHECKLIST.md)
+## 📑 Detailed Documentation
+- 📖 [Current Architecture](docs/ARCHITECTURE_CURRENT.md)
+- ⚖️ [Transparency Policies](docs/PRIVACY_TRANSPARENCY_POLICY.md)
+- 🧪 [Test Plan](docs/SECURITY_TEST_CHECKLIST.md)
 
 ---
 
-> [!TIP]
-> **Interessado em rodar no campo?** Consulte nossa documentação sobre **Edge Hubs** para saber como configurar um ponto de sincronização local via rádio ou rede mesh.
-
-**MG Location © 2026** - Desenvolvido para salvar vidas com tecnologia resiliente.
+**MG Location © 2026** - Developed to save lives with resilient technology.

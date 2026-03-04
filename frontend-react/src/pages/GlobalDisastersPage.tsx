@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CircleMarker, MapContainer, Polygon, Polyline, Popup, TileLayer, useMapEvents } from 'react-leaflet';
+import { format } from 'date-fns';
+import { CircleMarker, MapContainer, Polygon, Polyline, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import { Modal } from '../components/ui/Modal';
 import { createEvent, getEvents } from '../services/disastersApi';
 import { missingPersonsApi } from '../services/missingPersonsApi';
@@ -51,11 +52,21 @@ function MapInteractions({
   return null;
 }
 
+function MapRecenter({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, map.getZoom());
+  }, [center, map]);
+  return null;
+}
+
 export function GlobalDisastersPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [domainEvents, setDomainEvents] = useState<DomainEvent[]>([]);
   const [outbox, setOutbox] = useState<OutboxCommand[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<ScatterPoint | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([-14.2, -51.9]);
 
   const [country, setCountry] = useState('');
   const [minSeverity, setMinSeverity] = useState(1);
@@ -127,7 +138,8 @@ export function GlobalDisastersPage() {
         label: e.title,
         type: e.event_type,
         timestamp: e.start_at,
-        severity: e.severity
+        severity: e.severity,
+        metadata: e
       });
     });
 
@@ -142,7 +154,8 @@ export function GlobalDisastersPage() {
         label: `${e.aggregate_type}: ${e.event_type}`,
         type: e.aggregate_type,
         timestamp: e.timestamp,
-        severity: severity
+        severity: severity,
+        metadata: e
       });
     });
 
@@ -156,7 +169,8 @@ export function GlobalDisastersPage() {
         type: 'Outbox',
         timestamp: new Date(o.timestamp).toISOString(),
         severity: o.priority || 3,
-        isOffline: true
+        isOffline: true,
+        metadata: o
       });
     });
 
@@ -254,8 +268,9 @@ export function GlobalDisastersPage() {
         <div className="rounded-xl border border-slate-700/60 bg-slate-950/60 p-3">
           <h3 className="mb-2 text-sm font-semibold text-slate-100">Mapa tático integrado</h3>
           <div className="relative h-[420px] overflow-hidden rounded-lg border border-slate-800">
-            <MapContainer center={[-14.2, -51.9]} zoom={4} style={{ height: '100%', width: '100%', cursor: tool === 'inspect' ? 'grab' : 'crosshair' }}>
+            <MapContainer center={mapCenter} zoom={4} style={{ height: '100%', width: '100%', cursor: tool === 'inspect' ? 'grab' : 'crosshair' }}>
               <TileLayer attribution='&copy; OpenStreetMap contributors' url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
+              <MapRecenter center={mapCenter} />
               <MapInteractions tool={tool} onPickPoint={pickCoordinates} onHover={(lat, lon) => setHover({ lat, lon })} areaDraft={areaDraft} setAreaDraft={setAreaDraft} />
               {hover && (
                 <CircleMarker center={[hover.lat, hover.lon]} radius={4} pathOptions={{ color: '#22d3ee', fillOpacity: 0.9 }}>
@@ -287,14 +302,72 @@ export function GlobalDisastersPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-700/60 bg-slate-950/60 p-3">
-          <h3 className="mb-2 text-sm font-semibold text-slate-100">Análise Temporal de Eventos (Scatter)</h3>
-          <div className="relative h-[420px] w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
+        <div className="rounded-xl border border-slate-700/60 bg-slate-950/60 p-3 relative h-[420px]">
+          <h3 className="mb-2 text-sm font-semibold text-slate-100 flex items-center justify-between">
+            Análise Temporal de Eventos (Scatter)
+            {selectedPoint && (
+              <button 
+                onClick={() => setSelectedPoint(null)}
+                className="text-[10px] text-cyan-400 hover:underline"
+              >
+                Limpar seleção
+              </button>
+            )}
+          </h3>
+          <div className="relative h-full w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
              <EventScatterPlot 
                points={scatterPoints} 
                hoveredId={hoveredId}
                onHover={(p) => setHoveredId(p?.id || null)}
+               onClick={(p) => {
+                 setSelectedPoint(p);
+                 if (p.metadata?.lat && p.metadata?.lon) {
+                   setMapCenter([p.metadata.lat, p.metadata.lon]);
+                 }
+               }}
              />
+
+             {/* Semantic Detail Sidebar (Overlay) */}
+             {selectedPoint && (
+               <div className="absolute top-0 right-0 w-64 h-full bg-slate-900/95 border-l border-cyan-500/30 backdrop-blur-md z-40 p-4 shadow-2xl animate-in slide-in-from-right duration-300 overflow-y-auto">
+                 <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-cyan-400 px-1 border border-cyan-400/30 rounded uppercase bg-cyan-950/30">{selectedPoint.type}</span>
+                      <button onClick={() => setSelectedPoint(null)} className="text-slate-400 hover:text-white">✕</button>
+                    </div>
+                    
+                    <h4 className="font-bold text-slate-100 leading-tight">{selectedPoint.label}</h4>
+                    
+                    <div className="space-y-2 text-[11px]">
+                       <div className="bg-slate-800/50 p-2 rounded">
+                          <div className="text-slate-500 uppercase text-[9px]">Severidade</div>
+                          <div className="text-slate-200 font-bold">{selectedPoint.severity} / 5</div>
+                       </div>
+                       
+                       <div className="bg-slate-800/50 p-2 rounded">
+                          <div className="text-slate-500 uppercase text-[9px]">Data / Hora</div>
+                          <div className="text-slate-200">{format(new Date(selectedPoint.timestamp), 'dd/MM/yyyy HH:mm:ss')}</div>
+                       </div>
+
+                       {selectedPoint.metadata && (
+                         <div className="bg-slate-800/50 p-2 rounded">
+                            <div className="text-slate-500 uppercase text-[9px]">Detalhes Táticos</div>
+                            <pre className="text-[9px] text-cyan-200 mt-1 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                              {JSON.stringify(selectedPoint.metadata, null, 2)}
+                            </pre>
+                         </div>
+                       )}
+
+                       {selectedPoint.isOffline && (
+                         <div className="bg-amber-900/20 border border-amber-500/30 p-2 rounded">
+                            <div className="text-amber-400 font-bold uppercase text-[9px]">Status: Offline</div>
+                            <p className="text-amber-500/70 text-[10px]">Aguardando sincronização com Edge Hub ou Nuvem.</p>
+                         </div>
+                       )}
+                    </div>
+                 </div>
+               </div>
+             )}
           </div>
         </div>
       </div>
