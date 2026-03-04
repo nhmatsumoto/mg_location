@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from apps.api.models import AttentionAlert, MapAnnotation
+from apps.api.models import AttentionAlert, MapAnnotation, MissingPerson, RescueGroup, SupplyLogistics
 
 
 SEED_RISK_AREAS = [
@@ -98,6 +98,45 @@ SEED_ALERTS = [
     },
 ]
 
+SEED_MISSING_PERSONS = [
+    {
+        'external_id': 'MP-LOCAL-001',
+        'person_name': 'Carla Mendes',
+        'age': 29,
+        'city': 'Belo Horizonte',
+        'last_seen_location': 'Avenida Tereza Cristina',
+        'lat': -19.9375,
+        'lng': -43.9598,
+        'physical_description': 'Jaqueta azul e mochila cinza.',
+        'additional_info': 'Último contato às 06:15 durante chuva intensa.',
+        'contact_name': 'Paulo Mendes',
+        'contact_phone': '+55 31 98888-1010',
+    },
+]
+
+SEED_RESCUE_GROUPS = [
+    {
+        'external_id': 'RG-LOCAL-001',
+        'name': 'Equipe Alfa',
+        'members': 8,
+        'specialty': 'Busca em área inundada',
+        'status': 'em_campo',
+        'lat': -19.9229,
+        'lng': -43.9432,
+    },
+]
+
+SEED_SUPPLY_LOGISTICS = [
+    {
+        'external_id': 'SL-LOCAL-001',
+        'item': 'Kits de primeiros socorros',
+        'quantity': 120,
+        'status': 'em_transporte',
+        'origin': 'Centro Logístico Pampulha',
+        'destination': 'Abrigo Municipal - Pampulha',
+    },
+]
+
 
 class Command(BaseCommand):
     help = 'Popula o mapa operacional com áreas de risco/enchente, pontos de apoio e alertas de chuva.'
@@ -106,6 +145,9 @@ class Command(BaseCommand):
         risk_created = 0
         support_created = 0
         alerts_created = 0
+        missing_created = 0
+        groups_created = 0
+        supply_created = 0
 
         for item in SEED_RISK_AREAS:
             _, created = MapAnnotation.objects.update_or_create(
@@ -154,8 +196,38 @@ class Command(BaseCommand):
             if created:
                 alerts_created += 1
 
+        for item in SEED_MISSING_PERSONS:
+            _, created = MissingPerson.objects.update_or_create(
+                external_id=item['external_id'],
+                defaults=item,
+            )
+            if created:
+                missing_created += 1
+
+        for item in SEED_RESCUE_GROUPS:
+            _, created = RescueGroup.objects.update_or_create(
+                external_id=item['external_id'],
+                defaults=item,
+            )
+            if created:
+                groups_created += 1
+
+        for item in SEED_SUPPLY_LOGISTICS:
+            _, created = SupplyLogistics.objects.update_or_create(
+                external_id=item['external_id'],
+                defaults=item,
+            )
+            if created:
+                supply_created += 1
+
         self.stdout.write(
             self.style.SUCCESS(
-                f'Seed concluído: riskAreas(created={risk_created}) supportPoints(created={support_created}) alerts(created={alerts_created})'
+                'Seed concluído: '
+                f'riskAreas(created={risk_created}) '
+                f'supportPoints(created={support_created}) '
+                f'alerts(created={alerts_created}) '
+                f'missing(created={missing_created}) '
+                f'rescueGroups(created={groups_created}) '
+                f'supply(created={supply_created})'
             )
         )

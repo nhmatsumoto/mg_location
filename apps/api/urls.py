@@ -53,6 +53,7 @@ from apps.api.views_integrations import (
     ibge_municipios,
     weather_archive,
     weather_forecast,
+    weather_nowcast,
 )
 from apps.api.views_modules import (
     incident_detail,
@@ -133,6 +134,7 @@ urlpatterns = [
     path('risk/assessment', risk_assessment, name='risk_assessment'),
     path('risk/pipeline-sync', risk_pipeline_sync, name='risk_pipeline_sync'),
     path('weather/forecast', weather_forecast, name='weather_forecast'),
+    path('weather', weather_nowcast, name='weather_nowcast'),
     path('integrations/weather/forecast', weather_forecast, name='integrations_weather_forecast'),
     path('weather/archive', weather_archive, name='weather_archive'),
     path('integrations/weather/archive', weather_archive, name='integrations_weather_history'),

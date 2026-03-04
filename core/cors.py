@@ -14,7 +14,8 @@ class SimpleCorsMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
         self.allowed_origins = set(
-            getattr(
+            config('API_CORS_ORIGINS', default='', cast=Csv())
+            or getattr(
                 settings,
                 'CORS_ALLOWED_ORIGINS',
                 config(

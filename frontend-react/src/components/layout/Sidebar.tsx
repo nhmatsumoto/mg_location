@@ -2,19 +2,19 @@ import { Activity, AlertTriangle, BarChart3, FileWarning, Layers3, LifeBuoy, Rad
 import { Link, useLocation } from 'react-router-dom';
 
 const navItems = [
-  { to: '/command-center', label: 'Centro de Comando', icon: Radar },
-  { to: '/hotspots', label: 'Hotspots', icon: AlertTriangle },
-  { to: '/missing-persons', label: 'Desaparecidos', icon: Users },
-  { to: '/reports', label: 'Relatos', icon: FileWarning },
-  { to: '/searched-areas', label: 'Áreas Buscadas', icon: Search },
-  { to: '/rescue-support', label: 'Suporte ao Resgate', icon: LifeBuoy },
-  { to: '/incidents', label: 'Ocorrências / Evidências', icon: Activity },
-  { to: '/simulations', label: 'Simulações', icon: BarChart3 },
-  { to: '/data-hub', label: 'Data Hub', icon: Layers3 },
-  { to: '/integrations', label: 'Integrações', icon: PlugZap },
-  { to: '/global-disasters', label: 'Eventos Globais', icon: Globe },
-  { to: '/public', label: 'Transparência Pública', icon: Globe },
-  { to: '/settings', label: 'Configurações', icon: Settings },
+  { to: '/app/command-center', label: 'Centro de Comando', icon: Radar },
+  { to: '/app/hotspots', label: 'Hotspots', icon: AlertTriangle },
+  { to: '/app/missing-persons', label: 'Desaparecidos', icon: Users },
+  { to: '/app/reports', label: 'Relatos', icon: FileWarning },
+  { to: '/app/searched-areas', label: 'Áreas Buscadas', icon: Search },
+  { to: '/app/rescue-support', label: 'Suporte ao Resgate', icon: LifeBuoy },
+  { to: '/app/incidents', label: 'Ocorrências / Evidências', icon: Activity },
+  { to: '/app/simulations', label: 'Simulações', icon: BarChart3 },
+  { to: '/app/data-hub', label: 'Data Hub', icon: Layers3 },
+  { to: '/app/integrations', label: 'Integrações', icon: PlugZap },
+  { to: '/app/global-disasters', label: 'Eventos Globais', icon: Globe },
+  { to: '/public/transparency', label: 'Transparência Pública', icon: Globe },
+  { to: '/app/settings', label: 'Configurações', icon: Settings },
 ];
 
 export function Sidebar() {
@@ -23,7 +23,7 @@ export function Sidebar() {
   return (
     <aside className="rounded-2xl border border-slate-700/60 bg-slate-900/80 p-4 shadow-2xl shadow-black/25">
       <div className="mb-4 border-b border-slate-700/70 pb-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-300">MG Location</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-300">SOS Location</p>
         <h1 className="text-lg font-bold text-slate-100">War Room</h1>
       </div>
 
