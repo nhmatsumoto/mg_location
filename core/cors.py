@@ -97,11 +97,15 @@ class SimpleCorsMiddleware:
 
         response['Access-Control-Allow-Origin'] = origin
         vary = response.get('Vary')
-        response['Vary'] = f'{vary}, Origin' if vary else 'Origin'
-        response['Access-Control-Allow-Methods'] = self.allowed_methods
-        requested_headers = request.headers.get('Access-Control-Request-Headers', '').strip()
-        response['Access-Control-Allow-Headers'] = requested_headers or self.allowed_headers
-        response['Access-Control-Max-Age'] = str(self.max_age)
+        if 'Origin' not in (vary or ''):
+            response['Vary'] = f'{vary}, Origin' if vary else 'Origin'
+
+        if request.method == 'OPTIONS':
+            response['Access-Control-Allow-Methods'] = self.allowed_methods
+            requested_headers = request.headers.get('Access-Control-Request-Headers', '').strip()
+            response['Access-Control-Allow-Headers'] = requested_headers or self.allowed_headers
+            response['Access-Control-Max-Age'] = str(self.max_age)
+
         if self.allow_credentials:
             response['Access-Control-Allow-Credentials'] = 'true'
 

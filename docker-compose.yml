@@ -94,6 +94,7 @@ services:
       KEYCLOAK_ROLE_VIEWER: ${KEYCLOAK_ROLE_VIEWER:-mg_viewer}
       SEED_ON_STARTUP: ${SEED_ON_STARTUP:-true}
       RUN_INTEGRATIONS_ON_STARTUP: ${RUN_INTEGRATIONS_ON_STARTUP:-true}
+      SECURE_SSL_REDIRECT: "False"
     depends_on:
       postgres:
         condition: service_healthy
