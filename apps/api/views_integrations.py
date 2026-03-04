@@ -117,7 +117,11 @@ def weather_nowcast(request):
         if hours < 1 or hours > 24:
             raise ValueError('hours fora do intervalo [1, 24]')
     except ValueError as exc:
-        return JsonResponse({'error': str(exc)}, status=400)
+        logger.warning(
+            'integration.weather.nowcast.bad_request',
+            extra={'error': str(exc), 'query': dict(request.GET)},
+        )
+        return JsonResponse({'error': 'Invalid parameters.'}, status=400)
 
     try:
         data, cache_hit = fetch_forecast(
