@@ -41,7 +41,7 @@ def fetch_forecast(
     key = _cache_key('weather-forecast', params)
     cached, hit = shared_cache.get(key)
     if hit:
-        logger.info("integration.cache.hit", extra={"module": __name__})
+        logger.info("integration.cache.hit", extra={"provider_module": __name__})
         return cached, True
 
     payload = http_client.get_json(f'{BASE_URL}/forecast', params=params, source='open-meteo-forecast')
@@ -65,7 +65,7 @@ def fetch_archive(lat, lon, start, end):
     key = _cache_key('weather-archive', params)
     cached, hit = shared_cache.get(key)
     if hit:
-        logger.info("integration.cache.hit", extra={"module": __name__})
+        logger.info("integration.cache.hit", extra={"provider_module": __name__})
         return cached, True
 
     payload = http_client.get_json(ARCHIVE_URL, params=params, source='open-meteo-archive')

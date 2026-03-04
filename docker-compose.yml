@@ -69,7 +69,7 @@ services:
       SECRET_KEY: ${SECRET_KEY:-troque-isto}
       DEBUG: ${DEBUG:-False}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8088,http://127.0.0.1:8088}
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:8088,http://127.0.0.1:8088}
       CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-False}
       DB_ENGINE: ${DB_ENGINE:-django.db.backends.postgresql}
       DB_NAME: ${DB_NAME:-mg_location}
@@ -86,8 +86,8 @@ services:
       GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
       KEYCLOAK_ENABLED: ${KEYCLOAK_ENABLED:-true}
       KEYCLOAK_SERVER_URL: ${KEYCLOAK_SERVER_URL:-http://keycloak:8080}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-mg-location}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-mg-location-web}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-sos-location}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-sos-location-frontend}
       KEYCLOAK_VERIFY_AUDIENCE: ${KEYCLOAK_VERIFY_AUDIENCE:-true}
       KEYCLOAK_ROLE_ADMIN: ${KEYCLOAK_ROLE_ADMIN:-mg_admin}
       KEYCLOAK_ROLE_OPERATOR: ${KEYCLOAK_ROLE_OPERATOR:-mg_operator}
@@ -153,6 +153,27 @@ services:
       timeout: 10s
       retries: 5
       start_period: 20s
+    networks:
+      - mg-location-network
+
+
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: sos-location-logs-dozzle
+    restart: unless-stopped
+    environment:
+      DOZZLE_LEVEL: ${DOZZLE_LEVEL:-info}
+      DOZZLE_TAILSIZE: ${DOZZLE_TAILSIZE:-300}
+      DOZZLE_NO_ANALYTICS: "true"
+    ports:
+      - "${DOZZLE_PORT:-9999}:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     networks:
       - mg-location-network
 

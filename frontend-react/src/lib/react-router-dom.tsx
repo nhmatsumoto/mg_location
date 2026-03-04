@@ -10,6 +10,10 @@ type RouterContextValue = {
 const RouterContext = createContext<RouterContextValue | null>(null);
 
 function matchRoute(pattern: string, pathname: string): Record<string, string> | null {
+  if (pattern.endsWith('/*')) {
+    const base = pattern.slice(0, -2) || '/';
+    if (pathname === base || pathname.startsWith(`${base}/`)) return {};
+  }
   if (pattern === pathname) return {};
   const p1 = pattern.split('/').filter(Boolean);
   const p2 = pathname.split('/').filter(Boolean);
@@ -55,6 +59,12 @@ export function useLocation() {
   const context = useContext(RouterContext);
   if (!context) throw new Error('useLocation must be used within BrowserRouter');
   return { pathname: context.path };
+}
+
+export function useNavigate() {
+  const context = useContext(RouterContext);
+  if (!context) throw new Error('useNavigate must be used within BrowserRouter');
+  return (to: string, options?: { replace?: boolean }) => context.navigate(to, options?.replace);
 }
 
 export function useParams<T extends Record<string, string>>() {
