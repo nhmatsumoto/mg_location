@@ -1,9 +1,16 @@
-import { formatISO, parseISO } from 'date-fns';
 import { z } from 'zod';
 
 const OPEN_METEO_BASE_URL = 'https://api.open-meteo.com/v1/forecast';
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const STORAGE_KEY = 'open-meteo-cache-v1';
+
+
+const parseIsoDate = (value: string) => new Date(value);
+
+const formatDateOnly = (value: Date) => {
+  if (Number.isNaN(value.getTime())) return 'invalid-date';
+  return value.toISOString().slice(0, 10);
+};
 
 export const OPEN_METEO_HOURLY_FIELDS = [
   'temperature_2m', 'relative_humidity_2m', 'dew_point_2m', 'apparent_temperature', 'precipitation_probability', 'precipitation', 'rain', 'showers', 'snowfall', 'snow_depth', 'vapour_pressure_deficit', 'et0_fao_evapotranspiration', 'evapotranspiration', 'visibility', 'cloud_cover_high', 'cloud_cover_mid', 'cloud_cover_low', 'cloud_cover', 'surface_pressure', 'pressure_msl', 'weather_code', 'wind_speed_10m', 'wind_speed_80m', 'wind_speed_120m', 'wind_speed_180m', 'wind_direction_10m', 'wind_direction_80m', 'wind_direction_120m', 'wind_direction_180m', 'wind_gusts_10m', 'temperature_80m', 'temperature_120m', 'temperature_180m', 'soil_moisture_27_to_81cm', 'soil_moisture_9_to_27cm', 'soil_moisture_3_to_9cm', 'soil_moisture_1_to_3cm', 'soil_moisture_0_to_1cm', 'soil_temperature_54cm', 'soil_temperature_18cm', 'soil_temperature_6cm', 'soil_temperature_0cm',
@@ -139,7 +146,7 @@ export const weatherCodeToText = (code?: number | null) => {
 export function toSeries(data: OpenMeteoResponse, field: OpenMeteoHourlyField) {
   const values = data.hourly[field] ?? [];
   return data.hourly.time.map((time, index) => ({
-    time: parseISO(time),
+    time: parseIsoDate(time),
     value: values[index] ?? null,
   }));
 }
@@ -147,7 +154,7 @@ export function toSeries(data: OpenMeteoResponse, field: OpenMeteoHourlyField) {
 export function groupByDay(data: OpenMeteoResponse, field: OpenMeteoHourlyField) {
   const series = toSeries(data, field);
   return series.reduce<Record<string, Array<{ time: Date; value: number | null }>>>((acc, point) => {
-    const day = formatISO(point.time, { representation: 'date' });
+    const day = formatDateOnly(point.time);
     acc[day] ??= [];
     acc[day].push(point);
     return acc;
