@@ -310,31 +310,39 @@ export function WarRoomPage() {
         </div>
       </div>
 
-      {/* Draggable Panels (The Integrated War Room Menu) */}
-      <DraggablePanel 
-        title="OPERATIONAL KPIs" 
-        position={{ top: 80, left: 20 }} 
-        onDragStart={() => {}} 
-        onToggleDock={() => {}}
-      >
-        <div className="p-3 grid grid-cols-2 gap-2 bg-slate-900/50">
-           <KpiCard title="Alertas" value={opsSnapshot?.kpis.criticalAlerts ?? '-'} icon={<AlertTriangle size={14} className="text-red-400" />} />
-           <KpiCard title="Equipes" value={opsSnapshot?.kpis.activeTeams ?? '-'} icon={<Users size={14} className="text-cyan-400" />} />
-           <KpiCard title="Chuva" value={`${opsSnapshot?.kpis.rain24hMm ?? '-'}mm`} icon={<CloudRain size={14} className="text-blue-400" />} />
-           <KpiCard title="Caminho" value={opsSnapshot?.kpis.suppliesInTransit ?? '-'} icon={<PackageOpen size={14} className="text-emerald-400" />} />
+      {/* Top Center: War Room Identity */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40">
+        <div className="px-6 py-2 bg-slate-950/40 backdrop-blur-md border border-white/5 rounded-full shadow-2xl flex items-center gap-4">
+           <div className="flex items-center gap-2">
+             <div className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse"></div>
+             <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Tactical Operation Center</span>
+           </div>
+           <div className="h-4 w-px bg-white/10"></div>
+           <span className="text-[10px] font-bold text-cyan-500/80 uppercase tracking-widest">MG-LOCATION Alpha</span>
         </div>
-      </DraggablePanel>
+      </div>
 
-      <DraggablePanel 
-        title="QUICK ACTIONS" 
-        position={{ top: 280, left: 20 }} 
-        onDragStart={() => {}} 
-        onToggleDock={() => {}}
-      >
-        <div className="p-2 bg-slate-900/50">
+      {/* Top Left: Operational KPIs - Vertical Stack */}
+      <div className="absolute top-20 left-4 z-40 flex flex-col gap-2 w-[180px]">
+         <div className="flex items-center gap-2 mb-1 px-1">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+            </span>
+            <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">Live Monitor</span>
+         </div>
+         <KpiCard title="EQUIPES" value={opsSnapshot?.kpis.activeTeams ?? '12'} icon={<Users size={16} />} trend="+2" />
+         <KpiCard title="ALERTAS" value={opsSnapshot?.kpis.criticalAlerts ?? '08'} icon={<AlertTriangle size={16} />} trend="CRÍTICO" color="text-amber-400" />
+         <KpiCard title="CHUVA" value={`${opsSnapshot?.kpis.rain24hMm ?? '4.2'}mm`} icon={<CloudRain size={16} />} trend="ESTÁVEL" color="text-blue-400" />
+         <KpiCard title="LOGÍSTICA" value={opsSnapshot?.kpis.suppliesInTransit ?? '92'} icon={<PackageOpen size={16} />} trend="-4" />
+      </div>
+
+      {/* Bottom Center: Quick Action Bar */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-40 group">
+        <div className="bg-slate-950/80 backdrop-blur-2xl border border-white/10 p-2.5 rounded-full shadow-[0_0_40px_rgba(0,0,0,0.5)] flex items-center gap-2 transition-all group-hover:scale-105 group-hover:border-white/20">
            <QuickActions />
         </div>
-      </DraggablePanel>
+      </div>
 
       {intelPanelOpen && selectedEvent && (
         <DraggablePanel 
