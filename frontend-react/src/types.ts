@@ -134,3 +134,21 @@ export interface SelectedPanel {
   sourceLng?: number;
   label?: string;
 }
+export interface EnvironmentalData {
+  temp?: number;
+  pressure?: number;
+  humidity?: number;
+  windSpeed?: number;
+  rainfall?: number;
+  soilSaturaion?: number;
+}
+
+export interface SituationalSnapshot {
+  id: string;
+  timestamp: string;
+  center: [number, number];
+  bounds: Array<[number, number]>;
+  environmentalData: EnvironmentalData;
+  terrainData?: any;
+  buildings?: any;
+}

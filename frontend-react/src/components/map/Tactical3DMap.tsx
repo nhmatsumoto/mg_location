@@ -4,6 +4,17 @@ import { OrbitControls, PerspectiveCamera, Stars, Text, Float } from '@react-thr
 import * as THREE from 'three';
 import { SimulationBoxEditor } from './SimulationBoxEditor';
 import { HazardOverlay } from './HazardOverlay';
+import { SnapshotVolume } from './SnapshotVolume';
+import type { SituationalSnapshot } from '../../types';
+import { AnimatedBarrier } from './AnimatedBarrier';
+
+interface BarrierData {
+  id: string;
+  points: [number, number, number][];
+  color?: string;
+  type: 'containment' | 'restricted' | 'hazard';
+}
+
 
 interface Event3DProps {
   id: string;
@@ -96,6 +107,8 @@ interface Tactical3DMapProps {
   onHover: (id: string | null) => void;
   onClick: (p: any) => void;
   enableSimulationBox?: boolean;
+  activeSnapshots?: SituationalSnapshot[];
+  barriers?: BarrierData[];
 }
 
 export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({ 
@@ -103,7 +116,9 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
   hoveredId,
   onHover,
   onClick,
-  enableSimulationBox = false
+  enableSimulationBox = false,
+  activeSnapshots = [],
+  barriers = []
 }) => {
   // Projection logic: Lat/Lon to 3D Space
   // We'll normalize around center of events for better view
@@ -168,6 +183,21 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
 
         {/* Atmosphere/Fog */}
         <fog attach="fog" args={['#020617', 10, 60]} />
+
+        {/* Situational Snapshots */}
+        {activeSnapshots.map((snap) => (
+          <SnapshotVolume key={snap.id} snapshot={snap} />
+        ))}
+
+        {/* Active Barriers */}
+        {barriers.map((barrier) => (
+          <AnimatedBarrier 
+            key={barrier.id} 
+            points={barrier.points} 
+            color={barrier.color || (barrier.type === 'hazard' ? '#ef4444' : '#22d3ee')}
+            height={barrier.type === 'containment' ? 1.5 : 2.5}
+          />
+        ))}
 
         {enableSimulationBox && <SimulationBoxEditor />}
         {enableSimulationBox && <HazardOverlay />}

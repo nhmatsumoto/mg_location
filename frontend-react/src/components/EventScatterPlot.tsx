@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
-import { ZoomIn, ZoomOut, RefreshCw, Layers, Info, Filter, TrendingUp } from 'lucide-react';
+import { ZoomIn, ZoomOut, RefreshCw, Layers, Filter } from 'lucide-react';
 
 export type ScatterPoint = {
   id: string;
@@ -30,7 +30,6 @@ export const EventScatterPlot: React.FC<EventScatterPlotProps> = ({
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState(0); 
   const [showMiniMap, setShowMiniMap] = useState(true);
-  const [showTrend, setShowTrend] = useState(true);
   const [disabledTypes, setDisabledTypes] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -73,22 +72,6 @@ export const EventScatterPlot: React.FC<EventScatterPlotProps> = ({
     }));
   }, [filteredPoints, zoom, pan]);
 
-  // Dynamic Trend Line (Moving Average)
-  const trendPath = useMemo(() => {
-    if (!showTrend || filteredPoints.length < 2) return "";
-    const sorted = [...filteredPoints].sort((a, b) => a.x - b.x);
-    
-    // Simple 3-point moving average for smoothing
-    const points = sorted.map((p, i) => {
-      if (i === 0) return { x: (p.x * zoom) + pan, y: p.y };
-      const prev = sorted[i - 1];
-      const next = sorted[i + 1] || p;
-      const smoothY = (prev.y + p.y + next.y) / 3;
-      return { x: (p.x * zoom) + pan, y: smoothY };
-    });
-
-    return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x}% ${p.y}%`).join(' ');
-  }, [filteredPoints, zoom, pan, showTrend]);
 
   return (
     <div 
@@ -107,8 +90,8 @@ export const EventScatterPlot: React.FC<EventScatterPlotProps> = ({
         <button onClick={resetView} className="p-1 bg-slate-900 border border-slate-700 text-cyan-400 hover:bg-slate-800 rounded">
           <RefreshCw size={14} />
         </button>
-        <button onClick={() => setShowTrend(!showTrend)} className={`p-1 border border-slate-700 rounded ${showTrend ? 'bg-indigo-900/50 text-indigo-400' : 'bg-slate-900 text-slate-500'}`}>
-          <TrendingUp size={14} />
+        <button onClick={resetView} className="p-1 bg-slate-900 border border-slate-700 text-cyan-400 hover:bg-slate-800 rounded">
+          <RefreshCw size={14} />
         </button>
         <button onClick={() => setShowMiniMap(!showMiniMap)} className={`p-1 border border-slate-700 rounded ${showMiniMap ? 'bg-cyan-900/50 text-cyan-400' : 'bg-slate-900 text-slate-500'}`}>
           <Layers size={14} />
@@ -116,86 +99,87 @@ export const EventScatterPlot: React.FC<EventScatterPlotProps> = ({
       </div>
 
       <div className="absolute top-2 left-2 z-30 pointer-events-none flex flex-col gap-1">
-        <div className="flex items-center gap-2 text-cyan-500/70 uppercase tracking-widest text-[8px] font-bold">
-          <Info size={10} />
-          SCATTER TÁTICO v3.0 // ZOOM: {zoom.toFixed(1)}x
+        <div className="flex items-center gap-2 text-cyan-400 uppercase tracking-widest text-[9px] font-black">
+          <div className="w-2 h-2 bg-cyan-500 animate-ping rounded-full" />
+          EVENT_TIMELINE // {zoom.toFixed(1)}x
         </div>
       </div>
 
-      {/* Background Glow - Density Map */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
-        {filteredPoints.filter(p => !p.isOffline && p.severity >= 3).map(p => (
-           <div 
-             key={`glow-${p.id}`}
-             className="absolute w-32 h-32 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl transition-all duration-1000"
-             style={{ 
-               left: `${(p.x * zoom) + pan}%`, 
-               top: `${p.y}%`, 
-               background: `radial-gradient(circle, ${getEventColor(p.type, p.severity)} 0%, transparent 70%)` 
-             }}
-           />
-        ))}
-      </div>
 
       {/* Grid */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03]">
         <div className="h-full w-full" style={{ backgroundImage: 'radial-gradient(circle, #475569 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
       </div>
 
-      {/* SVG Layer for lines */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
-        {showTrend && trendPath && (
-          <path 
-            d={trendPath} 
-            fill="none" 
-            stroke="url(#trendGradient)" 
-            strokeWidth="2" 
-            strokeDasharray="4 2"
-            className="transition-all duration-300"
-          />
-        )}
-        <defs>
-          <linearGradient id="trendGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.2" />
-            <stop offset="50%" stopColor="#818cf8" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.2" />
-          </linearGradient>
-        </defs>
-      </svg>
+      {/* Central Timeline Line */}
+      <div className="absolute top-1/2 left-0 right-0 h-px bg-slate-800/50 z-0" />
 
-      {/* Points */}
-      <div className="relative h-full w-full cursor-crosshair">
+      {/* Points - V3 optimized rendering */}
+      <div 
+        className="relative h-full w-full cursor-crosshair"
+        style={{ 
+          transform: `scaleY(1)`, // Future perspective skew
+        }}
+      >
         {visiblePoints.map((p) => {
           const isSelected = hoveredId === p.id;
           if (p.displayX < -5 || p.displayX > 105) return null;
+          const color = getEventColor(p.type, p.severity);
 
           return (
             <div
               key={p.id}
-              className={`absolute h-3 w-3 -translate-x-1.5 -translate-y-1.5 transition-all duration-300
-                ${isSelected ? 'scale-[2.5] z-50' : 'z-10 hover:scale-150'}`}
+              className={`absolute flex flex-col items-center justify-center transition-all duration-300
+                ${isSelected ? 'z-50' : 'z-10'}`}
               style={{ 
                 left: `${p.displayX}%`, 
-                top: `${p.y}%`,
-                filter: isSelected ? `drop-shadow(0 0 8px ${getEventColor(p.type, p.severity)})` : 'none'
+                top: `50%`,
+                width: isSelected ? '32px' : '12px',
+                height: isSelected ? '32px' : '12px',
+                transform: 'translate(-50%, -50%)'
               }}
               onMouseEnter={() => onHover?.(p)}
               onMouseLeave={() => onHover?.(null)}
               onClick={() => onClick?.(p)}
             >
+              {/* Point Marker */}
               <div 
-                className={`w-full h-full border border-white/20 shadow-xl transition-all
-                  ${p.type.includes('Rescue') ? 'polygon-diamond' : 'rounded-full'}`}
+                className={`w-full h-full border-2 transition-all duration-500 relative
+                  ${p.type.includes('Rescue') ? 'rotate-45' : 'rounded-full'}`}
                 style={{ 
-                   background: isSelected 
-                    ? `radial-gradient(circle at 30% 30%, #fff, ${getEventColor(p.type, p.severity)})`
-                    : getEventColor(p.type, p.severity),
-                   clipPath: p.type.includes('Rescue') ? 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' : 'none',
+                   backgroundColor: isSelected ? color : 'transparent',
+                   borderColor: color,
+                   boxShadow: isSelected ? `0 0 20px ${color}` : `0 0 5px ${color}44`,
+                   transform: isSelected ? 'scale(1.2)' : 'scale(1)'
                 }}
-              />
-              
+              >
+                {/* Internal telemetry dot */}
+                {!isSelected && (
+                  <div className="absolute inset-1 bg-white/30 rounded-full" />
+                )}
+                
+                {/* Selection Rings */}
+                {isSelected && (
+                  <>
+                    <div className="absolute -inset-2 border border-cyan-400 rotate-12 animate-[spin_4s_linear_infinite]" />
+                    <div className="absolute -inset-4 border border-cyan-400/30 -rotate-12 animate-[spin_8s_linear_infinite]" />
+                  </>
+                )}
+              </div>
+
+              {/* Dynamic Label Component for Selected/Hovered */}
               {isSelected && (
-                <div className="absolute -inset-1 border border-cyan-400 rotate-45 animate-pulse" />
+                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 pointer-events-none min-w-[140px]">
+                  <div className="bg-slate-900/95 border border-cyan-500/50 backdrop-blur-md px-2 py-1.5 rounded shadow-2xl relative">
+                    <div className="text-[10px] font-black text-cyan-400 uppercase tracking-tighter truncate w-full">{p.label}</div>
+                    <div className="flex justify-between mt-1 items-end">
+                      <span className="text-[8px] text-slate-400 font-mono">{format(new Date(p.timestamp), 'HH:mm:ss')}</span>
+                      <span className="text-[9px] text-cyan-500 font-black">LVL_{p.severity}</span>
+                    </div>
+                  </div>
+                  {/* Connector Line */}
+                  <div className="h-4 w-px bg-cyan-500/50 mx-auto" />
+                </div>
               )}
             </div>
           );
