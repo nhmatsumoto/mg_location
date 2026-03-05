@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, memo, useCallback, lazy, Suspense } from 'react';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import { format } from 'date-fns';
 import { MapContainer, Polygon, Polyline, Popup, TileLayer, useMap, useMapEvents, Marker, CircleMarker, Circle } from 'react-leaflet';
 import { Modal } from '../components/ui/Modal';
@@ -9,9 +10,8 @@ import { integrationsApi, type AlertDto, type WeatherForecastDto } from '../serv
 import { syncEngine, type OutboxCommand } from '../lib/SyncEngine';
 import { useNotifications } from '../context/NotificationsContext';
 import { EventScatterPlot, type ScatterPoint } from '../components/EventScatterPlot';
-import { Tactical3DMap } from '../components/map/Tactical3DMap';
-import { Globe, Map as MapIcon, Target, AlertTriangle, CloudRain, Zap, Flame, Waves, Search, HeartHandshake, Maximize2, Minimize2, PanelBottomClose, PanelBottomOpen, MousePointer2, Layers, Crosshair, Box, Play } from 'lucide-react';
-import { useSimulationStore } from '../store/useSimulationStore';
+const Tactical3DMap = lazy(() => import('../components/map/Tactical3DMap').then(m => ({ default: m.Tactical3DMap })));
+import { Globe, Map as MapIcon, Target, AlertTriangle, CloudRain, Zap, Flame, Waves, Search, HeartHandshake, Maximize2, Minimize2, PanelBottomClose, PanelBottomOpen, MousePointer2, Layers, Crosshair, Box } from 'lucide-react';
 import { ScenarioBuilderPanel } from '../components/map/ScenarioBuilderPanel';
 import { renderToString } from 'react-dom/server';
 import L from 'leaflet';
@@ -87,6 +87,71 @@ function MapRecenter({ center }: { center: [number, number] }) {
   return null;
 }
 
+const MemoizedEventMarker = memo(({ e, isHovered, onHover, onUnhover }: { e: any, isHovered: boolean, onHover: (id: string) => void, onUnhover: () => void }) => {
+  const id = `${e.provider}-${e.provider_event_id}`;
+  const iconHtml = renderToString(getEventIcon(e.event_type || e.type, isHovered));
+  return (
+    <Marker 
+      position={[e.lat, e.lon]} 
+      icon={L.divIcon({
+        html: `<div class="tactical-marker ${isHovered ? 'hovered' : ''}" style="color: ${isHovered ? '#22d3ee' : getSeverityColor(e.severity)}">${iconHtml}</div>`,
+        className: 'custom-div-icon',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      })}
+      eventHandlers={{
+        mouseover: () => onHover(id),
+        mouseout: onUnhover
+      }}
+    >
+      <Popup className="tactical-popup">
+        <div className="font-mono text-xs p-1">
+          <div className="font-bold border-b border-white/10 mb-2 pb-1 text-cyan-400">{e.title}</div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            <span className="text-slate-500 uppercase text-[9px]">Tipo:</span>
+            <span className="text-slate-200">{e.event_type}</span>
+            <span className="text-slate-500 uppercase text-[9px]">Status:</span>
+            <span className="text-emerald-400 font-bold">Monitorando</span>
+          </div>
+        </div>
+      </Popup>
+    </Marker>
+  );
+});
+
+const MemoizedAnnotationMarker = memo(({ ann, isHovered, onHover, onUnhover }: { ann: any, isHovered: boolean, onHover: (id: string) => void, onUnhover: () => void }) => {
+  const id = `ann-${ann.id}`;
+  const iconType = ann.recordType === 'missing_person' ? 'search' : ann.recordType === 'support_point' ? 'donation' : 'risk';
+  const iconHtml = renderToString(getEventIcon(iconType, isHovered));
+  return (
+    <Marker 
+      position={[ann.lat, ann.lng]} 
+      icon={L.divIcon({
+        html: `<div class="tactical-marker ${isHovered ? 'hovered' : ''}" style="color: ${isHovered ? '#22d3ee' : '#eab308'}">${iconHtml}</div>`,
+        className: 'custom-div-icon',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      })}
+      eventHandlers={{
+        mouseover: () => onHover(id),
+        mouseout: onUnhover
+      }}
+    >
+      <Popup className="tactical-popup">
+        <div className="font-mono text-xs p-1">
+          <div className="font-bold border-b border-white/10 mb-2 pb-1 text-yellow-500">{ann.title}</div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            <span className="text-slate-500 uppercase text-[9px]">Tipo:</span>
+            <span className="text-slate-200">{ann.recordType}</span>
+            <span className="text-slate-500 uppercase text-[9px]">Inserido em:</span>
+            <span className="text-slate-200">{ann.createdAtUtc ? format(new Date(ann.createdAtUtc), 'dd/MM HH:mm') : 'Agora'}</span>
+          </div>
+        </div>
+      </Popup>
+    </Marker>
+  );
+});
+
 export function GlobalDisastersPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [domainEvents, setDomainEvents] = useState<DomainEvent[]>([]);
@@ -111,6 +176,14 @@ export function GlobalDisastersPage() {
   const [regionFilter, setRegionFilter] = useState('');
   const [intelReport, setIntelReport] = useState<any>(null);
   const [isIntelLoading, setIsIntelLoading] = useState(false);
+
+  const handleMarkerHover = useCallback((id: string) => {
+    setHoveredId(id);
+  }, []);
+
+  const handleMarkerUnhover = useCallback(() => {
+    setHoveredId(null);
+  }, []);
 
   const [openEventModal, setOpenEventModal] = useState(false);
   const [openOpsModal, setOpenOpsModal] = useState(false);
@@ -518,13 +591,15 @@ export function GlobalDisastersPage() {
         {/* Unified Map & 3D Layer */}
         <div className="absolute inset-0 z-0">
           {show3D ? (
-            <Tactical3DMap 
-              events={events.concat(domainEvents)} 
-              hoveredId={hoveredId}
-              onHover={setHoveredId}
-              onClick={(p: any) => setHoveredId(p.id || `${p.provider}-${p.provider_event_id}`)}
-              enableSimulationBox={tool === 'simulation_box'}
-            />
+            <Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-slate-900 text-cyan-500 font-mono animate-pulse">CARREGANDO MOTOR TÁTICO 3D...</div>}>
+              <Tactical3DMap 
+                events={events.concat(domainEvents)} 
+                hoveredId={hoveredId}
+                onHover={setHoveredId}
+                onClick={(p: any) => setHoveredId(p.id || `${p.provider}-${p.provider_event_id}`)}
+                enableSimulationBox={tool === 'simulation_box'}
+              />
+            </Suspense>
           ) : (
             <MapContainer center={mapCenter} zoom={4} style={{ height: '100%', width: '100%' }} className="tactical-map-container">
               {mapLayer === 'dark' ? (
@@ -561,76 +636,33 @@ export function GlobalDisastersPage() {
                 </CircleMarker>
               )}
 
-              {currentDisplayEvents.map((e) => {
-                const id = `${e.provider}-${e.provider_event_id}`;
-                const isHovered = hoveredId === id;
-                const iconHtml = renderToString(getEventIcon(e.event_type || e.type, isHovered));
-                
-                return (
-                  <Marker 
-                    key={id} 
-                    position={[e.lat, e.lon]} 
-                    icon={L.divIcon({
-                      html: `<div class="tactical-marker ${isHovered ? 'hovered' : ''}" style="color: ${isHovered ? '#22d3ee' : getSeverityColor(e.severity)}">${iconHtml}</div>`,
-                      className: 'custom-div-icon',
-                      iconSize: [24, 24],
-                      iconAnchor: [12, 12],
-                    })}
-                    eventHandlers={{
-                      mouseover: () => setHoveredId(id),
-                      mouseout: () => setHoveredId(null)
-                    }}
-                  >
-                    <Popup className="tactical-popup">
-                      <div className="font-mono text-xs p-1">
-                        <div className="font-bold border-b border-white/10 mb-2 pb-1 text-cyan-400">{e.title}</div>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                          <span className="text-slate-500 uppercase text-[9px]">Tipo:</span>
-                          <span className="text-slate-200">{e.event_type}</span>
-                          <span className="text-slate-500 uppercase text-[9px]">Status:</span>
-                          <span className="text-emerald-400 font-bold">Monitorando</span>
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
+              <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
+                {currentDisplayEvents.map((e) => {
+                  const id = `${e.provider}-${e.provider_event_id}`;
+                  return (
+                    <MemoizedEventMarker 
+                      key={id} 
+                      e={e} 
+                      isHovered={hoveredId === id}
+                      onHover={handleMarkerHover}
+                      onUnhover={handleMarkerUnhover}
+                    />
+                  );
+                })}
 
-              {mapAnnotations.map((ann) => {
-                const id = `ann-${ann.id}`;
-                const isHovered = hoveredId === id;
-                const iconType = ann.recordType === 'missing_person' ? 'search' : ann.recordType === 'support_point' ? 'donation' : 'risk';
-                const iconHtml = renderToString(getEventIcon(iconType, isHovered));
-                
-                return (
-                  <Marker 
-                    key={id} 
-                    position={[ann.lat, ann.lng]} 
-                    icon={L.divIcon({
-                      html: `<div class="tactical-marker ${isHovered ? 'hovered' : ''}" style="color: ${isHovered ? '#22d3ee' : '#eab308'}">${iconHtml}</div>`,
-                      className: 'custom-div-icon',
-                      iconSize: [24, 24],
-                      iconAnchor: [12, 12],
-                    })}
-                    eventHandlers={{
-                      mouseover: () => setHoveredId(id),
-                      mouseout: () => setHoveredId(null)
-                    }}
-                  >
-                    <Popup className="tactical-popup">
-                      <div className="font-mono text-xs p-1">
-                        <div className="font-bold border-b border-white/10 mb-2 pb-1 text-yellow-500">{ann.title}</div>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                          <span className="text-slate-500 uppercase text-[9px]">Tipo:</span>
-                          <span className="text-slate-200">{ann.recordType}</span>
-                          <span className="text-slate-500 uppercase text-[9px]">Inserido em:</span>
-                          <span className="text-slate-200">{ann.createdAtUtc ? format(new Date(ann.createdAtUtc), 'dd/MM HH:mm') : 'Agora'}</span>
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
+                {mapAnnotations.map((ann) => {
+                  const id = `ann-${ann.id}`;
+                  return (
+                    <MemoizedAnnotationMarker 
+                      key={id} 
+                      ann={ann} 
+                      isHovered={hoveredId === id}
+                      onHover={handleMarkerHover}
+                      onUnhover={handleMarkerUnhover}
+                    />
+                  );
+                })}
+              </MarkerClusterGroup>
 
               {alerts.map((alert) => {
                 if (!alert.polygons || !alert.polygons.length) return null;
