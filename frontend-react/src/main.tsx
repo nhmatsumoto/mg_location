@@ -8,6 +8,7 @@ import './index.css';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
+
 // Fix for Leaflet default icon 404s in bundled apps
 // @ts-ignore
 delete L.Icon.Default.prototype._getIconUrl;

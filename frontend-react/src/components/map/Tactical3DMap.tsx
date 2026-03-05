@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Stars, Text, Float } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { SimulationBoxEditor } from './SimulationBoxEditor';
 import { HazardOverlay } from './HazardOverlay';
@@ -8,6 +8,8 @@ import { SnapshotVolume } from './SnapshotVolume';
 import type { SituationalSnapshot } from '../../types';
 import { AnimatedBarrier } from './AnimatedBarrier';
 import { useSimulationStore } from '../../store/useSimulationStore';
+import { TacticalEnvironment } from './TacticalEnvironment';
+import { DayNightCycle } from './DayNightCycle';
 
 interface BarrierData {
   id: string;
@@ -16,6 +18,22 @@ interface BarrierData {
   type: 'containment' | 'restricted' | 'hazard';
 }
 
+
+const ScanningRay: React.FC = () => {
+  const meshRef = React.useRef<THREE.Mesh>(null);
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.position.z = Math.sin(state.clock.elapsedTime * 0.5) * 50;
+    }
+  });
+
+  return (
+    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.15, 0]}>
+      <planeGeometry args={[100, 2]} />
+      <meshBasicMaterial color="#22d3ee" transparent opacity={0.1} />
+    </mesh>
+  );
+};
 
 interface Event3DProps {
   id: string;
@@ -121,7 +139,7 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
   activeSnapshots = [],
   barriers = []
 }) => {
-  const { environment, isSimulating } = useSimulationStore();
+  const { environment, isSimulating, timeOfDay } = useSimulationStore();
   
   // Projection logic: Lat/Lon to 3D Space
   const coords = useMemo(() => {
@@ -147,23 +165,28 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
             enablePan={true} 
             maxPolarAngle={Math.PI / 2.1} 
             minDistance={2}
-            maxDistance={50}
+            maxDistance={80}
         />
         
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-        
-        <ambientLight intensity={0.2} />
-        <pointLight position={[10, 10, 10]} intensity={1} castShadow />
-        <spotLight position={[-10, 20, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
+        <DayNightCycle timeOfDay={timeOfDay} />
 
         {/* Tactical Grid Floor */}
         <gridHelper args={[100, 50, 0x1e293b, 0x0f172a]} position={[0, -0.1, 0]} />
         
-        {/* Ground Plane */}
+        {/* Ground Plane - Holographic Styled */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.2, 0]} receiveShadow>
             <planeGeometry args={[100, 100]} />
-            <meshStandardMaterial color="#020617" />
+            <meshStandardMaterial color="#020617" roughness={0} metalness={0.8} />
         </mesh>
+        
+        {/* Secondary Grid Overlay */}
+        <gridHelper args={[100, 10, 0x06b6d4, 0x06b6d4]} position={[0, -0.19, 0]} rotation={[0, 0, 0]} />
+
+        {/* Tactical Environment: Topography & Buildings */}
+        <TacticalEnvironment />
+
+        {/* Global Scanning Ray */}
+        <ScanningRay />
 
         {/* Global/Domain Events */}
         {coords.map((e) => (
@@ -181,7 +204,7 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
         ))}
 
         {/* Atmosphere/Fog - Reacts to store */}
-        <fog attach="fog" args={['#020617', 10, 60 - environment.fog * 40]} />
+        <fog attach="fog" args={[timeOfDay < 6 || timeOfDay > 18 ? '#020617' : '#94a3b8', 10, 60 - environment.fog * 40]} />
 
         {/* Situational Snapshots */}
         {activeSnapshots.map((snap) => (

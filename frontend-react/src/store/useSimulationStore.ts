@@ -28,6 +28,14 @@ interface SimulationState {
     snow: number;
   };
   setEnvironment: (env: Partial<{ fog: number; rain: number; snow: number }>) => void;
+  timeOfDay: number;
+  setTimeOfDay: (time: number) => void;
+  satelliteTextureUrl: string | null;
+  setSatelliteTextureUrl: (url: string | null) => void;
+  showStreets: boolean;
+  setShowStreets: (show: boolean) => void;
+  showVegetation: boolean;
+  setShowVegetation: (show: boolean) => void;
 }
 
 export const useSimulationStore = create<SimulationState>((set) => ({
@@ -54,4 +62,12 @@ export const useSimulationStore = create<SimulationState>((set) => ({
   setEnvironment: (env) => set((state) => ({ 
     environment: { ...state.environment, ...env } 
   })),
+  timeOfDay: 12,
+  setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
+  satelliteTextureUrl: null,
+  setSatelliteTextureUrl: (url) => set({ satelliteTextureUrl: url }),
+  showStreets: true,
+  setShowStreets: (showStreets) => set({ showStreets }),
+  showVegetation: true,
+  setShowVegetation: (showVegetation) => set({ showVegetation }),
 }));

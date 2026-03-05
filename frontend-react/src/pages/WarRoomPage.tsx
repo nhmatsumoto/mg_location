@@ -12,6 +12,8 @@ import { KpiCard } from '../components/ui/KpiCard';
 import { QuickActions } from '../components/ui/QuickActions';
 import { useSimulationStore } from '../store/useSimulationStore';
 
+import { useNavigate } from 'react-router-dom';
+import { TacticalLoadingScreen } from '../components/ui/TacticalLoadingScreen';
 const Tactical3DMap = lazy(() => import('../components/map/Tactical3DMap').then(m => ({ default: m.Tactical3DMap })));
 import type { SituationalSnapshot } from '../types';
 import { 
@@ -73,15 +75,6 @@ function MapInteractions({
         setAreaDraft([...areaDraft, [e.latlng.lat, e.latlng.lng]]);
         return;
       }
-      if (tool === 'snapshot' || tool === 'simulation_box') {
-        if (areaDraft.length < 2) {
-          setAreaDraft([...areaDraft, [e.latlng.lat, e.latlng.lng]]);
-        } else {
-          onSnapshotComplete(areaDraft);
-          setAreaDraft([]);
-        }
-        return;
-      }
       if (tool === 'filter_area') {
         if (!spatialFilter || spatialFilter.radius) {
           setSpatialFilter({ center: [e.latlng.lat, e.latlng.lng], radius: 0 });
@@ -91,6 +84,17 @@ function MapInteractions({
           setSpatialFilter(filter);
           onFilterComplete(filter);
         }
+      }
+    },
+    mousedown(e) {
+      if (tool === 'snapshot' || tool === 'simulation_box') {
+        setAreaDraft([[e.latlng.lat, e.latlng.lng]]);
+      }
+    },
+    mouseup(e) {
+      if ((tool === 'snapshot' || tool === 'simulation_box') && areaDraft.length === 1) {
+        onSnapshotComplete([areaDraft[0], [e.latlng.lat, e.latlng.lng]]);
+        setAreaDraft([]);
       }
     },
     contextmenu() {
@@ -123,7 +127,7 @@ function ToolButton({ active, onClick, icon, label }: { active: boolean, onClick
           : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
     >
       {icon}
-      <div className="absolute left-12 bg-slate-900 border border-white/10 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 font-mono">
+      <div className="absolute right-12 bg-slate-900 border border-white/10 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 font-mono">
         {label}
       </div>
     </button>
@@ -159,6 +163,7 @@ const MemoizedEventMarker = memo(({ e, isHovered, onHover, onUnhover }: { e: any
 });
 
 export function WarRoomPage() {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<any[]>([]);
   const [domainEvents, setDomainEvents] = useState<DomainEvent[]>([]);
   const [alerts, setAlerts] = useState<AlertDto[]>([]);
@@ -171,7 +176,14 @@ export function WarRoomPage() {
   const [minSeverity] = useState(1);
   const [tool, setTool] = useState<ToolMode>('inspect');
   const [areaDraft, setAreaDraft] = useState<Array<[number, number]>>([]);
-  const [spatialFilter, setSpatialFilter] = useState<{ center: [number, number], radius: number } | null>(null);
+  const [spatialFilter, setSpatialFilter] = useState<any>(null);
+  const [isGlitching, setIsGlitching] = useState(false);
+
+  useEffect(() => {
+    setIsGlitching(true);
+    const timer = setTimeout(() => setIsGlitching(false), 500);
+    return () => clearTimeout(timer);
+  }, [show3D]);
   const [activeSnapshots, setActiveSnapshots] = useState<SituationalSnapshot[]>([]);
   const [intelPanelOpen, setIntelPanelOpen] = useState(false);
   const [simulationPanelOpen, setSimulationPanelOpen] = useState(false);
@@ -240,6 +252,15 @@ export function WarRoomPage() {
     try {
       const centerLat = bounds.reduce((acc, b) => acc + b[0], 0) / bounds.length;
       const centerLon = bounds.reduce((acc, b) => acc + b[1], 0) / bounds.length;
+      
+      // Generate static map URL for satellite texture
+      // Using CartoDB as a fallback or example
+      const zoom = 15;
+      const x = Math.floor((centerLon + 180) / 360 * Math.pow(2, zoom));
+      const y = Math.floor((1 - Math.log(Math.tan(centerLat * Math.PI / 180) + 1 / Math.cos(centerLat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
+      const textureUrl = `https://basemaps.cartocdn.com/rastertiles/voyager_labels_under/${zoom}/${x}/${y}.png`;
+      useSimulationStore.getState().setSatelliteTextureUrl(textureUrl);
+
       const weather = await integrationsApi.getWeatherForecast(centerLat, centerLon);
       const newSnapshot: SituationalSnapshot = {
         id: `snap-${Date.now()}`,
@@ -298,11 +319,18 @@ export function WarRoomPage() {
            <button onClick={() => setShow3D(!show3D)} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border backdrop-blur-xl transition-all ${show3D ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)]' : 'bg-slate-900/80 border-white/10 text-slate-400 hover:text-white'}`}>
              <Box size={16} /> <span className="text-[10px] font-black uppercase tracking-widest">TACTICAL 3D</span>
            </button>
+           <button 
+             onClick={() => window.location.reload()} 
+             className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 bg-slate-900/80 text-slate-400 hover:text-white backdrop-blur-xl transition-all"
+             title="Reset View"
+           >
+             <Crosshair size={16} />
+           </button>
         </div>
       </div>
 
-      {/* Map Tools Sidebar - Moved to bottom-left to avoid KPI overlap */}
-      <div className="absolute left-4 bottom-32 z-40 flex flex-col gap-2">
+      {/* Map Tools Sidebar - Moved to bottom-right to avoid overlap with Simulation/Intel panels */}
+      <div className="absolute right-4 bottom-24 z-40 flex flex-col gap-2">
         <div className="bg-slate-900/90 border border-white/5 backdrop-blur-md p-1 rounded-xl shadow-2xl flex flex-col gap-1">
           <ToolButton active={tool === 'inspect'} onClick={() => selectTool('inspect')} icon={<MousePointer2 size={18} />} label="Inspecionar" />
           <ToolButton active={tool === 'point'} onClick={() => selectTool('point')} icon={<MapPin size={18} />} label="Reg. Evento" />
@@ -362,10 +390,18 @@ export function WarRoomPage() {
              <div className="bg-slate-800/50 p-3 rounded-lg border border-white/5 text-[10px] font-mono leading-relaxed">
                 {(selectedEvent as any).description || "Nenhuma análise adicional disponível."}
              </div>
-             <div className="flex justify-between items-center text-[10px]">
-                <span className="text-slate-500 uppercase font-bold">Severidade</span>
-                <span className="text-cyan-400 font-black">LVL_{(selectedEvent as any).severity || 1}</span>
-             </div>
+              <div className="flex justify-between items-center text-[10px]">
+                 <span className="text-slate-500 uppercase font-bold">Severidade</span>
+                 <span className="text-cyan-400 font-black">LVL_{(selectedEvent as any).severity || 1}</span>
+              </div>
+              <div className="pt-2">
+                 <button 
+                   onClick={() => navigate(`/app/splat-scenes/demo-${selectedEvent.id}`)}
+                   className="w-full flex items-center justify-center gap-2 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all shadow-lg"
+                 >
+                   <Box size={14} /> Ver Reconstrução 3D
+                 </button>
+              </div>
           </div>
         </DraggablePanel>
       )}
@@ -376,7 +412,7 @@ export function WarRoomPage() {
       {/* Main Map Content */}
       <div className="absolute inset-0 z-0">
         {show3D ? (
-          <Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-slate-900 text-cyan-500 font-mono animate-pulse uppercase tracking-widest">Iniciando motor tático 3D...</div>}>
+          <Suspense fallback={<TacticalLoadingScreen />}>
             <Tactical3DMap 
               events={events.concat(domainEvents)} 
               hoveredId={hoveredId}
@@ -426,6 +462,17 @@ export function WarRoomPage() {
            <button onClick={saveOps} className="w-full bg-emerald-600 font-bold py-2 rounded text-xs uppercase tracking-widest">REGISTRAR</button>
          </div>
       </Modal>
+
+       {/* Glitch Overlay Effect */}
+       {isGlitching && (
+         <div className="absolute inset-0 z-[100] pointer-events-none overflow-hidden bg-cyan-500/5 backdrop-blur-[1px] animate-pulse">
+            <div className="absolute top-1/4 left-0 w-full h-[1px] bg-white/20 animate-scan-fast" />
+            <div className="absolute top-3/4 left-0 w-full h-[1px] bg-white/20 animate-scan-fast" style={{ animationDelay: '0.2s' }} />
+            <div className="absolute inset-0 flex items-center justify-center">
+               <span className="text-[10px] text-white font-black uppercase tracking-[1em] opacity-40">CALIBRATING_OPTICS...</span>
+            </div>
+         </div>
+       )}
     </div>
   );
 }
@@ -442,7 +489,10 @@ function SimulationCommandPanel({ onClose }: { onClose: () => void }) {
     hazardType, setHazardType, 
     waterLevel, setWaterLevel,
     isSimulating, setIsSimulating,
-    environment, setEnvironment
+    environment, setEnvironment,
+    timeOfDay, setTimeOfDay,
+    showStreets, setShowStreets,
+    showVegetation, setShowVegetation
   } = useSimulationStore();
 
   return (
@@ -469,7 +519,7 @@ function SimulationCommandPanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* Hazard Intensity */}
+        {/* Intensity / Level Control */}
         <div className="space-y-3 border-t border-white/5 pt-4">
           <div className="flex justify-between items-center">
             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Intensidade / Nível</label>
@@ -501,6 +551,33 @@ function SimulationCommandPanel({ onClose }: { onClose: () => void }) {
                <span className="text-slate-100">{Math.round(environment.rain * 100)}%</span>
              </div>
              <input type="range" min="0" max="1" step="0.01" value={environment.rain} onChange={e => setEnvironment({ rain: Number(e.target.value) })} className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500" />
+           </div>
+
+           <div className="space-y-3 border-t border-white/5 pt-4">
+              <div className="flex justify-between text-[10px] font-mono">
+                <span className="text-slate-400 uppercase">Ciclo Dia/Noite</span>
+                <span className="text-slate-100">{Math.floor(timeOfDay)}:00</span>
+              </div>
+              <input 
+                type="range" min="0" max="23" step="1" 
+                value={timeOfDay} 
+                onChange={e => setTimeOfDay(Number(e.target.value))} 
+                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400" 
+              />
+           </div>
+
+           <div className="space-y-3 border-t border-white/5 pt-4">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Camadas Táticas</label>
+              <div className="flex flex-col gap-2 pt-2">
+                <label className="flex items-center justify-between text-[10px] cursor-pointer group">
+                  <span className="text-slate-400 uppercase font-mono group-hover:text-cyan-400 transition-colors">Arvores / Mata</span>
+                  <input type="checkbox" checked={showVegetation} onChange={e => setShowVegetation(e.target.checked)} className="h-3 w-3 rounded border-slate-700 bg-slate-800 accent-cyan-500" />
+                </label>
+                <label className="flex items-center justify-between text-[10px] cursor-pointer group">
+                  <span className="text-slate-400 uppercase font-mono group-hover:text-cyan-400 transition-colors">Rede Viária</span>
+                  <input type="checkbox" checked={showStreets} onChange={e => setShowStreets(e.target.checked)} className="h-3 w-3 rounded border-slate-700 bg-slate-800 accent-cyan-500" />
+                </label>
+              </div>
            </div>
         </div>
 

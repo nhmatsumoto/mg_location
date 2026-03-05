@@ -9,6 +9,7 @@ import { PublicMapPage } from './pages/PublicMapPage';
 const WarRoomPage = lazy(() => import('./pages/WarRoomPage').then((m) => ({ default: m.WarRoomPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const PublicIncidentDashboardPage = lazy(() => import('./pages/PublicIncidentDashboardPage').then((m) => ({ default: m.PublicIncidentDashboardPage })));
+const SplatScenePage = lazy(() => import('./pages/SplatScenePage').then((m) => ({ default: m.SplatScenePage })));
 function PrivateLayout() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const location = useLocation();
@@ -36,6 +37,8 @@ function PrivateLayout() {
           <Route path="/app/global-disasters" element={<Navigate to="/app/war-room" replace />} />
           <Route path="/app/operations" element={<Navigate to="/app/war-room" replace />} />
           <Route path="/app/settings" element={<SettingsPage />} />
+          <Route path="/app/splat-scenes/:id" element={<SplatScenePage />} />
+          <Route path="/app/splat-scenes" element={<SplatScenePage />} />
           <Route path="*" element={<Navigate to="/app/war-room" replace />} />
         </Routes>
       </Suspense>

@@ -164,8 +164,14 @@ KEYCLOAK_ROLE_OPERATOR = config('KEYCLOAK_ROLE_OPERATOR', default='mg_operator')
 KEYCLOAK_ROLE_VIEWER = config('KEYCLOAK_ROLE_VIEWER', default='mg_viewer')
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=not DEBUG, cast=bool)
-CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=not DEBUG, cast=bool)
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=True, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=True, cast=bool)
+
+# Fix for cross-origin/cross-port local dev (e.g. 127.0.0.1:8088 vs 127.0.0.1:8000)
+# SameSite=None is required for cross-site cookie transmission, which requires Secure=True.
+# 127.0.0.1/localhost are treated as secure contexts by modern browsers.
+SESSION_COOKIE_SAMESITE = config('SESSION_COOKIE_SAMESITE', default='None')
+CSRF_COOKIE_SAMESITE = config('CSRF_COOKIE_SAMESITE', default='None')
 
 SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
 SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)
