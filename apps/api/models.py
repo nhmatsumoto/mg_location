@@ -304,3 +304,75 @@ class EdgeHub(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=['hub_id']), models.Index(fields=['incident'])]
+
+
+import uuid
+
+class SimulationArea(TimestampedModel):
+    """
+    User-defined 3D geographic slice for the sandbox.
+    Stores the Bounding Box and an optional arbitrary polygon representation.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255, default="New Simulation Area")
+    bbox_min_lat = models.FloatField()
+    bbox_min_lng = models.FloatField()
+    bbox_max_lat = models.FloatField()
+    bbox_max_lng = models.FloatField()
+    polygon_geometry = models.JSONField(default=dict, blank=True, help_text="Optional complex geometry")
+
+
+class ScenarioBundle(TimestampedModel):
+    """
+    The compiled scenario extracting terrain, buildings, and roads for the SimulationArea.
+    """
+    STATUS_PENDING = 'pending'
+    STATUS_EXTRACTING = 'extracting'
+    STATUS_READY = 'ready'
+    STATUS_FAILED = 'failed'
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_EXTRACTING, 'Extracting'),
+        (STATUS_READY, 'Ready'),
+        (STATUS_FAILED, 'Failed'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    area = models.ForeignKey(SimulationArea, on_delete=models.CASCADE, related_name='scenarios')
+    version = models.CharField(max_length=50, default="v1.0")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    
+    terrain_path = models.CharField(max_length=512, blank=True, help_text="Path to extracted heightfield")
+    buildings_path = models.CharField(max_length=512, blank=True, help_text="Path to extracted OSM/PLATEAU buildings")
+    parameters = models.JSONField(default=dict, blank=True, help_text="Metadata about the source extractions")
+
+
+class SimulationRun(TimestampedModel):
+    """
+    A single execution of a flood/physics model over a ScenarioBundle.
+    """
+    STATUS_PENDING = 'pending'
+    STATUS_RUNNING = 'running'
+    STATUS_COMPLETED = 'completed'
+    STATUS_FAILED = 'failed'
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_RUNNING, 'Running'),
+        (STATUS_COMPLETED, 'Completed'),
+        (STATUS_FAILED, 'Failed'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    scenario = models.ForeignKey(ScenarioBundle, on_delete=models.CASCADE, related_name='runs')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    
+    # Input parameters
+    water_level_start = models.FloatField(default=0.0)
+    rainfall_mm = models.FloatField(default=50.0)
+    duration_hours = models.FloatField(default=24.0)
+    
+    # Outputs
+    metrics = models.JSONField(default=dict, blank=True, help_text="Flooded area, volume, building intersections")
+    artifacts = models.JSONField(default=dict, blank=True, help_text="Paths to output textures or GeoJSON layers")

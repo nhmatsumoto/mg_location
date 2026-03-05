@@ -1,0 +1,163 @@
+[catalog]
+title = "Catálogo de Agentes Especialistas (Expansão MG Location)"
+description = "Este catálogo consolida agentes especialistas para software, operações de emergência e domínios técnicos de apoio à decisão."
+
+[[agents]]
+id = 1
+name = "Python & Django Backend Agent"
+focus = "arquitetura Python/Django, modelagem de domínio e APIs REST"
+deliverables = "services/use-cases, regras de negócio, contratos de endpoint e testes"
+
+[[agents]]
+id = 2
+name = "PostgreSQL Data Agent"
+focus = "modelagem relacional, migrações, índices e performance"
+deliverables = "estratégia de persistência, constraints e tuning de consultas"
+
+[[agents]]
+id = 3
+name = "Docker & Runtime Agent"
+focus = "conteinerização, ambiente local/prod e confiabilidade"
+deliverables = "Dockerfile/Compose, healthchecks, startup/recovery e observabilidade"
+
+[[agents]]
+id = 4
+name = "Network & HTTP Agent"
+focus = "conectividade entre serviços e semântica HTTP"
+deliverables = "timeout/retry, status code/header policy, caching e troubleshooting de rede"
+
+[[agents]]
+id = 5
+name = "Security, Auth & Keycloak Agent"
+focus = "segurança de aplicação, autenticação/autorização e IAM"
+deliverables = "fluxos OAuth2/OIDC, políticas de acesso, auditoria e hardening"
+
+[[agents]]
+id = 6
+name = "Web Frontend Agent (React/TypeScript/Zustand)"
+focus = "arquitetura frontend web e UX operacional"
+deliverables = "componentização tipada, estado com Zustand e integração API"
+
+[[agents]]
+id = 7
+name = "API REST Integration Agent"
+focus = "integrações internas/externas com resiliência"
+deliverables = "cliente HTTP centralizado, fallback, mapeamento de erro e versionamento"
+
+[[agents]]
+id = 8
+name = "Certificates & TLS Agent"
+focus = "comunicação segura e gestão de certificados"
+deliverables = "políticas TLS, renovação/rotação de certificados e validação de cadeia"
+
+[[agents]]
+id = 9
+name = "LGPD Compliance Agent"
+focus = "privacidade, proteção de dados e conformidade regulatória"
+deliverables = "classificação de dados, retenção, minimização e trilha de auditoria"
+
+[[agents]]
+id = 10
+name = "Quality & Automated Testing Agent"
+focus = "qualidade contínua com testes automatizados"
+deliverables = "estratégia de testes (unidade/integração), cobertura de fluxos críticos e critérios de aceite"
+
+[[agents]]
+id = 11
+name = "Engineering Best Practices Agent"
+focus = "SOLID, DDD, clean code e governança técnica"
+deliverables = "padrões arquiteturais, revisão de acoplamento e melhoria contínua"
+
+[[agents]]
+id = 12
+name = "Git Workflow & Change Governance Agent"
+focus = "versionamento, branching e qualidade de entrega"
+deliverables = "convenções de commit, PR checklist, release/hotfix flow e rastreabilidade"
+
+[[agents]]
+id = 13
+name = "Design Patterns Agent"
+focus = "aplicação pragmática de design patterns e anti-pattern detection"
+deliverables = "seleção de padrões (Strategy, Factory, Adapter etc.) com justificativa de trade-off"
+
+[[agents]]
+id = 14
+name = "Product Owner Enablement Agent"
+focus = "descoberta de valor, priorização e critérios de aceite"
+deliverables = "backlog estruturado, user stories e definição de pronto"
+
+[[agents]]
+id = 15
+name = "Software Engineering Execution Agent"
+focus = "planejamento e execução técnica ponta a ponta"
+deliverables = "decomposição de tarefas, plano de integração e validação de entrega"
+
+[[agents]]
+id = 16
+name = "Statistics & Decision Intelligence Agent"
+focus = "estatística aplicada e suporte a decisão por dados"
+deliverables = "hipóteses, métricas, análises descritivas/inferenciais e interpretação de risco"
+
+[[agents]]
+id = 17
+name = "Applied Mathematics Agent"
+focus = "modelagem matemática para problemas operacionais"
+deliverables = "modelos, simplificações e validação de consistência numérica"
+
+[[agents]]
+id = 18
+name = "Physics & Simulation Agent"
+focus = "fundamentos físicos para cenários de risco e resposta"
+deliverables = "premissas de dinâmica básica, limitações do modelo e estimativas"
+
+[[agents]]
+id = 19
+name = "Geology & Terrain Risk Agent"
+focus = "análise de terreno, suscetibilidade e contexto geológico"
+deliverables = "critérios de risco geotécnico e interpretação espacial"
+
+[[agents]]
+id = 20
+name = "Architecture & Built Environment Agent"
+focus = "arquitetura de ambientes e impacto em resposta operacional"
+deliverables = "leitura espacial, acessibilidade, fluxos e uso seguro de edificações"
+
+[[agents]]
+id = 21
+name = "Civil Engineering Infrastructure Agent"
+focus = "infraestrutura, estabilidade e logística de campo"
+deliverables = "diretrizes de avaliação de estruturas e rotas críticas"
+
+[[agents]]
+id = 22
+name = "Supply Chain & Logistics Agent"
+focus = "cadeia de suprimentos e disponibilidade operacional"
+deliverables = "planejamento de recursos, buffers e estratégia de reposição"
+
+[[agents]]
+id = 23
+name = "Rescue & Emergency Operations Agent"
+focus = "protocolos de resgate e coordenação de emergência"
+deliverables = "playbooks de resposta, priorização operacional e integração com campo"
+
+[matrix]
+python_django_api = [1, 7]
+postgresql = [2]
+docker = [3]
+networks_http_certs = [4, 8]
+security_auth_keycloak_lgpd = [5, 9]
+web_react_typescript = [6]
+git = [12]
+design_patterns = [13]
+product_owner = [14]
+software_engineering = [15]
+statistics = [16]
+mathematics = [17]
+physics = [18]
+geology = [19]
+architecture = [20]
+civil_engineering = [21]
+supply_chain = [22]
+rescue_emergency = [23]
+solid_ddd_best_practices = [11]
+automated_testing = [10]

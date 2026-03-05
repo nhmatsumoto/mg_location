@@ -5,6 +5,7 @@ export interface WeatherForecastDto {
   lat: number;
   lon: number;
   timezone?: string;
+  current?: Record<string, unknown>;
   hourly?: Record<string, unknown>;
   daily?: Record<string, unknown>;
   cacheHit?: boolean;
@@ -17,6 +18,8 @@ export interface AlertDto {
   source: string;
   effective?: string;
   expires?: string;
+  area?: string[];
+  polygons?: string[];
 }
 
 export interface TransferRecordDto {
@@ -88,6 +91,10 @@ export const integrationsApi = {
     const response = await apiClient.get<{ source: string; items: IbgeMunicipioDto[]; cacheHit?: boolean }>('/api/integrations/ibge/municipios', {
       params: { uf, nome, limit },
     });
+    return response.data;
+  },
+  async getDisasterIntelligence(params: { city?: string; state?: string; lat?: number; lon?: number; bbox?: string; since?: string }) {
+    const response = await apiClient.get<any>('/api/alerts/intelligence', { params, __skipGlobalNotify: true } as any);
     return response.data;
   },
 };

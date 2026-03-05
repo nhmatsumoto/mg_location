@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Stars, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
+import { SimulationBoxEditor } from './SimulationBoxEditor';
+import { HazardOverlay } from './HazardOverlay';
 
 interface Event3DProps {
   id: string;
@@ -93,13 +95,15 @@ interface Tactical3DMapProps {
   hoveredId: string | null;
   onHover: (id: string | null) => void;
   onClick: (p: any) => void;
+  enableSimulationBox?: boolean;
 }
 
 export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({ 
   events, 
   hoveredId,
   onHover,
-  onClick
+  onClick,
+  enableSimulationBox = false
 }) => {
   // Projection logic: Lat/Lon to 3D Space
   // We'll normalize around center of events for better view
@@ -164,6 +168,9 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
 
         {/* Atmosphere/Fog */}
         <fog attach="fog" args={['#020617', 10, 60]} />
+
+        {enableSimulationBox && <SimulationBoxEditor />}
+        {enableSimulationBox && <HazardOverlay />}
       </Canvas>
 
       <div className="absolute bottom-4 left-4 pointer-events-none">

@@ -1,21 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { MapContainer, Polygon, Polyline, Popup, TileLayer, useMap, useMapEvents, Marker, CircleMarker } from 'react-leaflet';
+import { MapContainer, Polygon, Polyline, Popup, TileLayer, useMap, useMapEvents, Marker, CircleMarker, Circle } from 'react-leaflet';
 import { Modal } from '../components/ui/Modal';
 import { createEvent, getEvents } from '../services/disastersApi';
-import { missingPersonsApi } from '../services/missingPersonsApi';
-import { operationsApi } from '../services/operationsApi';
+import { operationsApi, type MapAnnotationDto } from '../services/operationsApi';
 import { eventsApi, type DomainEvent } from '../services/eventsApi';
+import { integrationsApi, type AlertDto, type WeatherForecastDto } from '../services/integrationsApi';
 import { syncEngine, type OutboxCommand } from '../lib/SyncEngine';
 import { useNotifications } from '../context/NotificationsContext';
 import { EventScatterPlot, type ScatterPoint } from '../components/EventScatterPlot';
 import { Tactical3DMap } from '../components/map/Tactical3DMap';
-import { Globe, Map as MapIcon, Target, AlertTriangle, CloudRain, Zap, Flame, Waves, Search, HeartHandshake, Maximize2, Minimize2, PanelBottomClose, PanelBottomOpen, MousePointer2, Layers, Crosshair } from 'lucide-react';
+import { Globe, Map as MapIcon, Target, AlertTriangle, CloudRain, Zap, Flame, Waves, Search, HeartHandshake, Maximize2, Minimize2, PanelBottomClose, PanelBottomOpen, MousePointer2, Layers, Crosshair, Box, Play } from 'lucide-react';
+import { useSimulationStore } from '../store/useSimulationStore';
+import { ScenarioBuilderPanel } from '../components/map/ScenarioBuilderPanel';
 import { renderToString } from 'react-dom/server';
 import L from 'leaflet';
 import { CountryDropdown } from '../components/ui/CountryDropdown';
 
-type ToolMode = 'inspect' | 'point' | 'area';
+type ToolMode = 'inspect' | 'point' | 'area' | 'filter_area' | 'simulation_box';
 
 const EVENT_TYPE_OPTIONS = ['Flood', 'Earthquake', 'Cyclone', 'Volcano', 'Wildfire', 'Storm', 'Tsunami', 'Landslide', 'Other'];
 const PROVIDER_OPTIONS = ['MANUAL', 'GDACS', 'USGS', 'INMET'];
@@ -27,16 +29,26 @@ function MapInteractions({
   onHover,
   areaDraft,
   setAreaDraft,
+  spatialFilter,
+  setSpatialFilter,
+  onFilterComplete
 }: {
   tool: ToolMode;
   onPickPoint: (lat: number, lon: number) => void;
   onHover: (lat: number, lon: number) => void;
   areaDraft: Array<[number, number]>;
   setAreaDraft: (next: Array<[number, number]>) => void;
+  spatialFilter: { center: [number, number], radius: number } | null;
+  setSpatialFilter: (next: { center: [number, number], radius: number } | null) => void;
+  onFilterComplete: (filter: { center: [number, number], radius: number }) => void;
 }) {
+  const map = useMap();
   useMapEvents({
     mousemove(e) {
       onHover(e.latlng.lat, e.latlng.lng);
+      if (tool === 'filter_area' && spatialFilter && !spatialFilter.radius) {
+        setSpatialFilter({ ...spatialFilter, radius: map.distance(spatialFilter.center, e.latlng) });
+      }
     },
     click(e) {
       if (tool === 'point') {
@@ -45,6 +57,16 @@ function MapInteractions({
       }
       if (tool === 'area') {
         setAreaDraft([...areaDraft, [e.latlng.lat, e.latlng.lng]]);
+      }
+      if (tool === 'filter_area') {
+        if (!spatialFilter || spatialFilter.radius) {
+          setSpatialFilter({ center: [e.latlng.lat, e.latlng.lng], radius: 0 });
+        } else {
+          const finalRadius = map.distance(spatialFilter.center, e.latlng);
+          const filter = { ...spatialFilter, radius: finalRadius };
+          setSpatialFilter(filter);
+          onFilterComplete(filter);
+        }
       }
     },
     contextmenu() {
@@ -68,11 +90,14 @@ function MapRecenter({ center }: { center: [number, number] }) {
 export function GlobalDisastersPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [domainEvents, setDomainEvents] = useState<DomainEvent[]>([]);
+  const [alerts, setAlerts] = useState<AlertDto[]>([]);
+  const [mapAnnotations, setMapAnnotations] = useState<MapAnnotationDto[]>([]);
   const [outbox, setOutbox] = useState<OutboxCommand[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([-14.2, -51.9]);
   const [show3D, setShow3D] = useState(false);
   const [showTimeline, setShowTimeline] = useState(true);
+  const [weatherIntel, setWeatherIntel] = useState<WeatherForecastDto | null>(null);
   const [intelPanelOpen, setIntelPanelOpen] = useState(false);
 
   const [country, setCountry] = useState('BR');
@@ -82,6 +107,10 @@ export function GlobalDisastersPage() {
   const [mapLayer, setMapLayer] = useState<'dark' | 'soil'>('dark');
   const [hover, setHover] = useState<{ lat: number; lon: number } | null>(null);
   const [areaDraft, setAreaDraft] = useState<Array<[number, number]>>([]);
+  const [spatialFilter, setSpatialFilter] = useState<{ center: [number, number], radius: number } | null>(null);
+  const [regionFilter, setRegionFilter] = useState('');
+  const [intelReport, setIntelReport] = useState<any>(null);
+  const [isIntelLoading, setIsIntelLoading] = useState(false);
 
   const [openEventModal, setOpenEventModal] = useState(false);
   const [openOpsModal, setOpenOpsModal] = useState(false);
@@ -97,7 +126,7 @@ export function GlobalDisastersPage() {
     countryName: '',
     sourceUrl: '',
   });
-  const [opsForm, setOpsForm] = useState({ personName: '', lastSeenLocation: '', incidentTitle: '', severity: 'high' });
+  const [opsForm, setOpsForm] = useState({ recordType: 'risk_area' as 'risk_area' | 'support_point' | 'missing_person', personName: '', lastSeenLocation: '', incidentTitle: '', severity: 'high' });
   const { pushNotice } = useNotifications();
 
   const loadData = async () => {
@@ -110,8 +139,28 @@ export function GlobalDisastersPage() {
         if (all.length >= resp.total || resp.items.length === 0) break;
       }
       setEvents(all);
-      const dEvents = await eventsApi.list();
-      setDomainEvents(dEvents);
+
+      try {
+        const dEvents = await eventsApi.list();
+        setDomainEvents(dEvents);
+      } catch (e) {
+        console.warn('Failed to load domain events', e);
+      }
+      
+      try {
+        const fetchedAlerts = await integrationsApi.getAlerts();
+        setAlerts(fetchedAlerts?.items || []);
+      } catch (e) {
+        console.warn('Failed to fetch official alerts', e);
+      }
+      
+      try {
+        const fetchedAnnotations = await operationsApi.listMapAnnotations();
+        setMapAnnotations(fetchedAnnotations || []);
+      } catch (e) {
+        console.warn('Failed to fetch map annotations', e);
+      }
+
       const pending = await syncEngine.getOutbox();
       setOutbox(pending);
     } catch (err) {
@@ -163,11 +212,25 @@ export function GlobalDisastersPage() {
     setTool('inspect'); // Reset tool to avoid weird interactions
   };
 
-  const currentDisplayEvents = country ? events.filter(e => e.country_code === country) : filteredEvents;
+  const filterByDistance = (lat?: number | string | null, lon?: number | string | null) => {
+    if (!spatialFilter || !spatialFilter.radius) return true;
+    if (!lat || !lon) return false;
+    const center = L.latLng(spatialFilter.center[0], spatialFilter.center[1]);
+    return center.distanceTo(L.latLng(Number(lat), Number(lon))) <= spatialFilter.radius + 5000;
+  };
+
+  const currentDisplayEvents = useMemo(() => {
+    let list = country ? events.filter(e => e.country_code === country) : filteredEvents;
+    if (spatialFilter?.radius) {
+      list = list.filter(e => filterByDistance(e.lat, e.lon));
+    }
+    return list;
+  }, [events, filteredEvents, country, spatialFilter]);
 
   const scatterPoints = useMemo(() => {
     const combined: ScatterPoint[] = [];
     currentDisplayEvents.forEach((e) => {
+      // already filtered
       combined.push({
         id: `${e.provider}-${e.provider_event_id}`,
         x: 0, 
@@ -182,6 +245,7 @@ export function GlobalDisastersPage() {
 
     domainEvents.forEach((e) => {
       const data = e.payload || {};
+      if (!filterByDistance(data.lat, data.lng)) return;
       const severity = data.priority || (data.severity === 'high' ? 4 : data.severity === 'critical' ? 5 : 2);
       combined.push({
         id: e.id,
@@ -209,6 +273,50 @@ export function GlobalDisastersPage() {
       });
     });
 
+    alerts.forEach((alert) => {
+      let alat = null, alon = null;
+      if (alert.polygons?.[0]) {
+        alat = Number(alert.polygons[0].split(/[,\s]+/)[0]);
+        alon = Number(alert.polygons[0].split(/[,\s]+/)[1]);
+      }
+      if (!filterByDistance(alat, alon)) return;
+
+      const severityMap: Record<string, number> = {
+        'Extreme': 5,
+        'Severe': 4,
+        'Moderate': 3,
+        'Minor': 2,
+        'Unknown': 1
+      };
+      const severity = severityMap[alert.severity] || 3;
+      combined.push({
+        id: `alert-${alert.id}`,
+        x: 0,
+        y: 100 - ((severity - 1) / 4) * 100,
+        label: `ALERTA (${alert.source}): ${alert.event}`,
+        type: 'Alert',
+        timestamp: alert.effective || new Date().toISOString(),
+        severity: severity,
+        metadata: alert
+      });
+    });
+
+    mapAnnotations.forEach((ann) => {
+      if (!filterByDistance(ann.lat, ann.lng)) return;
+      const severityMap: Record<string, number> = { 'critical': 5, 'high': 4, 'medium': 3, 'low': 2 };
+      const sev = severityMap[ann.severity || 'low'] || 2;
+      combined.push({
+        id: `ann-${ann.id}`,
+        x: 0,
+        y: 100 - ((sev - 1) / 4) * 100,
+        label: `ANOTAÇÃO (${ann.recordType}): ${ann.title}`,
+        type: ann.recordType,
+        timestamp: ann.createdAtUtc || new Date().toISOString(),
+        severity: sev,
+        metadata: ann
+      });
+    });
+
     if (!combined.length) return [];
     const times = combined.map(p => new Date(p.timestamp).getTime());
     const minTs = Math.min(...times);
@@ -219,7 +327,7 @@ export function GlobalDisastersPage() {
       ...p,
       x: ((new Date(p.timestamp).getTime() - minTs) / range) * 95 + 2.5
     }));
-  }, [events, domainEvents, outbox]);
+  }, [currentDisplayEvents, domainEvents, outbox, alerts, mapAnnotations, spatialFilter]);
 
   const pickCoordinates = (lat: number, lon: number) => {
     setForm((prev) => ({ ...prev, lat: lat.toFixed(6), lon: lon.toFixed(6) }));
@@ -251,26 +359,22 @@ export function GlobalDisastersPage() {
 
   const saveOps = async () => {
     try {
-      if (form.lat && form.lon && opsForm.incidentTitle) {
+      if (form.lat && form.lon) {
         await operationsApi.createMapAnnotation({
-          recordType: 'risk_area',
-          title: opsForm.incidentTitle,
+          recordType: opsForm.recordType,
+          title: opsForm.incidentTitle || (opsForm.recordType === 'missing_person' ? `Busca: ${opsForm.personName}` : 'Nova Anotação'),
           lat: Number(form.lat),
           lng: Number(form.lon),
           severity: opsForm.severity,
-          radiusMeters: 300,
-        });
-      }
-      if (opsForm.personName) {
-        await missingPersonsApi.create({
-          personName: opsForm.personName,
-          city: 'Ubá',
-          lastSeenLocation: opsForm.lastSeenLocation || `${form.lat}, ${form.lon}`,
-          contactPhone: 'Não informado',
-          contactName: 'Central MG Location',
+          ...(opsForm.recordType === 'risk_area' ? { radiusMeters: 300 } : {}),
+          ...(opsForm.recordType === 'missing_person' ? { 
+            personName: opsForm.personName, 
+            lastSeenLocation: opsForm.lastSeenLocation || `${form.lat}, ${form.lon}` 
+          } : {})
         });
       }
       setOpenOpsModal(false);
+      setAreaDraft([]);
       await loadData();
     } catch {
       pushNotice({ type: 'error', title: 'Falha no cadastro operacional', message: 'Erro de comunicação.' });
@@ -280,12 +384,59 @@ export function GlobalDisastersPage() {
   const selectedEvent = useMemo(() => {
     if (!hoveredId) return null;
     return events.find(e => `${e.provider}-${e.provider_event_id}` === hoveredId) || 
-           domainEvents.find(e => e.id === hoveredId);
-  }, [hoveredId, events, domainEvents]);
+           domainEvents.find(e => e.id === hoveredId) ||
+           alerts.find(a => `alert-${a.id}` === hoveredId) ||
+           mapAnnotations.find(m => `ann-${m.id}` === hoveredId);
+  }, [hoveredId, events, domainEvents, alerts, mapAnnotations]);
 
   useEffect(() => {
-    if (selectedEvent) setIntelPanelOpen(true);
+    if (selectedEvent) {
+      setIntelPanelOpen(true);
+      const lat = selectedEvent.lat || selectedEvent.payload?.lat || selectedEvent.metadata?.lat || (selectedEvent.polygons?.[0] ? Number(selectedEvent.polygons[0].split(/[,\s]+/)[0]) : null);
+      const lon = selectedEvent.lon || selectedEvent.payload?.lon || selectedEvent.metadata?.lng || (selectedEvent.polygons?.[0] ? Number(selectedEvent.polygons[0].split(/[,\s]+/)[1]) : null);
+      if (lat && lon) {
+        integrationsApi.getWeatherForecast(lat, lon).then(setWeatherIntel).catch(() => setWeatherIntel(null));
+      } else {
+        setWeatherIntel(null);
+      }
+    } else {
+      setWeatherIntel(null);
+    }
   }, [selectedEvent]);
+
+  const handleRegionSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!regionFilter) return;
+    setIsIntelLoading(true);
+    try {
+      const data = await integrationsApi.getDisasterIntelligence({ city: regionFilter });
+      setIntelReport(data);
+      if (data.location?.lat && data.location?.lon) {
+         setSpatialFilter({ center: [data.location.lat, data.location.lon], radius: 60000 });
+         setMapCenter([data.location.lat, data.location.lon]);
+         useMap?.().setView([data.location.lat, data.location.lon], 9);
+      }
+      setIntelPanelOpen(true);
+    } catch (err) {
+      console.error(err);
+      pushNotice({ type: 'error', title: 'Integração Inativa', message: 'Não foi possível buscar os dados da região.' });
+    } finally {
+      setIsIntelLoading(false);
+    }
+  };
+
+  const handleFilterComplete = async (filter: { center: [number, number]; radius: number }) => {
+    setIsIntelLoading(true);
+    try {
+       const data = await integrationsApi.getDisasterIntelligence({ lat: filter.center[0], lon: filter.center[1] });
+       setIntelReport(data);
+       setIntelPanelOpen(true);
+    } catch (err) {
+       console.error(err);
+    } finally {
+       setIsIntelLoading(false);
+    }
+  };
 
   return (
     <section className="h-[calc(100vh-140px)] flex flex-col gap-4 overflow-hidden">
@@ -315,6 +466,28 @@ export function GlobalDisastersPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <form className="relative flex items-center mr-2" onSubmit={handleRegionSearch}>
+            <input 
+               type="text" 
+               placeholder="Filtrar Cidade, UF..." 
+               className="bg-slate-800/80 border border-slate-700 text-slate-200 text-[11px] rounded px-3 py-1.5 focus:outline-none focus:border-cyan-500 w-44" 
+               value={regionFilter} 
+               onChange={e => setRegionFilter(e.target.value)} 
+               disabled={isIntelLoading}
+            />
+            {isIntelLoading ? (
+               <div className="absolute right-2 w-3 h-3 rounded-full border-2 border-slate-500 border-t-cyan-400 animate-spin" />
+            ) : (
+               <button type="submit" className="absolute right-2 text-slate-400 hover:text-cyan-400 cursor-pointer">
+                 <Search size={12} />
+               </button>
+            )}
+            {spatialFilter && (
+               <button type="button" onClick={() => { setSpatialFilter(null); setIntelReport(null); setRegionFilter(''); }} className="absolute -left-6 text-red-400 hover:text-red-300 tooltip" title="Remover Filtro Lógico">
+                 ✖
+               </button>
+            )}
+          </form>
 
           <CountryDropdown value={country} onChange={setCountry} />
           
@@ -350,6 +523,7 @@ export function GlobalDisastersPage() {
               hoveredId={hoveredId}
               onHover={setHoveredId}
               onClick={(p: any) => setHoveredId(p.id || `${p.provider}-${p.provider_event_id}`)}
+              enableSimulationBox={tool === 'simulation_box'}
             />
           ) : (
             <MapContainer center={mapCenter} zoom={4} style={{ height: '100%', width: '100%' }} className="tactical-map-container">
@@ -366,8 +540,21 @@ export function GlobalDisastersPage() {
                 </>
               )}
               <MapRecenter center={mapCenter} />
-              <MapInteractions tool={tool} onPickPoint={pickCoordinates} onHover={(lat, lon) => setHover({ lat, lon })} areaDraft={areaDraft} setAreaDraft={setAreaDraft} />
+              <MapInteractions 
+                tool={tool} 
+                onPickPoint={pickCoordinates} 
+                onHover={(lat, lon) => setHover({ lat, lon })} 
+                areaDraft={areaDraft} 
+                setAreaDraft={setAreaDraft} 
+                spatialFilter={spatialFilter} 
+                setSpatialFilter={setSpatialFilter} 
+                onFilterComplete={handleFilterComplete} 
+              />
               
+              {spatialFilter && spatialFilter.radius > 0 && (
+                <Circle center={spatialFilter.center} radius={spatialFilter.radius} pathOptions={{ color: '#2dd4bf', fillColor: '#2dd4bf', fillOpacity: 0.1, dashArray: '4,4' }} />
+              )}
+
               {hover && (
                 <CircleMarker center={[hover.lat, hover.lon]} radius={4} pathOptions={{ color: '#22d3ee', fillOpacity: 0.9 }}>
                   <Popup>Cursor: {hover.lat.toFixed(5)}, {hover.lon.toFixed(5)}</Popup>
@@ -408,6 +595,91 @@ export function GlobalDisastersPage() {
                   </Marker>
                 );
               })}
+
+              {mapAnnotations.map((ann) => {
+                const id = `ann-${ann.id}`;
+                const isHovered = hoveredId === id;
+                const iconType = ann.recordType === 'missing_person' ? 'search' : ann.recordType === 'support_point' ? 'donation' : 'risk';
+                const iconHtml = renderToString(getEventIcon(iconType, isHovered));
+                
+                return (
+                  <Marker 
+                    key={id} 
+                    position={[ann.lat, ann.lng]} 
+                    icon={L.divIcon({
+                      html: `<div class="tactical-marker ${isHovered ? 'hovered' : ''}" style="color: ${isHovered ? '#22d3ee' : '#eab308'}">${iconHtml}</div>`,
+                      className: 'custom-div-icon',
+                      iconSize: [24, 24],
+                      iconAnchor: [12, 12],
+                    })}
+                    eventHandlers={{
+                      mouseover: () => setHoveredId(id),
+                      mouseout: () => setHoveredId(null)
+                    }}
+                  >
+                    <Popup className="tactical-popup">
+                      <div className="font-mono text-xs p-1">
+                        <div className="font-bold border-b border-white/10 mb-2 pb-1 text-yellow-500">{ann.title}</div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                          <span className="text-slate-500 uppercase text-[9px]">Tipo:</span>
+                          <span className="text-slate-200">{ann.recordType}</span>
+                          <span className="text-slate-500 uppercase text-[9px]">Inserido em:</span>
+                          <span className="text-slate-200">{ann.createdAtUtc ? format(new Date(ann.createdAtUtc), 'dd/MM HH:mm') : 'Agora'}</span>
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+
+              {alerts.map((alert) => {
+                if (!alert.polygons || !alert.polygons.length) return null;
+                return alert.polygons.map((polyString, idx) => {
+                  const rawChunks = polyString.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
+                  const points: Array<[number, number]> = [];
+                  for (let i = 0; i < rawChunks.length - 1; i += 2) {
+                    let lat = Number(rawChunks[i]);
+                    let lon = Number(rawChunks[i + 1]);
+                    if (!isNaN(lat) && !isNaN(lon)) {
+                      if (Math.abs(lat) > 90 && Math.abs(lon) <= 90) {
+                        const temp = lat; lat = lon; lon = temp;
+                      } else if (lat >= -75 && lat <= -25 && lon >= -35 && lon <= 10) {
+                        const temp = lat; lat = lon; lon = temp;
+                      }
+                      points.push([lat, lon]);
+                    }
+                  }
+                  if (points.length < 3) return null;
+                  
+                  const color = alert.severity === 'Extreme' ? '#ef4444' : alert.severity === 'Severe' ? '#f97316' : '#eab308';
+                  return (
+                    <Polygon 
+                      key={`${alert.id}-${idx}`} 
+                      positions={points} 
+                      pathOptions={{ color, fillColor: color, fillOpacity: 0.15, weight: 2 }}
+                      eventHandlers={{
+                        mouseover: () => setHoveredId(`alert-${alert.id}`),
+                        mouseout: () => setHoveredId(null)
+                      }}
+                    >
+                      <Popup className="tactical-popup">
+                        <div className="font-mono text-xs p-1 min-w-[200px]">
+                          <div className="font-bold border-b border-white/10 mb-2 pb-1" style={{color}}>{alert.event || 'Alerta Oficial'}</div>
+                          <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
+                            <span className="text-slate-500 uppercase text-[9px]">Severidade:</span>
+                            <span className="text-slate-200">{alert.severity}</span>
+                            <span className="text-slate-500 uppercase text-[9px]">Fonte:</span>
+                            <span className="text-slate-200">{alert.source}</span>
+                            <span className="text-slate-500 uppercase text-[9px]">Área:</span>
+                            <span className="text-slate-200 text-[10px] leading-tight max-h-20 overflow-y-auto custom-scrollbar">{alert.area?.join(', ')}</span>
+                          </div>
+                        </div>
+                      </Popup>
+                    </Polygon>
+                  );
+                });
+              })}
+
               {areaDraft.length > 1 && <Polyline positions={areaDraft} pathOptions={{ color: '#06b6d4', weight: 2, dashArray: '5, 5' }} />}
               {areaDraft.length > 2 && <Polygon positions={areaDraft} pathOptions={{ color: '#06b6d4', fillColor: '#06b6d4', fillOpacity: 0.2 }} />}
             </MapContainer>
@@ -420,7 +692,9 @@ export function GlobalDisastersPage() {
             {[
               { id: 'inspect', icon: <MousePointer2 size={16} />, label: 'Inspecionar' },
               { id: 'point', icon: <Target size={16} />, label: 'Ponto' },
-              { id: 'area', icon: <Maximize2 size={16} />, label: 'Área' }
+              { id: 'area', icon: <Maximize2 size={16} />, label: 'Área' },
+              { id: 'filter_area', icon: <Crosshair size={16} />, label: 'Filtro Circular' },
+              { id: 'simulation_box', icon: <Box size={16} />, label: 'Área 3D (Simulação)' }
             ].map((t) => (
               <button
                 key={t.id}
@@ -453,7 +727,7 @@ export function GlobalDisastersPage() {
             </button>
           </div>
           
-          {tool !== 'inspect' && (
+          {tool !== 'inspect' && tool !== 'simulation_box' && (
             <div className="bg-cyan-500/20 border border-cyan-500/50 px-3 py-1.5 rounded-md animate-in fade-in slide-in-from-left duration-300 backdrop-blur-md">
               <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
@@ -462,13 +736,73 @@ export function GlobalDisastersPage() {
             </div>
           )}
         </div>
+
+        {/* Scenario Sandbox UI */}
+        {show3D && tool === 'simulation_box' && (
+          <ScenarioBuilderPanel onClose={() => setTool('inspect')} />
+        )}
         {/* Intelligence / Selection Sidebar */}
-        <aside className={`absolute top-4 right-4 z-20 w-80 max-h-[calc(100%-120px)] bg-slate-900/90 border border-white/10 rounded-2xl backdrop-blur-xl shadow-3xl transition-all duration-300 transform overflow-hidden flex flex-col ${intelPanelOpen && selectedEvent ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'}`}>
+        <aside className={`absolute top-4 right-4 z-20 w-80 max-h-[calc(100%-120px)] bg-slate-900/90 border border-white/10 rounded-2xl backdrop-blur-xl shadow-3xl transition-all duration-300 transform overflow-hidden flex flex-col ${intelPanelOpen && (selectedEvent || intelReport) ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'}`}>
           <div className="p-4 border-b border-white/5 flex items-center justify-between">
-            <h3 className="text-xs font-black text-cyan-400 uppercase tracking-[0.2em]">SITUATION INTEL</h3>
+            <h3 className="text-xs font-black text-cyan-400 uppercase tracking-[0.2em] flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
+              SITUATION INTEL
+            </h3>
             <button onClick={() => setIntelPanelOpen(false)} className="text-slate-500 hover:text-white transition-colors"><Minimize2 size={14} /></button>
           </div>
           <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+            {intelReport && !selectedEvent && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
+                <div className="space-y-1">
+                  <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1"><Crosshair size={10} /> Relatório Zonal de Risco</div>
+                  <h4 className="text-lg font-bold text-slate-100 leading-tight">Inteligência Regional</h4>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="bg-slate-800/50 p-2 rounded-lg border border-white/5">
+                    <div className="text-slate-500 uppercase font-bold text-[8px]">Nível de Risco</div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex gap-0.5">
+                        {[...Array(5)].map((_, i) => (
+                           <div key={i} className={`w-2 h-2 rounded-full ${i < (intelReport.risk_level === 'CRITICAL' ? 5 : intelReport.risk_level === 'HIGH' ? 4 : intelReport.risk_level === 'MEDIUM' ? 3 : 2) ? 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]' : 'bg-slate-700'}`} />
+                        ))}
+                      </div>
+                      <span className="font-bold text-slate-200">{intelReport.risk_level}</span>
+                    </div>
+                  </div>
+                  <div className="bg-slate-800/50 p-2 rounded-lg border border-white/5">
+                    <div className="text-slate-500 uppercase font-bold text-[8px]">Alertas Ativos</div>
+                    <div className="text-slate-200 mt-1 font-mono">{intelReport.alerts?.length || 0} Registros</div>
+                  </div>
+                </div>
+
+                {intelReport.weather && intelReport.weather.current && (
+                  <div className="space-y-2">
+                    <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1"><CloudRain size={10} /> Meteorologia Local</div>
+                    <div className="p-3 bg-cyan-950/20 rounded-lg border border-cyan-500/20 flex items-center justify-between">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-400 text-[10px] uppercase font-bold">Chuva</span>
+                        <span className="text-cyan-400 font-mono font-bold text-sm">{intelReport.weather.current.rain_mm || 0} mm</span>
+                      </div>
+                      <div className="flex flex-col gap-1 items-end">
+                        <span className="text-slate-400 text-[10px] uppercase font-bold">Temp.</span>
+                        <span className="text-orange-400 font-mono font-bold text-sm">{intelReport.weather.current.temp_c || '--'} °C</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {intelReport.recommendations && intelReport.recommendations.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1"><AlertTriangle size={10} /> Recomendações Táticas</div>
+                    <ul className="p-3 bg-red-950/20 rounded-lg border border-red-500/20 text-[10px] text-red-200 font-mono leading-relaxed list-disc list-inside">
+                      {intelReport.recommendations.map((rec: string, idx: number) => <li key={idx} className="mb-1">{rec}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
             {selectedEvent && (
               <div className="space-y-4">
                 <div className="space-y-1">
@@ -482,17 +816,33 @@ export function GlobalDisastersPage() {
                     <div className="flex items-center gap-1.5 mt-1">
                       <div className="flex gap-0.5">
                         {[1,2,3,4,5].map(i => (
-                          <div key={i} className={`w-2 h-2 rounded-full ${i <= selectedEvent.severity ? 'bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]' : 'bg-slate-700'}`} />
+                          <div key={i} className={`w-2 h-2 rounded-full ${i <= (selectedEvent.severity || 1) ? 'bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]' : 'bg-slate-700'}`} />
                         ))}
                       </div>
-                      <span className="font-bold text-slate-200">{selectedEvent.severity}/5</span>
+                      <span className="font-bold text-slate-200">{(selectedEvent.severity || 1)}/5</span>
                     </div>
                   </div>
                   <div className="bg-slate-800/50 p-2 rounded-lg border border-white/5">
                     <div className="text-slate-500 uppercase font-bold text-[8px]">Início</div>
-                    <div className="text-slate-200 mt-1">{format(new Date(selectedEvent.start_at || selectedEvent.timestamp), 'dd/MM HH:mm')}</div>
+                    <div className="text-slate-200 mt-1">{selectedEvent.start_at || selectedEvent.timestamp || selectedEvent.effective || selectedEvent.createdAtUtc ? format(new Date(selectedEvent.start_at || selectedEvent.timestamp || selectedEvent.effective || selectedEvent.createdAtUtc), 'dd/MM HH:mm') : 'Desconhecido'}</div>
                   </div>
                 </div>
+
+                {weatherIntel && weatherIntel.current && (
+                  <div className="space-y-2">
+                    <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1"><CloudRain size={10} /> Meteorologia Local (24h)</div>
+                    <div className="p-3 bg-cyan-950/20 rounded-lg border border-cyan-500/20 flex items-center justify-between">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-400 text-[10px] uppercase font-bold">Chuva</span>
+                        <span className="text-cyan-400 font-mono font-bold text-sm">{(weatherIntel.current as any).rain_mm || 0} mm</span>
+                      </div>
+                      <div className="flex flex-col gap-1 items-end">
+                        <span className="text-slate-400 text-[10px] uppercase font-bold">Temperatura</span>
+                        <span className="text-orange-400 font-mono font-bold text-sm">{(weatherIntel.current as any).temp_c || '--'} °C</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Análise de Dados</div>
@@ -581,14 +931,24 @@ export function GlobalDisastersPage() {
 
       <Modal title="Cadastro operacional rápido" open={openOpsModal} onClose={() => setOpenOpsModal(false)}>
         <div className="grid grid-cols-1 gap-2 text-sm">
-          <input value={opsForm.incidentTitle} onChange={(e) => setOpsForm((p) => ({ ...p, incidentTitle: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Título do incidente" />
+          <select value={opsForm.recordType} onChange={(e) => setOpsForm((p) => ({ ...p, recordType: e.target.value as any }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2 text-cyan-400 font-bold">
+            <option value="risk_area">⚠️ Área de Risco / Ocorrência</option>
+            <option value="support_point">🤝 Ponto de Apoio / Abrigo</option>
+            <option value="missing_person">🔍 Pessoa Desaparecida</option>
+          </select>
+          <input value={opsForm.incidentTitle} onChange={(e) => setOpsForm((p) => ({ ...p, incidentTitle: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Título (ex: Deslizamento Morro X)" />
           <select value={opsForm.severity} onChange={(e) => setOpsForm((p) => ({ ...p, severity: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2">
+            <option value="low">Baixa</option>
             <option value="medium">Média</option>
             <option value="high">Alta</option>
             <option value="critical">Crítica</option>
           </select>
-          <input value={opsForm.personName} onChange={(e) => setOpsForm((p) => ({ ...p, personName: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Nome da pessoa" />
-          <input value={opsForm.lastSeenLocation} onChange={(e) => setOpsForm((p) => ({ ...p, lastSeenLocation: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Localização" />
+          {opsForm.recordType === 'missing_person' && (
+            <>
+              <input value={opsForm.personName} onChange={(e) => setOpsForm((p) => ({ ...p, personName: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Nome da pessoa" />
+              <input value={opsForm.lastSeenLocation} onChange={(e) => setOpsForm((p) => ({ ...p, lastSeenLocation: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Último local visto" />
+            </>
+          )}
         </div>
         <div className="mt-3 flex justify-end gap-2">
           <button className="rounded border border-slate-700 px-3 py-2 text-xs" onClick={() => setOpenOpsModal(false)}>Cancelar</button>

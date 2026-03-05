@@ -158,3 +158,13 @@ urlpatterns = [
     path('hubs', hub_list, name='hub_list'),
     path('hubs/register', hub_register, name='hub_register'),
 ]
+
+from rest_framework.routers import DefaultRouter
+from apps.api.views_simulation import SimulationAreaViewSet, ScenarioBundleViewSet, SimulationRunViewSet
+
+router = DefaultRouter(trailing_slash=False)
+router.register(r'simulations/areas', SimulationAreaViewSet, basename='simulation-area')
+router.register(r'simulations/scenarios', ScenarioBundleViewSet, basename='simulation-scenario')
+router.register(r'simulations/runs', SimulationRunViewSet, basename='simulation-run')
+
+urlpatterns += router.urls

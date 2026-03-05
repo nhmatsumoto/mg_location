@@ -10,6 +10,19 @@ export interface SupportPoint {
   metadata?: { type?: string; capacity?: number };
 }
 
+export interface MapAnnotationDto {
+  id: string;
+  recordType: string;
+  title: string;
+  lat: number;
+  lng: number;
+  severity?: string;
+  radiusMeters?: number;
+  status?: string;
+  metadata?: Record<string, unknown>;
+  createdAtUtc?: string;
+}
+
 export interface RiskArea {
   id: string;
   recordType: string;
@@ -143,6 +156,15 @@ export const operationsApi = {
     return response.data;
   },
 
+
+  async listMapAnnotations() {
+    try {
+      const response = await apiClient.get<MapAnnotationDto[]>('/api/map-annotations', { __skipGlobalNotify: true } as any);
+      return response.data;
+    } catch {
+      return [];
+    }
+  },
 
   async createMapAnnotation(payload: {
     recordType: 'support_point' | 'risk_area' | 'missing_person';
