@@ -17,11 +17,11 @@ const navItems = [
   { to: '/app/settings', label: 'Configurações', icon: Settings },
 ];
 
-export function Sidebar() {
+export function Sidebar({ className }: { className?: string }) {
   const location = useLocation();
 
   return (
-    <aside className="rounded-2xl border border-slate-700/60 bg-slate-900/80 p-4 shadow-2xl shadow-black/25">
+    <aside className={`rounded-2xl border border-slate-700/60 bg-slate-900/80 p-4 shadow-2xl shadow-black/25 ${className || ''}`}>
       <div className="mb-4 border-b border-slate-700/70 pb-3">
         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-300">SOS Location</p>
         <h1 className="text-lg font-bold text-slate-100">War Room</h1>

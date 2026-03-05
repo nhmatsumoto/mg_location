@@ -5,9 +5,26 @@ interface TopbarProps {
   onToggleTheme: () => void;
   notificationCount: number;
   onOpenNotifications: () => void;
+  minimal?: boolean;
 }
 
-export function Topbar({ theme, onToggleTheme, notificationCount, onOpenNotifications }: TopbarProps) {
+export function Topbar({ theme, onToggleTheme, notificationCount, onOpenNotifications, minimal }: TopbarProps) {
+  if (minimal) {
+    return (
+      <header className="rounded-xl border border-slate-700/60 bg-slate-900/40 p-2 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+           <button onClick={onOpenNotifications} className="relative rounded-lg border border-slate-700 bg-slate-950/50 p-1.5 text-slate-100 hover:bg-slate-800" aria-label="Abrir notificações">
+            <Bell size={14} />
+            {notificationCount > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-rose-500 px-1 text-[8px] font-bold text-white">{notificationCount}</span>}
+          </button>
+          <button onClick={onToggleTheme} className="rounded-lg border border-slate-700 bg-slate-950/50 p-1.5 text-slate-100 hover:bg-slate-800" aria-label="Alternar tema">
+            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header className="rounded-2xl border border-slate-700/60 bg-slate-900/80 p-3">
       <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">

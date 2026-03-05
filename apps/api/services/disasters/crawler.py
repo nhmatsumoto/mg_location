@@ -53,9 +53,9 @@ class DisasterCrawlerService:
                 
                 if isinstance(exc, HTTPError) and status_code == 403:
                     totals['forbidden'] += 1
-                    logger.error('disaster_crawler provider=%s status=forbidden (blocked)', provider.provider_name)
+                    logger.warning('disaster_crawler provider=%s status=forbidden (blocked)', provider.provider_name)
                 else:
-                    logger.exception('disaster_crawler provider=%s status=failed err=%s code=%s', 
+                    logger.warning('disaster_crawler provider=%s status=failed err=%s code=%s', 
                                      provider.provider_name, type(exc).__name__, status_code)
         
         self._cleanup_retention(days=90)

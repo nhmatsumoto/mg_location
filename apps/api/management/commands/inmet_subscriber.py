@@ -44,7 +44,7 @@ class Command(BaseCommand):
                 client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
                 client.loop_forever()
             except Exception as e:
-                logger.error("MQTT connection failed, retrying in 30s... err=%s", e)
+                logger.warning("MQTT connection failed, retrying in 30s... err=%s", e)
                 time.sleep(30)
 
     def on_connect(self, client, userdata, flags, rc):
@@ -52,7 +52,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Connected to WIS2 Broker!"))
             client.subscribe(MQTT_TOPIC)
         else:
-            logger.error("Failed to connect to MQTT broker, rc=%s", rc)
+            logger.warning("Failed to connect to MQTT broker, rc=%s", rc)
 
     def on_disconnect(self, client, userdata, rc):
         self.stdout.write(self.style.WARNING("Disconnected from MQTT broker."))
@@ -62,7 +62,7 @@ class Command(BaseCommand):
             payload = json.loads(msg.payload.decode('utf-8'))
             self.process_alert(payload)
         except Exception as e:
-            logger.error("Failed to process MQTT message: %s", e)
+            logger.warning("Failed to process MQTT message: %s", e)
 
     def process_alert(self, data):
         """

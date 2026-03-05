@@ -125,7 +125,7 @@ def _extract_public_alert_news(source):
             raw = response.read().decode('utf-8', errors='ignore')
             logger.info('public_alert_fetch_succeeded source=%s status=%s', source.get('id'), getattr(response, 'status', 'n/a'))
     except Exception as exc:
-        logger.exception('public_alert_fetch_failed source=%s error=%s', source.get('id'), exc)
+        logger.warning('public_alert_fetch_failed source=%s error=%s', source.get('id'), exc)
         return []
 
     cleaned = _strip_html(raw)

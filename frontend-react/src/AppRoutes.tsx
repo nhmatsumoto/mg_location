@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { getSessionToken } from './lib/authSession';
 import { LoginPage } from './pages/LoginPage';
@@ -23,9 +23,9 @@ const DataHubPage = lazy(() => import('./pages/DataHubPage').then((m) => ({ defa
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage').then((m) => ({ default: m.IntegrationsPage })));
 const GlobalDisastersPage = lazy(() => import('./pages/GlobalDisastersPage').then((m) => ({ default: m.GlobalDisastersPage })));
-
 function PrivateLayout() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const location = useLocation();
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -35,8 +35,14 @@ function PrivateLayout() {
     return <Navigate to="/login" replace />;
   }
 
+  const isGlobalDisasters = location.pathname === '/app/global-disasters';
+
   return (
-    <AppShell theme={theme} onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}>
+    <AppShell 
+      theme={theme} 
+      onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+      variant={isGlobalDisasters ? 'tactical' : 'default'}
+    >
       <Suspense fallback={<div style={{ padding: 16 }}>Carregando módulo…</div>}>
         <Routes>
           <Route path="/app/command-center" element={<CommandCenterPage />} />

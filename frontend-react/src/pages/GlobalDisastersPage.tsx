@@ -1,25 +1,23 @@
 import { useEffect, useMemo, useState, memo, useCallback, lazy, Suspense } from 'react';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { format } from 'date-fns';
-import { MapContainer, Polygon, Polyline, Popup, TileLayer, useMap, useMapEvents, Marker, CircleMarker, Circle } from 'react-leaflet';
+import { MapContainer, Polygon, Popup, TileLayer, WMSTileLayer, useMap, useMapEvents, Marker } from 'react-leaflet';
 import { Modal } from '../components/ui/Modal';
 import { createEvent, getEvents } from '../services/disastersApi';
 import { operationsApi, type MapAnnotationDto } from '../services/operationsApi';
 import { eventsApi, type DomainEvent } from '../services/eventsApi';
-import { integrationsApi, type AlertDto, type WeatherForecastDto } from '../services/integrationsApi';
+import { integrationsApi, type AlertDto } from '../services/integrationsApi';
 import { syncEngine, type OutboxCommand } from '../lib/SyncEngine';
 import { useNotifications } from '../context/NotificationsContext';
 import { EventScatterPlot, type ScatterPoint } from '../components/EventScatterPlot';
 const Tactical3DMap = lazy(() => import('../components/map/Tactical3DMap').then(m => ({ default: m.Tactical3DMap })));
-import { Globe, Map as MapIcon, Target, AlertTriangle, CloudRain, Zap, Flame, Waves, Search, HeartHandshake, Maximize2, Minimize2, PanelBottomClose, PanelBottomOpen, MousePointer2, Layers, Crosshair, Box } from 'lucide-react';
-import { ScenarioBuilderPanel } from '../components/map/ScenarioBuilderPanel';
+import { Globe, Target, AlertTriangle, CloudRain, Zap, Flame, Waves, Search, HeartHandshake, Maximize2, PanelBottomClose, PanelBottomOpen, MousePointer2, Layers, Crosshair, Box, BarChart3 } from 'lucide-react';
 import { renderToString } from 'react-dom/server';
 import L from 'leaflet';
 import { CountryDropdown } from '../components/ui/CountryDropdown';
 
 type ToolMode = 'inspect' | 'point' | 'area' | 'filter_area' | 'simulation_box';
 
-const EVENT_TYPE_OPTIONS = ['Flood', 'Earthquake', 'Cyclone', 'Volcano', 'Wildfire', 'Storm', 'Tsunami', 'Landslide', 'Other'];
 const PROVIDER_OPTIONS = ['MANUAL', 'GDACS', 'USGS', 'INMET'];
 const MAX_PAGES = 10;
 
@@ -162,15 +160,12 @@ export function GlobalDisastersPage() {
   const [mapCenter, setMapCenter] = useState<[number, number]>([-14.2, -51.9]);
   const [show3D, setShow3D] = useState(false);
   const [showTimeline, setShowTimeline] = useState(true);
-  const [weatherIntel, setWeatherIntel] = useState<WeatherForecastDto | null>(null);
   const [intelPanelOpen, setIntelPanelOpen] = useState(false);
 
   const [country, setCountry] = useState('BR');
   const [minSeverity, setMinSeverity] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [tool, setTool] = useState<ToolMode>('inspect');
   const [mapLayer, setMapLayer] = useState<'dark' | 'soil'>('dark');
-  const [hover, setHover] = useState<{ lat: number; lon: number } | null>(null);
   const [areaDraft, setAreaDraft] = useState<Array<[number, number]>>([]);
   const [spatialFilter, setSpatialFilter] = useState<{ center: [number, number], radius: number } | null>(null);
   const [regionFilter, setRegionFilter] = useState('');
@@ -203,7 +198,6 @@ export function GlobalDisastersPage() {
   const { pushNotice } = useNotifications();
 
   const loadData = async () => {
-    setLoading(true);
     try {
       const all: any[] = [];
       for (let page = 1; page <= MAX_PAGES; page += 1) {
@@ -240,7 +234,6 @@ export function GlobalDisastersPage() {
       console.error(err);
       pushNotice({ type: 'warning', title: 'Falha na sincronização', message: 'Alguns dados podem estar desatualizados.' });
     } finally {
-      setLoading(false);
     }
   };
 
@@ -465,15 +458,6 @@ export function GlobalDisastersPage() {
   useEffect(() => {
     if (selectedEvent) {
       setIntelPanelOpen(true);
-      const lat = selectedEvent.lat || selectedEvent.payload?.lat || selectedEvent.metadata?.lat || (selectedEvent.polygons?.[0] ? Number(selectedEvent.polygons[0].split(/[,\s]+/)[0]) : null);
-      const lon = selectedEvent.lon || selectedEvent.payload?.lon || selectedEvent.metadata?.lng || (selectedEvent.polygons?.[0] ? Number(selectedEvent.polygons[0].split(/[,\s]+/)[1]) : null);
-      if (lat && lon) {
-        integrationsApi.getWeatherForecast(lat, lon).then(setWeatherIntel).catch(() => setWeatherIntel(null));
-      } else {
-        setWeatherIntel(null);
-      }
-    } else {
-      setWeatherIntel(null);
     }
   }, [selectedEvent]);
 
@@ -512,277 +496,254 @@ export function GlobalDisastersPage() {
   };
 
   return (
-    <section className="h-[calc(100vh-140px)] flex flex-col gap-4 overflow-hidden">
-      {/* Top Header & Filters - More Compact */}
-      <header className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between rounded-xl border border-white/10 bg-slate-900/60 p-4 backdrop-blur-md shadow-2xl">
+    <div className="h-screen w-screen relative overflow-hidden bg-slate-950">
+      {/* Top Header - Ultra Tactical */}
+      <header className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-6 rounded-full border border-cyan-500/30 bg-slate-900/80 px-6 py-2 backdrop-blur-xl shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center gap-3 pr-6 border-r border-white/10">
+          <div className="relative">
+             <Globe className="h-5 w-5 text-cyan-400 animate-pulse" />
+             <div className="absolute inset-0 bg-cyan-500/20 blur-lg rounded-full" />
+          </div>
+          <div className="flex flex-col">
+            <h2 className="text-xs font-black text-slate-100 uppercase tracking-[0.2em] leading-none">Command Center</h2>
+            <span className="text-[8px] text-cyan-500/70 font-mono mt-1">SITUATION_ROOM_v4 // {scatterPoints.length} SENSORS_OK</span>
+          </div>
+        </div>
+
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-950/50 border border-cyan-500/30 text-cyan-400">
-            <Globe className="h-6 w-6" />
+          <div className="flex items-center gap-1.5 bg-slate-950/50 px-3 py-1.5 rounded-full border border-white/5">
+            <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Filtro Local:</span>
+            <CountryDropdown value={country} onChange={setCountry} />
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-slate-100 uppercase tracking-tighter">Tactical Situation Room</h2>
-            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
-              <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> OPERACIONAL</span>
-              <span>// {scatterPoints.length} ATIVOS</span>
-              {loading && <span className="text-cyan-400 opacity-80 ml-2 animate-pulse tracking-widest">SINC...</span>}
-            </div>
+
+          <div className="flex items-center gap-3 px-3 py-1.5 rounded-full border border-white/5 bg-slate-950/50">
+            <span className="text-[9px] font-mono text-slate-500 uppercase">Impacto {minSeverity}+</span>
+            <input type="range" min={1} max={5} value={minSeverity} onChange={(e) => setMinSeverity(Number(e.target.value))} className="w-20 h-1 rounded-lg appearance-none bg-slate-800 accent-cyan-500" />
+          </div>
+
+          <div className="flex gap-1 h-8">
+            <button onClick={() => triggerHotspot('brazil_floods')} className="px-3 rounded-full bg-cyan-900/40 hover:bg-cyan-800/60 border border-cyan-500/30 text-[10px] uppercase font-bold text-cyan-100 transition-all flex items-center gap-1.5">
+              <CloudRain size={12} /> S.O.S RS/MG
+            </button>
+            <button onClick={() => triggerHotspot('high_alert')} className="px-3 rounded-full bg-red-900/40 hover:bg-red-800/60 border border-red-500/30 text-[10px] uppercase font-bold text-red-100 transition-all flex items-center gap-1.5">
+              <AlertTriangle size={12} /> Alerta Máximo
+            </button>
           </div>
         </div>
 
-        {/* Global Hotspots */}
-        <div className="hidden lg:flex items-center gap-2 border-l border-white/10 pl-4 ml-4">
-          <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold mr-2"><Crosshair size={10} className="inline mr-1" /> FOCO BRASIL (S.O.S):</span>
-          <button onClick={() => triggerHotspot('brazil_floods')} className="px-2 py-1 bg-cyan-900/30 hover:bg-cyan-800/50 border border-cyan-700/50 rounded text-xs text-cyan-200 transition-colors tooltip"><CloudRain size={12} className="inline mr-1" /> Enchentes</button>
-          <button onClick={() => triggerHotspot('landslides')} className="px-2 py-1 bg-amber-900/30 hover:bg-amber-800/50 border border-amber-700/50 rounded text-xs text-amber-200 transition-colors"><MapIcon size={12} className="inline mr-1" /> Deslizamentos</button>
-          <button onClick={() => triggerHotspot('community_help')} className="px-2 py-1 bg-indigo-900/30 hover:bg-indigo-800/50 border border-indigo-700/50 rounded text-xs text-indigo-200 transition-colors"><HeartHandshake size={12} className="inline mr-1" /> Apoio Comunitário</button>
-          <button onClick={() => triggerHotspot('high_alert')} className="px-2 py-1 bg-red-900/30 hover:bg-red-800/50 border border-red-700/50 rounded text-xs text-red-200 transition-colors"><AlertTriangle size={12} className="inline mr-1" /> Alerta Máximo (INMET)</button>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <form className="relative flex items-center mr-2" onSubmit={handleRegionSearch}>
+        <div className="flex items-center gap-2 pl-6 border-l border-white/10">
+          <form className="relative flex items-center" onSubmit={handleRegionSearch}>
             <input 
                type="text" 
-               placeholder="Filtrar Cidade, UF..." 
-               className="bg-slate-800/80 border border-slate-700 text-slate-200 text-[11px] rounded px-3 py-1.5 focus:outline-none focus:border-cyan-500 w-44" 
+               placeholder="COORD_LAT_LON / CITY_ID" 
+               className="bg-slate-950/50 border border-white/10 text-cyan-100 text-[10px] font-mono rounded-full px-4 py-1.5 focus:outline-none focus:border-cyan-500/50 w-48 placeholder:text-slate-600" 
                value={regionFilter} 
                onChange={e => setRegionFilter(e.target.value)} 
                disabled={isIntelLoading}
             />
-            {isIntelLoading ? (
-               <div className="absolute right-2 w-3 h-3 rounded-full border-2 border-slate-500 border-t-cyan-400 animate-spin" />
-            ) : (
-               <button type="submit" className="absolute right-2 text-slate-400 hover:text-cyan-400 cursor-pointer">
-                 <Search size={12} />
-               </button>
-            )}
-            {spatialFilter && (
-               <button type="button" onClick={() => { setSpatialFilter(null); setIntelReport(null); setRegionFilter(''); }} className="absolute -left-6 text-red-400 hover:text-red-300 tooltip" title="Remover Filtro Lógico">
-                 ✖
-               </button>
-            )}
+            {isIntelLoading && <div className="absolute right-3 w-2 h-2 rounded-full border-2 border-slate-500 border-t-cyan-400 animate-spin" />}
           </form>
-
-          <CountryDropdown value={country} onChange={setCountry} />
           
-          <div className="flex items-center gap-3 px-3 py-1.5 rounded-md border border-slate-700 bg-slate-800/50">
-            <span className="text-[10px] font-bold text-slate-500 uppercase">Severidade {minSeverity}+</span>
-            <input type="range" min={1} max={5} value={minSeverity} onChange={(e) => setMinSeverity(Number(e.target.value))} className="w-24 h-1.5 rounded-lg appearance-none bg-slate-700 accent-cyan-500" />
-          </div>
-
           <button 
-            className="flex items-center gap-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 px-3 py-2 text-xs font-bold text-emerald-400 transition-all hover:bg-emerald-600/30" 
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 transition-all hover:bg-emerald-500/30" 
             onClick={() => setOpenOpsModal(true)}
+            title="REGISTRAR OCORRÊNCIA"
           >
-            <HeartHandshake size={14} /> CADASTRO RÁPIDO
-          </button>
-
-          <button 
-            className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs font-bold transition-all ${show3D ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`} 
-            onClick={() => setShow3D(!show3D)}
-          >
-            {show3D ? <MapIcon size={14} /> : <Globe size={14} />}
-            {show3D ? 'VISTA 2D' : 'SITUAÇÃO 3D'}
+            <HeartHandshake size={14} />
           </button>
         </div>
       </header>
 
       {/* Main Unified Dashboard Area */}
-      <div className="flex-1 relative rounded-2xl border border-white/5 bg-slate-950 overflow-hidden shadow-3xl">
-        {/* Unified Map & 3D Layer */}
-        <div className="absolute inset-0 z-0">
-          {show3D ? (
-            <Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-slate-900 text-cyan-500 font-mono animate-pulse">CARREGANDO MOTOR TÁTICO 3D...</div>}>
-              <Tactical3DMap 
-                events={events.concat(domainEvents)} 
-                hoveredId={hoveredId}
-                onHover={setHoveredId}
-                onClick={(p: any) => setHoveredId(p.id || `${p.provider}-${p.provider_event_id}`)}
-                enableSimulationBox={tool === 'simulation_box'}
-              />
-            </Suspense>
-          ) : (
-            <MapContainer center={mapCenter} zoom={4} style={{ height: '100%', width: '100%' }} className="tactical-map-container">
-              {mapLayer === 'dark' ? (
-                <TileLayer attribution='&copy; CARTO' url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' />
-              ) : (
-                <>
-                  <TileLayer attribution='&copy; OpenStreetMap' url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' opacity={0.4} />
-                  {/* Public SoilGrids WMS for World Soil Data */}
-                  <TileLayer 
-                    url='https://maps.isric.org/mapserv?map=/map/wrb.map&LAYERS=MostProbable&TRANSPARENT=true&FORMAT=image/png&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&SRS=EPSG:3857&BBOX={bbox-epsg-3857}&WIDTH=256&HEIGHT=256' 
-                    opacity={0.6}
+      <div className="absolute inset-0 z-0">
+        {show3D ? (
+          <Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-slate-900 text-cyan-500 font-mono animate-pulse uppercase tracking-widest">Iniciando motor tático 3D...</div>}>
+            <Tactical3DMap 
+              events={events.concat(domainEvents)} 
+              hoveredId={hoveredId}
+              onHover={setHoveredId}
+              onClick={(p: any) => {
+                setHoveredId(p.id || `${p.provider}-${p.provider_event_id}`);
+                setIntelPanelOpen(true);
+              }}
+              enableSimulationBox={tool === 'simulation_box'}
+            />
+          </Suspense>
+        ) : (
+          <MapContainer center={mapCenter} zoom={4} zoomControl={false} style={{ height: '100%', width: '100%' }} className="tactical-map-container">
+            {mapLayer === 'dark' ? (
+              <TileLayer attribution='&copy; CARTO' url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' />
+            ) : (
+              <>
+                <TileLayer attribution='&copy; OpenStreetMap' url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' opacity={0.4} />
+                <WMSTileLayer 
+                  url='https://maps.isric.org/mapserv?map=/map/wrb.map' 
+                  layers='MostProbable'
+                  format='image/png'
+                  transparent={true}
+                  version='1.1.1'
+                  opacity={0.6}
+                />
+              </>
+            )}
+            <MapRecenter center={mapCenter} />
+            <MapInteractions 
+              tool={tool} 
+              onPickPoint={pickCoordinates} 
+              onHover={() => {}} 
+              areaDraft={areaDraft} 
+              setAreaDraft={setAreaDraft} 
+              spatialFilter={spatialFilter} 
+              setSpatialFilter={setSpatialFilter} 
+              onFilterComplete={handleFilterComplete} 
+            />
+            
+            <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
+              {currentDisplayEvents.map((e) => {
+                const id = `${e.provider}-${e.provider_event_id}`;
+                return (
+                  <MemoizedEventMarker 
+                    key={id} 
+                    e={e} 
+                    isHovered={hoveredId === id}
+                    onHover={handleMarkerHover}
+                    onUnhover={handleMarkerUnhover}
                   />
-                </>
-              )}
-              <MapRecenter center={mapCenter} />
-              <MapInteractions 
-                tool={tool} 
-                onPickPoint={pickCoordinates} 
-                onHover={(lat, lon) => setHover({ lat, lon })} 
-                areaDraft={areaDraft} 
-                setAreaDraft={setAreaDraft} 
-                spatialFilter={spatialFilter} 
-                setSpatialFilter={setSpatialFilter} 
-                onFilterComplete={handleFilterComplete} 
-              />
-              
-              {spatialFilter && spatialFilter.radius > 0 && (
-                <Circle center={spatialFilter.center} radius={spatialFilter.radius} pathOptions={{ color: '#2dd4bf', fillColor: '#2dd4bf', fillOpacity: 0.1, dashArray: '4,4' }} />
-              )}
-
-              {hover && (
-                <CircleMarker center={[hover.lat, hover.lon]} radius={4} pathOptions={{ color: '#22d3ee', fillOpacity: 0.9 }}>
-                  <Popup>Cursor: {hover.lat.toFixed(5)}, {hover.lon.toFixed(5)}</Popup>
-                </CircleMarker>
-              )}
-
-              <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
-                {currentDisplayEvents.map((e) => {
-                  const id = `${e.provider}-${e.provider_event_id}`;
-                  return (
-                    <MemoizedEventMarker 
-                      key={id} 
-                      e={e} 
-                      isHovered={hoveredId === id}
-                      onHover={handleMarkerHover}
-                      onUnhover={handleMarkerUnhover}
-                    />
-                  );
-                })}
-
-                {mapAnnotations.map((ann) => {
-                  const id = `ann-${ann.id}`;
-                  return (
-                    <MemoizedAnnotationMarker 
-                      key={id} 
-                      ann={ann} 
-                      isHovered={hoveredId === id}
-                      onHover={handleMarkerHover}
-                      onUnhover={handleMarkerUnhover}
-                    />
-                  );
-                })}
-              </MarkerClusterGroup>
-
-              {alerts.map((alert) => {
-                if (!alert.polygons || !alert.polygons.length) return null;
-                return alert.polygons.map((polyString, idx) => {
-                  const rawChunks = polyString.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
-                  const points: Array<[number, number]> = [];
-                  for (let i = 0; i < rawChunks.length - 1; i += 2) {
-                    let lat = Number(rawChunks[i]);
-                    let lon = Number(rawChunks[i + 1]);
-                    if (!isNaN(lat) && !isNaN(lon)) {
-                      if (Math.abs(lat) > 90 && Math.abs(lon) <= 90) {
-                        const temp = lat; lat = lon; lon = temp;
-                      } else if (lat >= -75 && lat <= -25 && lon >= -35 && lon <= 10) {
-                        const temp = lat; lat = lon; lon = temp;
-                      }
-                      points.push([lat, lon]);
-                    }
-                  }
-                  if (points.length < 3) return null;
-                  
-                  const color = alert.severity === 'Extreme' ? '#ef4444' : alert.severity === 'Severe' ? '#f97316' : '#eab308';
-                  return (
-                    <Polygon 
-                      key={`${alert.id}-${idx}`} 
-                      positions={points} 
-                      pathOptions={{ color, fillColor: color, fillOpacity: 0.15, weight: 2 }}
-                      eventHandlers={{
-                        mouseover: () => setHoveredId(`alert-${alert.id}`),
-                        mouseout: () => setHoveredId(null)
-                      }}
-                    >
-                      <Popup className="tactical-popup">
-                        <div className="font-mono text-xs p-1 min-w-[200px]">
-                          <div className="font-bold border-b border-white/10 mb-2 pb-1" style={{color}}>{alert.event || 'Alerta Oficial'}</div>
-                          <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
-                            <span className="text-slate-500 uppercase text-[9px]">Severidade:</span>
-                            <span className="text-slate-200">{alert.severity}</span>
-                            <span className="text-slate-500 uppercase text-[9px]">Fonte:</span>
-                            <span className="text-slate-200">{alert.source}</span>
-                            <span className="text-slate-500 uppercase text-[9px]">Área:</span>
-                            <span className="text-slate-200 text-[10px] leading-tight max-h-20 overflow-y-auto custom-scrollbar">{alert.area?.join(', ')}</span>
-                          </div>
-                        </div>
-                      </Popup>
-                    </Polygon>
-                  );
-                });
+                );
               })}
+              {mapAnnotations.map((ann) => {
+                const id = `ann-${ann.id}`;
+                return (
+                  <MemoizedAnnotationMarker 
+                    key={id} 
+                    ann={ann} 
+                    isHovered={hoveredId === id}
+                    onHover={handleMarkerHover}
+                    onUnhover={handleMarkerUnhover}
+                  />
+                );
+              })}
+            </MarkerClusterGroup>
 
-              {areaDraft.length > 1 && <Polyline positions={areaDraft} pathOptions={{ color: '#06b6d4', weight: 2, dashArray: '5, 5' }} />}
-              {areaDraft.length > 2 && <Polygon positions={areaDraft} pathOptions={{ color: '#06b6d4', fillColor: '#06b6d4', fillOpacity: 0.2 }} />}
-            </MapContainer>
-          )}
+            {alerts.map((alert) => {
+              if (!alert.polygons || !alert.polygons.length) return null;
+              return alert.polygons.map((polyString, idx) => {
+                 const rawChunks = polyString.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
+                 const points: Array<[number, number]> = [];
+                 for (let i = 0; i < rawChunks.length - 1; i += 2) {
+                   let lat = Number(rawChunks[i]);
+                   let lon = Number(rawChunks[i + 1]);
+                   if (!isNaN(lat) && !isNaN(lon)) {
+                     if (Math.abs(lat) > 90 && Math.abs(lon) <= 90) { const temp = lat; lat = lon; lon = temp; }
+                     else if (lat >= -75 && lat <= -25 && lon >= -35 && lon <= 10) { const temp = lat; lat = lon; lon = temp; }
+                     points.push([lat, lon]);
+                   }
+                 }
+                 if (points.length < 3) return null;
+                 const color = alert.severity === 'Extreme' ? '#ef4444' : alert.severity === 'Severe' ? '#f97316' : '#eab308';
+                 return (
+                   <Polygon 
+                     key={`${alert.id}-${idx}`} 
+                     positions={points} 
+                     pathOptions={{ color, fillColor: color, fillOpacity: 0.15, weight: 2 }}
+                     eventHandlers={{
+                       mouseover: () => setHoveredId(`alert-${alert.id}`),
+                       mouseout: () => setHoveredId(null)
+                     }}
+                   />
+                 );
+              });
+            })}
+          </MapContainer>
+        )}
+      </div>
+
+      {/* Floating Tool Controls - Left */}
+      <div className="absolute top-24 left-6 z-20 flex flex-col gap-3">
+        <div className="flex flex-col gap-2 p-1.5 bg-slate-900/60 border border-white/10 rounded-2xl backdrop-blur-xl shadow-2xl">
+          {[
+            { id: 'inspect', icon: <MousePointer2 size={18} />, label: 'Inspecionar' },
+            { id: 'point', icon: <Target size={18} />, label: 'Ponto' },
+            { id: 'area', icon: <Maximize2 size={18} />, label: 'Área' },
+            { id: 'filter_area', icon: <Crosshair size={18} />, label: 'Filtro Circular' },
+            { id: 'simulation_box', icon: <Box size={18} />, label: 'Simulação 3D' }
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTool(t.id as ToolMode)}
+              className={`flex h-11 w-11 items-center justify-center rounded-xl transition-all ${tool === t.id ? 'bg-cyan-500 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.4)]' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+              title={t.label}
+            >
+              {t.icon}
+            </button>
+          ))}
         </div>
 
-        {/* Floating Tool Controls */}
-        <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-          <div className="flex flex-col gap-1 p-1 bg-slate-900/80 border border-white/10 rounded-lg backdrop-blur-md shadow-2xl">
-            {[
-              { id: 'inspect', icon: <MousePointer2 size={16} />, label: 'Inspecionar' },
-              { id: 'point', icon: <Target size={16} />, label: 'Ponto' },
-              { id: 'area', icon: <Maximize2 size={16} />, label: 'Área' },
-              { id: 'filter_area', icon: <Crosshair size={16} />, label: 'Filtro Circular' },
-              { id: 'simulation_box', icon: <Box size={16} />, label: 'Área 3D (Simulação)' }
-            ].map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTool(t.id as ToolMode)}
-                className={`flex h-10 w-10 items-center justify-center rounded-md transition-all ${tool === t.id ? 'bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.5)]' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                title={t.label}
-              >
-                {t.icon}
-              </button>
-            ))}
-            <button onClick={() => { setFilteredEvents(events); setCountry(''); }} className="h-9 px-4 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-all">
-              RESET
-            </button>
-            <button
-              onClick={() => setShow3D(!show3D)}
-              className={`h-9 px-4 rounded-md text-xs font-bold transition-all ${
-                show3D ? 'bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.5)]' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-              }`}
+        <div className="flex flex-col gap-2 p-1.5 bg-slate-900/60 border border-white/10 rounded-2xl backdrop-blur-xl">
+           <button
+            onClick={() => setShow3D(!show3D)}
+            className={`flex h-11 w-11 items-center justify-center rounded-xl transition-all ${show3D ? 'bg-indigo-600 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            title="SITUAÇÃO 3D"
+          >
+            <Globe size={18} />
+          </button>
+          <button
+            onClick={() => setMapLayer(prev => prev === 'dark' ? 'soil' : 'dark')}
+            className={`flex h-11 w-11 items-center justify-center rounded-xl transition-all ${mapLayer === 'soil' ? 'bg-amber-600 text-white shadow-[0_0_20px_rgba(217,119,6,0.4)]' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            title="CAMADA DE SOLO (ISRIC)"
+          >
+            <Layers size={18} />
+          </button>
+        </div>
+      </div>
+
+      {/* Bottom Integrated Scatter Plot Section */}
+      <footer className={`absolute bottom-0 left-0 right-0 z-30 transition-all duration-500 transform ${showTimeline ? 'translate-y-0' : 'translate-y-[calc(100%-40px)]'}`}>
+        <div className="h-[200px] w-full bg-slate-950/80 backdrop-blur-xl border-t border-cyan-500/20 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col pointer-events-auto">
+          <div className="flex items-center justify-between px-6 py-2 border-b border-white/5 bg-slate-900/40">
+            <div className="flex items-center gap-4">
+              <h3 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <BarChart3 size={14} /> SCATTER_EVENT_TIMELINE_V3
+              </h3>
+              <div className="h-4 w-px bg-white/10" />
+              <div className="text-[9px] text-slate-500 font-mono">STREAMING ATIVO // {scatterPoints.length} OBJETOS_DETECTADOS</div>
+            </div>
+            <button 
+              onClick={() => setShowTimeline(!showTimeline)}
+              className="p-1 text-slate-500 hover:text-white transition-colors"
             >
-              MODO 3D
-            </button>
-            <button
-              onClick={() => setMapLayer(prev => prev === 'dark' ? 'soil' : 'dark')}
-              className={`flex items-center gap-2 h-9 px-4 rounded-md text-xs font-bold transition-all border ${
-                mapLayer === 'soil' ? 'bg-amber-900/50 border-amber-500/50 text-amber-200' : 'bg-slate-800 border-transparent hover:bg-slate-700 text-slate-200'
-              }`}
-            >
-              <Layers size={14} />
-              {mapLayer === 'soil' ? 'MAPA DE SOLO (ISRIC)' : 'MAPA TÁTICO'}
+              {showTimeline ? <PanelBottomClose size={18} /> : <PanelBottomOpen size={18} />}
             </button>
           </div>
-          
-          {tool !== 'inspect' && tool !== 'simulation_box' && (
-            <div className="bg-cyan-500/20 border border-cyan-500/50 px-3 py-1.5 rounded-md animate-in fade-in slide-in-from-left duration-300 backdrop-blur-md">
-              <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-                {tool === 'point' ? 'MODO CAPTURA ATIVO' : 'MODO ÁREA ATIVO'}
-              </span>
-            </div>
-          )}
+          <div className="flex-1">
+            <EventScatterPlot 
+              points={scatterPoints} 
+              hoveredId={hoveredId}
+              onHover={(p) => setHoveredId(p?.id || null)}
+              onClick={(p) => {
+                if (p.metadata?.lat && p.metadata?.lon) {
+                  setMapCenter([p.metadata.lat, p.metadata.lon]);
+                } else if (p.metadata?.payload?.lat) {
+                  setMapCenter([p.metadata.payload.lat, p.metadata.payload.lng]);
+                }
+                setHoveredId(p.id);
+                setIntelPanelOpen(true);
+              }}
+            />
+          </div>
         </div>
+      </footer>
 
-        {/* Scenario Sandbox UI */}
-        {show3D && tool === 'simulation_box' && (
-          <ScenarioBuilderPanel onClose={() => setTool('inspect')} />
-        )}
-        {/* Intelligence / Selection Sidebar */}
-        <aside className={`absolute top-4 right-4 z-20 w-80 max-h-[calc(100%-120px)] bg-slate-900/90 border border-white/10 rounded-2xl backdrop-blur-xl shadow-3xl transition-all duration-300 transform overflow-hidden flex flex-col ${intelPanelOpen && (selectedEvent || intelReport) ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'}`}>
+      {/* Intelligence Sidebar Overlay */}
+      <aside className={`absolute top-24 right-6 z-20 w-80 max-h-[calc(100%-250px)] bg-slate-900/80 border border-white/10 rounded-3xl backdrop-blur-2xl shadow-3xl transition-all duration-500 transform overflow-hidden flex flex-col ${intelPanelOpen && (selectedEvent || intelReport) ? 'translate-x-0 opacity-100' : 'translate-x-[calc(100%+100px)] opacity-0'}`}>
           <div className="p-4 border-b border-white/5 flex items-center justify-between">
             <h3 className="text-xs font-black text-cyan-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
               SITUATION INTEL
             </h3>
-            <button onClick={() => setIntelPanelOpen(false)} className="text-slate-500 hover:text-white transition-colors"><Minimize2 size={14} /></button>
+            <button onClick={() => setIntelPanelOpen(false)} className="text-slate-500 hover:text-white transition-colors"><Maximize2 size={14} className="rotate-45" /></button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-slate-900/50">
             {intelReport && !selectedEvent && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
                 <div className="space-y-1">
@@ -808,25 +769,9 @@ export function GlobalDisastersPage() {
                   </div>
                 </div>
 
-                {intelReport.weather && intelReport.weather.current && (
-                  <div className="space-y-2">
-                    <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1"><CloudRain size={10} /> Meteorologia Local</div>
-                    <div className="p-3 bg-cyan-950/20 rounded-lg border border-cyan-500/20 flex items-center justify-between">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-slate-400 text-[10px] uppercase font-bold">Chuva</span>
-                        <span className="text-cyan-400 font-mono font-bold text-sm">{intelReport.weather.current.rain_mm || 0} mm</span>
-                      </div>
-                      <div className="flex flex-col gap-1 items-end">
-                        <span className="text-slate-400 text-[10px] uppercase font-bold">Temp.</span>
-                        <span className="text-orange-400 font-mono font-bold text-sm">{intelReport.weather.current.temp_c || '--'} °C</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {intelReport.recommendations && intelReport.recommendations.length > 0 && (
                   <div className="space-y-2">
-                    <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1"><AlertTriangle size={10} /> Recomendações Táticas</div>
+                    <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1"><AlertTriangle size={10} /> Recomendações</div>
                     <ul className="p-3 bg-red-950/20 rounded-lg border border-red-500/20 text-[10px] text-red-200 font-mono leading-relaxed list-disc list-inside">
                       {intelReport.recommendations.map((rec: string, idx: number) => <li key={idx} className="mb-1">{rec}</li>)}
                     </ul>
@@ -860,153 +805,100 @@ export function GlobalDisastersPage() {
                   </div>
                 </div>
 
-                {weatherIntel && weatherIntel.current && (
-                  <div className="space-y-2">
-                    <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1"><CloudRain size={10} /> Meteorologia Local (24h)</div>
-                    <div className="p-3 bg-cyan-950/20 rounded-lg border border-cyan-500/20 flex items-center justify-between">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-slate-400 text-[10px] uppercase font-bold">Chuva</span>
-                        <span className="text-cyan-400 font-mono font-bold text-sm">{(weatherIntel.current as any).rain_mm || 0} mm</span>
-                      </div>
-                      <div className="flex flex-col gap-1 items-end">
-                        <span className="text-slate-400 text-[10px] uppercase font-bold">Temperatura</span>
-                        <span className="text-orange-400 font-mono font-bold text-sm">{(weatherIntel.current as any).temp_c || '--'} °C</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 <div className="space-y-2">
                   <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Análise de Dados</div>
                   <div className="p-3 bg-slate-950/50 rounded-lg border border-white/5 text-[10px] text-slate-400 font-mono leading-relaxed max-h-48 overflow-y-auto custom-scrollbar whitespace-pre-wrap">
-                    {selectedEvent.description || "Nenhuma descrição detalhada disponível."}
+                    {selectedEvent.description || "Nenhuma descrição disponível."}
                   </div>
                 </div>
-
-                {selectedEvent.source_url && (
-                  <a 
-                    href={selectedEvent.source_url} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-bold text-[10px] uppercase hover:bg-cyan-500/20 transition-all"
-                  >
-                    Abrir Fonte Original <Maximize2 size={12} />
-                  </a>
-                )}
               </div>
             )}
           </div>
-        </aside>
+          <div className="p-4 bg-slate-950/50 border-t border-white/5">
+             <button 
+                onClick={() => setIntelPanelOpen(false)}
+                className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors"
+             >
+                FECHAR RELATÓRIO
+             </button>
+          </div>
+      </aside>
 
-        {/* Crosshair Overlay for Capture Mode */}
-        {tool !== 'inspect' && !show3D && (
+      {/* Crosshair Overlay */}
+      {tool !== 'inspect' && !show3D && (
           <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center">
             <div className="relative">
               <div className="absolute w-[200px] h-px bg-cyan-500/20 -translate-x-[100px]" />
               <div className="absolute w-px h-[200px] bg-cyan-500/20 -translate-y-[100px]" />
-              <div className="absolute w-24 h-24 border border-dashed border-cyan-500/30 rounded-full -translate-x-12 -translate-y-12 animate-[spin_10s_linear_infinite]" />
-              <div className="absolute w-4 h-4 border border-cyan-400 -translate-x-2 -translate-y-2 animate-pulse" />
-              <Target size={16} className="absolute -translate-x-2 -translate-y-2 text-cyan-400 opacity-50" />
+              <div className="absolute w-12 h-12 border border-cyan-400/50 rounded -translate-x-6 -translate-y-6 animate-pulse" />
             </div>
           </div>
-        )}
+      )}
 
-        {/* Bottom Timeline Tray */}
-        <div className={`absolute bottom-0 left-0 right-0 z-30 transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${showTimeline ? 'h-64' : 'h-10'}`}>
-          <div className="absolute top-0 right-4 -translate-y-full flex gap-1 items-end pointer-events-auto">
-            <button 
-              onClick={() => setShowTimeline(!showTimeline)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-t-lg bg-slate-900/90 border-t border-x border-white/10 text-cyan-400 font-black text-[9px] uppercase tracking-widest backdrop-blur-xl shadow-2xl hover:bg-slate-800 transition-all"
-            >
-              {showTimeline ? <PanelBottomClose size={14} /> : <PanelBottomOpen size={14} />}
-              {showTimeline ? 'Minimizar Timeline' : 'SITUATION TIMELINE'}
-            </button>
+      {/* Modals */}
+      <Modal title="NOTIFICAR EVENTO GLOBAL" open={openEventModal} onClose={() => setOpenEventModal(false)}>
+        <div className="space-y-4 p-4 text-slate-200 bg-slate-950">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Capa de Dados</label>
+              <select className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs" value={form.provider} onChange={e => setForm({...form, provider: e.target.value})}>
+                {PROVIDER_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Severidade</label>
+              <select className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs" value={form.severity} onChange={e => setForm({...form, severity: Number(e.target.value)})}>
+                {[1,2,3,4,5].map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
           </div>
-          <div className="h-full w-full bg-slate-900/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
-             <EventScatterPlot 
-               points={scatterPoints} 
-               hoveredId={hoveredId}
-               onHover={(p) => setHoveredId(p?.id || null)}
-               onClick={(p) => {
-                 setHoveredId(p.id);
-                 if (p.metadata?.lat && p.metadata?.lon) {
-                   setMapCenter([p.metadata.lat, p.metadata.lon]);
-                 }
-               }}
-             />
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Título do Incidente</label>
+            <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs" placeholder="Ex: Inundação Severa..." value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
           </div>
-        </div>
-      </div>
-
-      <Modal title="Cadastrar evento global" open={openEventModal} onClose={() => setOpenEventModal(false)}>
-        <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
-          <select value={form.provider} onChange={(e) => setForm((p) => ({ ...p, provider: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2">
-            {PROVIDER_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
-          <select value={form.eventType} onChange={(e) => setForm((p) => ({ ...p, eventType: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2">
-            {EVENT_TYPE_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
-          <input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Título do evento" />
-          <input type="number" min={1} max={5} value={form.severity} onChange={(e) => setForm((p) => ({ ...p, severity: Number(e.target.value) }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Severidade" />
-          <input value={form.lat} onChange={(e) => setForm((p) => ({ ...p, lat: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Latitude" />
-          <input value={form.lon} onChange={(e) => setForm((p) => ({ ...p, lon: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Longitude" />
-          <input value={form.countryCode} onChange={(e) => setForm((p) => ({ ...p, countryCode: e.target.value.toUpperCase() }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="ISO2" />
-          <input value={form.countryName} onChange={(e) => setForm((p) => ({ ...p, countryName: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="País" />
-          <input value={form.sourceUrl} onChange={(e) => setForm((p) => ({ ...p, sourceUrl: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2 md:col-span-2" placeholder="URL da fonte" />
-          <textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2 md:col-span-2" placeholder="Descrição" rows={3} />
-        </div>
-        <div className="mt-3 flex justify-end gap-2">
-          <button className="rounded border border-slate-700 px-3 py-2 text-xs" onClick={() => setOpenEventModal(false)}>Cancelar</button>
-          <button className="rounded bg-cyan-600 px-3 py-2 text-xs" onClick={() => void saveEvent()}>Salvar evento</button>
+          <button onClick={saveEvent} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 rounded text-xs transition-colors tracking-widest uppercase">TRANSMITIR DADOS</button>
         </div>
       </Modal>
 
-      <Modal title="Cadastro operacional rápido" open={openOpsModal} onClose={() => setOpenOpsModal(false)}>
-        <div className="grid grid-cols-1 gap-2 text-sm">
-          <select value={opsForm.recordType} onChange={(e) => setOpsForm((p) => ({ ...p, recordType: e.target.value as any }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2 text-cyan-400 font-bold">
-            <option value="risk_area">⚠️ Área de Risco / Ocorrência</option>
-            <option value="support_point">🤝 Ponto de Apoio / Abrigo</option>
-            <option value="missing_person">🔍 Pessoa Desaparecida</option>
-          </select>
-          <input value={opsForm.incidentTitle} onChange={(e) => setOpsForm((p) => ({ ...p, incidentTitle: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Título (ex: Deslizamento Morro X)" />
-          <select value={opsForm.severity} onChange={(e) => setOpsForm((p) => ({ ...p, severity: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2">
-            <option value="low">Baixa</option>
-            <option value="medium">Média</option>
-            <option value="high">Alta</option>
-            <option value="critical">Crítica</option>
-          </select>
-          {opsForm.recordType === 'missing_person' && (
-            <>
-              <input value={opsForm.personName} onChange={(e) => setOpsForm((p) => ({ ...p, personName: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Nome da pessoa" />
-              <input value={opsForm.lastSeenLocation} onChange={(e) => setOpsForm((p) => ({ ...p, lastSeenLocation: e.target.value }))} className="rounded border border-slate-700 bg-slate-900 px-2 py-2" placeholder="Último local visto" />
-            </>
-          )}
-        </div>
-        <div className="mt-3 flex justify-end gap-2">
-          <button className="rounded border border-slate-700 px-3 py-2 text-xs" onClick={() => setOpenOpsModal(false)}>Cancelar</button>
-          <button className="rounded bg-emerald-600 px-3 py-2 text-xs" onClick={() => void saveOps()}>Salvar cadastro</button>
+      <Modal title="REGISTRO OPERACIONAL DE CAMPO" open={openOpsModal} onClose={() => setOpenOpsModal(false)}>
+        <div className="space-y-4 p-4 text-slate-200 bg-slate-950">
+           <div className="grid grid-cols-2 gap-2">
+              {['risk_area', 'support_point', 'missing_person'].map(mode => (
+                <button 
+                  key={mode}
+                  onClick={() => setOpsForm({...opsForm, recordType: mode as any})}
+                  className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${opsForm.recordType === mode ? 'bg-cyan-900/40 border-cyan-500 text-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700'}`}
+                >
+                  {mode === 'risk_area' ? <AlertTriangle size={20} /> : mode === 'support_point' ? <HeartHandshake size={20} /> : <Search size={20} />}
+                  <span className="text-[10px] font-bold uppercase">{mode.replace('_', ' ')}</span>
+                </button>
+              ))}
+           </div>
+           <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Descrição / Identificação</label>
+              <input className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs" placeholder="Identificador da ocorrência..." value={opsForm.incidentTitle} onChange={e => setOpsForm({...opsForm, incidentTitle: e.target.value})} />
+           </div>
+           <button onClick={saveOps} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded text-xs transition-colors tracking-widest uppercase">GRAVAR REGISTRO</button>
         </div>
       </Modal>
-    </section>
+    </div>
   );
 }
 
 function getSeverityColor(severity: number): string {
-  if (severity >= 5) return '#ef4444';
+  if (severity >= 5) return '#f43f5e';
   if (severity >= 4) return '#f97316';
   if (severity >= 3) return '#eab308';
-  return '#10b981';
+  return '#22d3ee';
 }
 
 function getEventIcon(type: string, isHovered: boolean) {
-  const size = isHovered ? 24 : 20;
-  const t = type.toLowerCase();
-  if (t.includes('flood') || t.includes('water')) return <Waves size={size} />;
-  if (t.includes('storm') || t.includes('wind')) return <CloudRain size={size} />;
-  if (t.includes('wildfire') || t.includes('fire')) return <Flame size={size} />;
-  if (t.includes('earthquake')) return <Zap size={size} />;
-  if (t.includes('rescue')) return <Target size={size} />;
-  if (t.includes('search')) return <Search size={size} />;
-  if (t.includes('donation')) return <HeartHandshake size={size} />;
-  return <AlertTriangle size={size} />;
+  const t = (type || '').toLowerCase();
+  if (t.includes('flood')) return <Waves className={isHovered ? 'animate-bounce' : ''} />;
+  if (t.includes('earthquake')) return <Zap className={isHovered ? 'animate-pulse' : ''} />;
+  if (t.includes('wildfire') || t.includes('fire')) return <Flame className={isHovered ? 'animate-pulse' : ''} />;
+  if (t.includes('storm') || t.includes('cyclone')) return <CloudRain className={isHovered ? 'animate-bounce' : ''} />;
+  if (t.includes('search') || t.includes('missing')) return <Search className={isHovered ? 'animate-pulse' : ''} />;
+  if (t.includes('donation') || t.includes('support')) return <HeartHandshake className={isHovered ? 'animate-pulse' : ''} />;
+  return <AlertTriangle className={isHovered ? 'animate-pulse' : ''} />;
 }

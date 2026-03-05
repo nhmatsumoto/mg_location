@@ -8,7 +8,7 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0006_domainevent_edgehub_processedcommand_and_more'),
+        ('api', '0005_incident_support_rescue_publicsnapshot_auditlog'),
     ]
 
     operations = [

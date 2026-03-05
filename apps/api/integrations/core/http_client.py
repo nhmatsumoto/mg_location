@@ -67,14 +67,14 @@ class HttpClient:
                         return payload
                     except json.JSONDecodeError:
                         snippet = body[:200].replace('\n', ' ')
-                        logger.error('http_json_decode_error source=%s url=%s ct=%s body_start="%s"', 
-                                     source, final_url, content_type, snippet)
+                        logger.warning('http_json_decode_error source=%s url=%s ct=%s body_start="%s"', 
+                                       source, final_url, content_type, snippet)
                         raise
             except HTTPError as err:
                 code = getattr(err, 'code', 500)
                 # Circuit breaker for 403 Forbidden (Auth/Policy issues)
                 if code == 403:
-                    logger.error('http_forbidden source=%s url=%s', source, final_url)
+                    logger.warning('http_forbidden source=%s url=%s', source, final_url)
                     self._trip_breaker(source)
                     raise
                 

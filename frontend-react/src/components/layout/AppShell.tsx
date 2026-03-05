@@ -11,9 +11,10 @@ interface AppShellProps {
   children: ReactNode;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
+  variant?: 'default' | 'tactical';
 }
 
-export function AppShell({ children, theme, onToggleTheme }: AppShellProps) {
+export function AppShell({ children, theme, onToggleTheme, variant = 'default' }: AppShellProps) {
   const themeClass = theme === 'dark'
     ? 'bg-[radial-gradient(circle_at_top,_#1e293b_0%,_#020617_45%)] text-slate-100'
     : 'bg-[radial-gradient(circle_at_top,_#dbeafe_0%,_#f8fafc_55%)] text-slate-900';
@@ -24,6 +25,28 @@ export function AppShell({ children, theme, onToggleTheme }: AppShellProps) {
   useEffect(() => {
     setApiNotifier((title, message) => pushNotice({ title, message, type: 'error' }));
   }, [pushNotice]);
+
+  if (variant === 'tactical') {
+    return (
+      <div className={`min-h-screen ${themeClass} overflow-hidden`}>
+        <Sidebar className="fixed inset-y-0 left-0 z-50 -translate-x-full transition-transform hover:translate-x-0 group" />
+        <main className="h-screen w-full relative">
+          {children}
+          <div className="absolute top-4 right-4 z-40">
+            <Topbar
+              theme={theme}
+              onToggleTheme={onToggleTheme}
+              notificationCount={notices.length}
+              onOpenNotifications={() => setOpenCenter(true)}
+              minimal
+            />
+          </div>
+        </main>
+        <NotificationCenter open={openCenter} onClose={() => setOpenCenter(false)} />
+        <ToastStack />
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen ${themeClass}`}>

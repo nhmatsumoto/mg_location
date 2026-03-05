@@ -58,7 +58,7 @@ def _validate_bbox_tuple(bbox_tuple):
 
 
 def _integration_error(exc):
-    logger.exception('integration.provider.error', extra={'provider_error_type': type(exc).__name__})
+    logger.warning('integration.provider.error', extra={'provider_error_type': type(exc).__name__})
     if isinstance(exc, CircuitOpenError):
         return JsonResponse({'error': 'Fonte temporariamente indisponível (circuit breaker ativo).'}, status=503)
     return JsonResponse({'error': f'Falha ao consultar provedor externo: {type(exc).__name__}'}, status=502)
@@ -241,7 +241,7 @@ def transparency_transfers(request):
             end=request.GET.get('end'),
         )
     except TransparencyApiKeyMissing:
-        return JsonResponse({'error': 'Configuração de chave de API de transparência ausente.'}, status=400)
+        return JsonResponse({'items': [], 'missingKeyInfo': True})
     except Exception as exc:
         return _integration_error(exc)
     data['cacheHit'] = cache_hit
@@ -259,7 +259,7 @@ def transparency_search(request):
     try:
         data, cache_hit = search(query, request.GET.get('start'), request.GET.get('end'))
     except TransparencyApiKeyMissing:
-        return JsonResponse({'error': 'Configuração de chave de API de transparência ausente.'}, status=400)
+        return JsonResponse({'items': [], 'missingKeyInfo': True})
     except Exception as exc:
         return _integration_error(exc)
 
@@ -293,7 +293,7 @@ def transparency_summary(request):
             end=end,
         )
     except TransparencyApiKeyMissing:
-        return JsonResponse({'error': 'Configuração de chave de API de transparência ausente.'}, status=400)
+        return JsonResponse({'source': 'cgu', 'summary': {}, 'missingKeyInfo': True})
     except Exception as exc:
         return _integration_error(exc)
 
