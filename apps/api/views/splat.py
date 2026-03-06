@@ -1,8 +1,8 @@
 from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from django.http import FileResponse
-from .models_splat import SplatAsset
-from .serializers_splat import SplatAssetSerializer
+from apps.api.models_splat import SplatAsset
+from apps.api.serializers_splat import SplatAssetSerializer
 
 class SplatAssetViewSet(viewsets.ModelViewSet):
     queryset = SplatAsset.objects.all()

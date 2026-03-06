@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Polygon, TileLayer, MapContainer } from 'react-leaflet';
 import { useParams } from 'react-router-dom';
+import { LoadingOverlay } from '../components/ui/LoadingOverlay';
 import { modulesApi } from '../services/modulesApi';
 import { KpiCard } from '../components/ui/KpiCard';
 import { 
@@ -16,9 +17,14 @@ export function PublicIncidentDashboardPage() {
   const { id } = useParams();
   const [snapshot, setSnapshot] = useState<any | null>(null);
   const [areas, setAreas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    if (!id || isNaN(Number(id))) return;
+  const load = async (isInitial = false) => {
+    if (isInitial) setLoading(true);
+    if (!id || isNaN(Number(id))) {
+      if (isInitial) setLoading(false);
+      return;
+    }
     const incidentId = Number(id);
     try {
       const [snap, searchAreas] = await Promise.all([
@@ -29,11 +35,13 @@ export function PublicIncidentDashboardPage() {
       setAreas(searchAreas);
     } catch (err) {
       console.error(err);
+    } finally {
+      if (isInitial) setLoading(false);
     }
   };
 
   useEffect(() => { 
-    void load(); 
+    void load(true); 
     const t = setInterval(() => { void load(); }, 30000); 
     return () => clearInterval(t); 
   }, [id]);
@@ -42,6 +50,7 @@ export function PublicIncidentDashboardPage() {
 
   return (
     <div className="h-screen w-screen relative overflow-hidden bg-slate-950">
+      {loading && <LoadingOverlay message="Obtendo Dados Públicos..." />}
       {/* Premium Identity Header */}
       <div className="absolute top-4 left-4 right-4 z-50 flex justify-between items-start pointer-events-none">
         <div className="flex gap-4 items-center bg-slate-900/80 border border-white/10 p-2 px-4 rounded-2xl backdrop-blur-xl pointer-events-auto shadow-2xl">

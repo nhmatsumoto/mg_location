@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.authtoken.models import Token
 
 from apps.api.auth_keycloak import decode_keycloak_access_token, get_user_auth_context, provision_user_from_keycloak
-from apps.api.views import _request_payload
+from .core import _request_payload
 
 
 class _IdTokenShim:

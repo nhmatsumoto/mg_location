@@ -403,5 +403,68 @@ def disaster_intelligence(request):
     except Exception as exc:
         return _integration_error(exc)
 
-    logger.info('integration.alerts.intelligence.success')
-    return JsonResponse(payload)
+from apps.api.services.climate import (
+    climate_integrations_context,
+    load_public_news_updates,
+)
+from apps.api.services.terrain import terrain_open_data_context
+
+from .views_core import _json_error, _parse_float
+
+
+@require_GET
+def news_updates(request):
+    force_refresh = request.GET.get('refresh') == '1'
+    items = load_public_news_updates(force_refresh=force_refresh)
+    return JsonResponse(items, safe=False)
+
+
+@require_GET
+def cfd_ideas(request):
+    payload = {
+        "ideas": [
+            "http://fluidityproject.github.io/",
+            "http://lorenabarba.com/blog/cfd-python-12-steps-to-navier-stokes/",
+            "https://pt.wikipedia.org/wiki/Equações_de_Navier-Stokes",
+            "http://rlguy.com/gridfluidsim/",
+        ],
+        "supportMaterial": [
+            "http://www.journalrepository.org/media/journals/JSRR_22/2015/May/Liu732015JSRR17346.pdf",
+            "https://github.com/rlguy/GridFluidSim3D/tree/master/src/examples/python",
+        ],
+        "openDataTerrain": {
+            "climate": "https://open-meteo.com/",
+            "soil_reference": "https://soilgrids.org/",
+            "vegetation_reference": "https://land.copernicus.eu/",
+        },
+    }
+    return JsonResponse(payload, safe=False)
+
+
+@require_GET
+def climate_integrations(request):
+    lat = _parse_float(request.GET.get('lat'))
+    lon = _parse_float(request.GET.get('lon'))
+    if lat is None or lon is None:
+        return _json_error('lat e lng são obrigatórios para integrações climáticas.')
+
+    ctx = climate_integrations_context(lat, lon)
+    return JsonResponse(ctx, safe=False)
+
+
+@require_GET
+def terrain_context(request):
+    lat = _parse_float(request.GET.get('lat'))
+    lon = _parse_float(request.GET.get('lon'))
+    if lat is None or lon is None:
+        return _json_error('lat e lng são obrigatórios para contexto de terreno.')
+
+    return JsonResponse(
+        {
+            'lat': lat,
+            'lng': lon,
+            'context': terrain_open_data_context(lat, lon),
+            'notes': 'Contexto híbrido com dados abertos (Open-Meteo) e fallback local para operação contínua.',
+        },
+        safe=False,
+    )

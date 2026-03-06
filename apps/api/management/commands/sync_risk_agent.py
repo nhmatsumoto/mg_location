@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.api.views_risk import _parse_float, _parse_int
+from apps.api.views.risk import _parse_float, _parse_int
 from apps.api.services.risk_agent import RiskAgentError, fetch_risk_assessment
 from apps.api.models import MapAnnotation
 import uuid

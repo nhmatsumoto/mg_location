@@ -68,8 +68,8 @@ services:
     environment:
       SECRET_KEY: ${SECRET_KEY:-troque-isto}
       DEBUG: ${DEBUG:-False}
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
-      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:8088,http://127.0.0.1:8088}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0,backend}
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:8088,http://127.0.0.1:8088,http://0.0.0.0:8088}
       CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-True}
       DB_ENGINE: ${DB_ENGINE:-django.db.backends.postgresql}
       DB_NAME: ${DB_NAME:-mg_location}
@@ -119,8 +119,8 @@ services:
 
   risk-agent:
     build:
-      context: .
-      dockerfile: risk_agent/Dockerfile
+      context: ./risk_agent
+      dockerfile: Dockerfile
     container_name: mg-location-ml-risk-agent
     volumes:
       - ./risk_agent:/app

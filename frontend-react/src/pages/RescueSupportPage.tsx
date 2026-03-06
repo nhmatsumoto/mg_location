@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
+import { LoadingOverlay } from '../components/ui/LoadingOverlay';
 import { operationsApi, type RiskArea, type SupportPoint } from '../services/operationsApi';
 import { useNotifications } from '../context/NotificationsContext';
 
@@ -126,7 +127,8 @@ export function RescueSupportPage() {
   };
 
   return (
-    <div className="space-y-4 rounded-2xl border border-slate-700/60 bg-slate-900/70 p-4">
+    <div className="space-y-4 rounded-2xl border border-slate-700/60 bg-slate-900/70 p-4 relative overflow-hidden">
+      {loading && <LoadingOverlay variant="contained" message="Carregando Dados Operacionais..." />}
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-lg font-semibold text-slate-100">Suporte ao resgate (CRUD operacional)</h2>

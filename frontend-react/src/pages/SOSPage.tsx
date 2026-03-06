@@ -15,6 +15,7 @@ import { useSimulationStore } from '../store/useSimulationStore';
 
 import { useNavigate } from 'react-router-dom';
 import { TacticalLoadingScreen } from '../components/ui/TacticalLoadingScreen';
+import { LoadingOverlay } from '../components/ui/LoadingOverlay';
 import { MapInteractions, MapListener, type ToolMode } from '../components/map/MapInteractions';
 import { ToolButton } from '../components/ui/ToolButton';
 import { MemoizedEventMarker } from '../components/map/EventMarker';
@@ -67,6 +68,8 @@ export function SOSPage() {
   const [areaDraft, setAreaDraft] = useState<Array<[number, number]>>([]);
   const [spatialFilter, setSpatialFilter] = useState<any>(null);
   const [isGlitching, setIsGlitching] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [savingOps, setSavingOps] = useState(false);
 
   useEffect(() => {
     setIsGlitching(true);
@@ -98,7 +101,8 @@ export function SOSPage() {
     severity: 'high' 
   });
 
-  const loadData = async () => {
+  const loadData = async (isInitial = false) => {
+    if (isInitial) setInitialLoading(true);
     try {
       const all: any[] = [];
       const resp = await getEvents({ country: country || undefined, minSeverity, page: 1, pageSize: 500 });
@@ -116,13 +120,15 @@ export function SOSPage() {
 
       const opSnap = await operationsApi.snapshot();
       setOpsSnapshot(opSnap);
-    } catch (err) {
+     } catch (err) {
       console.error(err);
+    } finally {
+      if (isInitial) setInitialLoading(false);
     }
   };
 
   useEffect(() => {
-    void loadData();
+    void loadData(true);
     const interval = setInterval(() => void loadData(), 15000);
     return () => clearInterval(interval);
   }, [country, minSeverity]);
@@ -205,6 +211,7 @@ export function SOSPage() {
       return;
     }
 
+    setSavingOps(true);
     try {
       await operationsApi.createMapAnnotation({
         recordType: opsForm.recordType,
@@ -220,12 +227,17 @@ export function SOSPage() {
       pushNotice({ type: 'success', title: 'Sucesso', message: 'Registro efetuado com sucesso.' });
     } catch {
       pushNotice({ type: 'error', title: 'Falha no cadastro', message: 'Erro de comunicação com o servidor.' });
+    } finally {
+      setSavingOps(false);
     }
   };
 
 
   return (
     <div className="h-screen w-screen relative overflow-hidden bg-slate-950">
+      {initialLoading && <LoadingOverlay message="Inicializando Terminal SOS..." />}
+      {savingOps && <LoadingOverlay message="Registrando Dados de Campo..." />}
+
       {/* HUD - Floating HUD for high level context */}
       <div className="absolute top-4 left-4 right-4 z-50 flex justify-between pointer-events-none">
         <div className="flex gap-4 items-center bg-slate-900/80 border border-white/10 p-2 rounded-2xl backdrop-blur-xl pointer-events-auto shadow-2xl">
