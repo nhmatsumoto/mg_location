@@ -409,7 +409,7 @@ from apps.api.services.climate import (
 )
 from apps.api.services.terrain import terrain_open_data_context
 
-from .views_core import _json_error, _parse_float
+from .core import _json_error, _parse_float
 
 
 @require_GET

@@ -13,10 +13,10 @@ from werkzeug.utils import secure_filename
 
 from apps.api.models import SimulationArea, ScenarioBundle, SimulationRun, CollapseReport, AttentionAlert
 from apps.api.serializers_simulation import SimulationAreaSerializer, ScenarioBundleSerializer, SimulationRunSerializer
-from .services.simulation.logic import (
+from apps.api.services.simulation.logic import (
     build_rescue_support, simulate_tailing_flow, load_hotspots_from_risk_areas
 )
-from .services.terrain import terrain_open_data_context
+from apps.api.services.terrain import terrain_open_data_context
 from .core import _parse_float, _request_payload, _json_error, _uploads_directory
 
 logger = logging.getLogger(__name__)

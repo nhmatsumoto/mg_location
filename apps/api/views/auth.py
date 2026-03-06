@@ -204,6 +204,8 @@ def google_oauth2_login_view(request):
     return JsonResponse({'user': _serialize_user(user), 'authenticated': True})
 
 
+from rest_framework.exceptions import AuthenticationFailed
+
 @csrf_exempt
 def keycloak_sso_login_view(request):
     if request.method != 'POST':
@@ -217,7 +219,14 @@ def keycloak_sso_login_view(request):
     if not access_token:
         return _auth_error('accessToken ausente.', status=400)
 
-    claims = decode_keycloak_access_token(access_token)
+    try:
+        claims = decode_keycloak_access_token(access_token)
+    except AuthenticationFailed as exc:
+        return _auth_error(str(exc), status=401)
+    except Exception as exc:
+        logger.warning('keycloak_sso_login_error', extra={'error': str(exc)})
+        return _auth_error('Falha ao decodificar token Keycloak.', status=401)
+
     user = provision_user_from_keycloak(claims)
     login(request, user)
     token, _ = Token.objects.get_or_create(user=user)
