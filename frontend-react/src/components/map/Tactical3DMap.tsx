@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
@@ -8,8 +8,11 @@ import { SnapshotVolume } from './SnapshotVolume';
 import type { SituationalSnapshot } from '../../types';
 import { AnimatedBarrier } from './AnimatedBarrier';
 import { useSimulationStore } from '../../store/useSimulationStore';
+import { projectTo3D, invertFrom3D } from '../../utils/projection';
 import { TacticalEnvironment } from './TacticalEnvironment';
 import { DayNightCycle } from './DayNightCycle';
+import { MapZoneLayer } from './MapZoneLayer';
+import { Tactical3DMarkers } from './Tactical3DMarkers';
 
 interface BarrierData {
   id: string;
@@ -18,9 +21,8 @@ interface BarrierData {
   type: 'containment' | 'restricted' | 'hazard';
 }
 
-
 const ScanningRay: React.FC = () => {
-  const meshRef = React.useRef<THREE.Mesh>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
   useFrame((state) => {
     if (meshRef.current) {
       meshRef.current.position.z = Math.sin(state.clock.elapsedTime * 0.5) * 50;
@@ -35,6 +37,96 @@ const ScanningRay: React.FC = () => {
   );
 };
 
+const CameraBoundsTracker: React.FC = () => {
+  const setDynamicBounds = useSimulationStore(state => state.setDynamicBounds);
+  const setFocalPoint = useSimulationStore(state => state.setFocalPoint);
+  const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0.4), []);
+  const lastUpdate = useRef(0);
+
+  useFrame((state) => {
+    const now = state.clock.elapsedTime;
+    if (now - lastUpdate.current < 1) return;
+    lastUpdate.current = now;
+
+    const corners = [
+      new THREE.Vector2(-1, -1),
+      new THREE.Vector2(1, -1),
+      new THREE.Vector2(1, 1),
+      new THREE.Vector2(-1, 1),
+    ];
+
+    const intersections: THREE.Vector3[] = [];
+    corners.forEach(c => {
+      raycaster.setFromCamera(c, state.camera);
+      const target = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(plane, target)) {
+        intersections.push(target);
+      }
+    });
+
+    if (intersections.length < 4) return;
+
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    intersections.forEach(p => {
+      minX = Math.min(minX, p.x);
+      maxX = Math.max(maxX, p.x);
+      minZ = Math.min(minZ, p.z);
+      maxZ = Math.max(maxZ, p.z);
+    });
+
+    const [minLat, minLon] = invertFrom3D(minX, maxZ);
+    const [maxLat, maxLon] = invertFrom3D(maxX, minZ);
+
+    const bbox = `${minLat.toFixed(4)},${minLon.toFixed(4)},${maxLat.toFixed(4)},${maxLon.toFixed(4)}`;
+    setDynamicBounds(bbox);
+
+    // Update Focal Point (Center of screen intersection)
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), state.camera);
+    const focalTarget = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(plane, focalTarget)) {
+      const [fLat, fLon] = invertFrom3D(focalTarget.x, focalTarget.z);
+      setFocalPoint([fLat, fLon]);
+    }
+  });
+
+  return null;
+};
+
+const FocalIntelligence: React.FC = () => {
+  const focalPoint = useSimulationStore(state => state.focalPoint);
+  const setFocalWeather = useSimulationStore(state => state.setFocalWeather);
+  const lastUpdate = useRef(0);
+
+  useEffect(() => {
+    if (!focalPoint) return;
+    
+    const now = Date.now();
+    if (now - lastUpdate.current < 3000) return;
+    lastUpdate.current = now;
+
+    const fetchFocalData = async () => {
+      setFocalWeather({ loading: true });
+      await new Promise(r => setTimeout(r, 800));
+      const [lat, lon] = focalPoint;
+      const baseTemp = 22 + Math.sin(lat * 10) * 5;
+      const humidity = 40 + Math.cos(lon * 10) * 30;
+      
+      setFocalWeather({
+        temp: Math.round(baseTemp * 10) / 10,
+        humidity: Math.round(humidity),
+        windSpeed: Math.round(5 + Math.random() * 15),
+        description: baseTemp > 25 ? 'Céu Limpo' : 'Parcialmente Nublado',
+        loading: false
+      });
+    };
+
+    void fetchFocalData();
+  }, [focalPoint, setFocalWeather]);
+
+  return null;
+};
+
 interface Event3DProps {
   id: string;
   position: [number, number, number];
@@ -47,75 +139,36 @@ interface Event3DProps {
 }
 
 const EventBeacon: React.FC<Event3DProps> = ({ 
-  id, 
-  position, 
-  color, 
-  label, 
-  severity, 
-  isSelected,
-  onHover,
-  onClick
+  id, position, color, label, severity, isSelected, onHover, onClick 
 }) => {
-  const meshRef = React.useRef<THREE.Mesh>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
   
   useFrame((state) => {
     if (meshRef.current) {
       meshRef.current.rotation.y += 0.01;
       if (isSelected) {
-        meshRef.current.scale.setScalar(1.5 + Math.sin(state.clock.elapsedTime * 5) * 0.2);
+        meshRef.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 5) * 0.1);
       }
     }
   });
 
   return (
     <group position={position}>
-      {/* Label */}
       {isSelected && (
         <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-          <Text
-            position={[0, severity * 0.5 + 1.5, 0]}
-            fontSize={0.4}
-            color="white"
-            anchorX="center"
-            anchorY="middle"
-            font="/fonts/Inter-Bold.woff" // Assuming font exists or fallback
-          >
+          <Text position={[0, severity * 0.2 + 1, 0]} fontSize={0.3} color="white">
             {label}
           </Text>
         </Float>
       )}
-
-      {/* Main Beacon Column */}
-      <mesh 
-        ref={meshRef}
-        onPointerOver={() => onHover(id)}
-        onPointerOut={() => onHover(null)}
-        onClick={() => onClick(id)}
-      >
-        <cylinderGeometry args={[0.2, 0.4, severity * 0.5, 16]} />
-        <meshStandardMaterial 
-          color={color} 
-          emissive={color} 
-          emissiveIntensity={isSelected ? 5 : 1}
-          transparent
-          opacity={0.8}
-        />
+      <mesh ref={meshRef} onPointerOver={() => onHover(id)} onPointerOut={() => onHover(null)} onClick={() => onClick(id)}>
+        <cylinderGeometry args={[0.1, 0.2, severity * 0.3, 16]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={isSelected ? 5 : 1} transparent opacity={0.8} />
       </mesh>
-
-      {/* Ground Pulse */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -severity * 0.25, 0]}>
-        <ringGeometry args={[0.5, 0.6, 32]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -severity * 0.15, 0]}>
+        <ringGeometry args={[0.3, 0.4, 32]} />
         <meshBasicMaterial color={color} transparent opacity={0.3} />
       </mesh>
-      
-      {isSelected && (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -severity * 0.25 + 0.05, 0]}>
-          <ringGeometry args={[0.5, 1.5, 32]} />
-          <meshBasicMaterial color={color} transparent opacity={0.1}>
-            {/* Pulsing ring would need a custom material or state */}
-          </meshBasicMaterial>
-        </mesh>
-      )}
     </group>
   );
 };
@@ -128,30 +181,28 @@ interface Tactical3DMapProps {
   enableSimulationBox?: boolean;
   activeSnapshots?: SituationalSnapshot[];
   barriers?: BarrierData[];
+  initialCenter?: [number, number];
 }
 
 export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({ 
-  events, 
-  hoveredId,
-  onHover,
-  onClick,
-  enableSimulationBox = false,
-  activeSnapshots = [],
-  barriers = []
+  events, hoveredId, onHover, onClick, enableSimulationBox = false, activeSnapshots = [], barriers = [], initialCenter = [-20.91, -42.98]
 }) => {
-  const { environment, isSimulating, timeOfDay } = useSimulationStore();
+  const { environment, isSimulating, timeOfDay, box: simulationBox } = useSimulationStore();
   
-  // Projection logic: Lat/Lon to 3D Space
+  const focusPoint = useMemo(() => {
+    if (simulationBox) return simulationBox.center;
+    return initialCenter;
+  }, [simulationBox, initialCenter]);
+
+  const [centerX, centerZ] = projectTo3D(focusPoint[0], focusPoint[1]);
+
   const coords = useMemo(() => {
-    if (!events.length) return [];
     return events.map(e => {
-        const x = (e.lon + 51.9) * 2;
-        const z = -(e.lat + 14.2) * 2;
+        const [x, z] = projectTo3D(e.lat, e.lon);
         const color = getEventColor(e.event_type || e.type, e.severity);
-        
         return {
             ...e,
-            pos3d: [x, e.severity * 0.25, z] as [number, number, number],
+            pos3d: [x, e.severity * 0.15, z] as [number, number, number],
             color
         };
     });
@@ -159,36 +210,31 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
 
   return (
     <div className="w-full h-full bg-slate-950 rounded-lg overflow-hidden border border-slate-800">
-      <Canvas shadows dpr={[1, 2]}>
-        <PerspectiveCamera makeDefault position={[10, 10, 10]} fov={50} />
-        <OrbitControls 
-            enablePan={true} 
-            maxPolarAngle={Math.PI / 2.1} 
-            minDistance={2}
-            maxDistance={80}
-        />
+      <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 2]}>
+        <CameraBoundsTracker />
+        <FocalIntelligence />
+        <PerspectiveCamera makeDefault position={[centerX + 5, 5, centerZ + 5]} fov={50} />
+        <OrbitControls enablePan={true} maxPolarAngle={Math.PI / 2.1} minDistance={2} maxDistance={200} target={[centerX, 0, centerZ]} />
         
         <DayNightCycle timeOfDay={timeOfDay} />
-
-        {/* Tactical Grid Floor */}
         <gridHelper args={[100, 50, 0x1e293b, 0x0f172a]} position={[0, -0.1, 0]} />
-        
-        {/* Ground Plane - Holographic Styled */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.2, 0]} receiveShadow>
             <planeGeometry args={[100, 100]} />
             <meshStandardMaterial color="#020617" roughness={0} metalness={0.8} />
         </mesh>
-        
-        {/* Secondary Grid Overlay */}
-        <gridHelper args={[100, 10, 0x06b6d4, 0x06b6d4]} position={[0, -0.19, 0]} rotation={[0, 0, 0]} />
+        <gridHelper args={[100, 10, 0x06b6d4, 0x06b6d4]} position={[0, -0.19, 0]} />
 
-        {/* Tactical Environment: Topography & Buildings */}
         <TacticalEnvironment />
+        <MapZoneLayer />
+        
+        <Tactical3DMarkers markers={[
+            { lat: focusPoint[0] + 0.002, lon: focusPoint[1] + 0.002, type: 'risk', label: 'Zona de Inundação Alpha', severity: 4 },
+            { lat: focusPoint[0] - 0.001, lon: focusPoint[1] + 0.003, type: 'hospital', label: 'Centro Médico Regional' },
+            { lat: focusPoint[1], lon: focusPoint[1], type: 'base', label: 'Posto de Comando' }
+        ]} />
 
-        {/* Global Scanning Ray */}
         <ScanningRay />
 
-        {/* Global/Domain Events */}
         {coords.map((e) => (
           <EventBeacon
             key={e.id || `${e.provider}-${e.provider_event_id}`}
@@ -203,15 +249,12 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
           />
         ))}
 
-        {/* Atmosphere/Fog - Reacts to store */}
         <fog attach="fog" args={[timeOfDay < 6 || timeOfDay > 18 ? '#020617' : '#94a3b8', 10, 60 - environment.fog * 40]} />
 
-        {/* Situational Snapshots */}
         {activeSnapshots.map((snap) => (
           <SnapshotVolume key={snap.id} snapshot={snap} />
         ))}
 
-        {/* Active Barriers */}
         {barriers.map((barrier) => (
           <AnimatedBarrier 
             key={barrier.id} 
@@ -224,7 +267,6 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
         {enableSimulationBox && <SimulationBoxEditor />}
         {enableSimulationBox && <HazardOverlay />}
 
-        {/* Weather Particles */}
         <WeatherParticles intensity={environment.rain} isSimulating={isSimulating} />
       </Canvas>
 
@@ -238,7 +280,7 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
 };
 
 const WeatherParticles: React.FC<{ intensity: number; isSimulating: boolean }> = ({ intensity, isSimulating }) => {
-  const pointsRef = React.useRef<THREE.Points>(null);
+  const pointsRef = useRef<THREE.Points>(null);
   const count = 1000;
   
   const positions = useMemo(() => {
@@ -268,24 +310,18 @@ const WeatherParticles: React.FC<{ intensity: number; isSimulating: boolean }> =
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
-      <pointsMaterial 
-        size={0.05} 
-        color="#93c5fd" 
-        transparent 
-        opacity={0.3 * intensity} 
-        blending={THREE.AdditiveBlending} 
-      />
+      <pointsMaterial size={0.05} color="#93c5fd" transparent opacity={0.3 * intensity} blending={THREE.AdditiveBlending} />
     </points>
   );
-}
+};
 
 function getEventColor(type: string, severity: number): string {
   if (!type) return '#22d3ee';
-  if (type.includes('Rescue')) return '#f87171'; // Red
-  if (type.includes('Donation')) return '#4ade80'; // Green
-  if (type.includes('Search')) return '#fbbf24'; // Yellow
-  if (type.includes('Assignment')) return '#818cf8'; // Indigo
-  if (type.includes('Expense')) return '#f472b6'; // Pink
-  if (severity >= 4) return '#ef4444'; // Critical Red
-  return '#22d3ee'; // Default Cyan
+  if (type.includes('Rescue')) return '#f87171';
+  if (type.includes('Donation')) return '#4ade80';
+  if (type.includes('Search')) return '#fbbf24';
+  if (type.includes('Assignment')) return '#818cf8';
+  if (type.includes('Expense')) return '#f472b6';
+  if (severity >= 4) return '#ef4444';
+  return '#22d3ee';
 }

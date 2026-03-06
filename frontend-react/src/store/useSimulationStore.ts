@@ -36,6 +36,34 @@ interface SimulationState {
   setShowStreets: (show: boolean) => void;
   showVegetation: boolean;
   setShowVegetation: (show: boolean) => void;
+  dynamicBounds: string | null;
+  setDynamicBounds: (bounds: string | null) => void;
+  showGEE: boolean;
+  setShowGEE: (show: boolean) => void;
+  geeAnalysisType: 'ndvi' | 'moisture' | 'thermal';
+  setGeeAnalysisType: (type: 'ndvi' | 'moisture' | 'thermal') => void;
+  
+  // Advanced Simulation State
+  simulationDate: string;
+  setSimulationDate: (date: string) => void;
+  rainIntensity: number; 
+  setRainIntensity: (val: number) => void;
+  soilSaturation: number; 
+  setSoilSaturation: (val: number) => void;
+  soilType: 'clay' | 'sandy' | 'loam' | 'rocky';
+  setSoilType: (type: 'clay' | 'sandy' | 'loam' | 'rocky') => void;
+
+  // Camera-Aware Intelligence
+  focalPoint: [number, number] | null; // [lat, lon] the camera is looking at
+  setFocalPoint: (point: [number, number] | null) => void;
+  focalWeather: {
+    temp: number;
+    humidity: number;
+    windSpeed: number;
+    description: string;
+    loading: boolean;
+  };
+  setFocalWeather: (weather: Partial<SimulationState['focalWeather']>) => void;
 }
 
 export const useSimulationStore = create<SimulationState>((set) => ({
@@ -70,4 +98,34 @@ export const useSimulationStore = create<SimulationState>((set) => ({
   setShowStreets: (showStreets) => set({ showStreets }),
   showVegetation: true,
   setShowVegetation: (showVegetation) => set({ showVegetation }),
+  dynamicBounds: null,
+  setDynamicBounds: (dynamicBounds) => set({ dynamicBounds }),
+  showGEE: false,
+  setShowGEE: (showGEE) => set({ showGEE }),
+  geeAnalysisType: 'ndvi',
+  setGeeAnalysisType: (geeAnalysisType) => set({ geeAnalysisType }),
+  
+  // Defaults
+  simulationDate: new Date().toISOString().split('T')[0],
+  setSimulationDate: (simulationDate) => set({ simulationDate }),
+  rainIntensity: 0,
+  setRainIntensity: (rainIntensity) => set({ rainIntensity }),
+  soilSaturation: 10,
+  setSoilSaturation: (soilSaturation) => set({ soilSaturation }),
+  soilType: 'loam',
+  setSoilType: (soilType) => set({ soilType }),
+
+  // Defaults for Camera-Aware Intelligence
+  focalPoint: null,
+  setFocalPoint: (focalPoint) => set({ focalPoint }),
+  focalWeather: {
+    temp: 24,
+    humidity: 65,
+    windSpeed: 12,
+    description: 'Cloudy',
+    loading: false
+  },
+  setFocalWeather: (weather) => set((state) => ({
+    focalWeather: { ...state.focalWeather, ...weather }
+  })),
 }));

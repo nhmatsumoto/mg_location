@@ -1,5 +1,12 @@
 # MG Location: Resilient Tactical Map & 3D Situation Room v1.2
 
+> [!CAUTION]
+> **AVISO ÉTICO CRÍTICO / CRITICAL ETHICAL WARNING**
+>
+> O uso desta plataforma para fins militares, em ambientes de guerra ou para simulações de conflito é **COMPLETAMENTE INACEITÁVEL**. Este projeto foi desenvolvido exclusivamente para **SALVAR VIDAS** e mitigar os impactos de desastres naturais e crises humanitárias. Usar esta tecnologia para fins de destruição é expressamente condenado pela organização e viola os princípios fundamentais deste software.
+>
+> The use of this platform for military purposes, warfare environments, or conflict simulations is **COMPLETELY UNACCEPTABLE**. This project was developed exclusively to **SAVE LIVES** and mitigate the impacts of natural disasters and humanitarian crises. Using this technology for destructive purposes is expressly condemned by the organization and violates the fundamental principles of this software.
+
 ![MG Location Banner](https://img.shields.io/badge/MG--Location-Resilience--v1.1-blueviolet?style=for-the-badge)
 ![Status Build](https://img.shields.io/badge/Build-Passing-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)

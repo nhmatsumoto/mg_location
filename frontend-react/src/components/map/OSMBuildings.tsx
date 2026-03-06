@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import axios from 'axios';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { fetchOSMData } from '../../utils/osmFetcher';
+import { useSimulationStore } from '../../store/useSimulationStore';
+import { projectTo3D } from '../../utils/projection';
 
 interface BuildingData {
   id: string;
@@ -12,32 +15,39 @@ interface BuildingData {
 export const OSMBuildings: React.FC = () => {
   const [buildings, setBuildings] = useState<BuildingData[]>([]);
 
-  // Bounding box for Ubá, MG (Tactical simulation area)
-  // Expanded slightly for better context
-  const bbox = "-20.94,-43.01,-20.88,-42.95";
+  const { dynamicBounds, box: simulationBox, rainIntensity } = useSimulationStore();
+  const lastFetchedBbox = useRef<string | null>(null);
+
+  const defaultBbox = "-20.94,-43.01,-20.88,-42.95";
 
   useEffect(() => {
+    const activeBbox = dynamicBounds || (simulationBox ? 
+      `${simulationBox.center[0] - 0.02},${simulationBox.center[1] - 0.02},${simulationBox.center[0] + 0.02},${simulationBox.center[1] + 0.02}` 
+      : defaultBbox);
+
+    if (activeBbox === lastFetchedBbox.current) return;
+    lastFetchedBbox.current = activeBbox;
+
     const fetchBuildings = async () => {
       try {
         const query = `
           [out:json][timeout:25];
           (
-            node["building"](${bbox});
-            way["building"](${bbox});
-            relation["building"](${bbox});
+            way["building"](${activeBbox});
+            relation["building"](${activeBbox});
           );
           out body;
           >;
           out skel qt;
         `;
-        const response = await axios.post('https://overpass-api.de/api/interpreter', query);
+        const data = await fetchOSMData(query);
         
         const nodes: Record<string, [number, number]> = {};
-        response.data.elements.filter((el: any) => el.type === 'node').forEach((node: any) => {
+        data.elements.filter((el: any) => el.type === 'node').forEach((node: any) => {
           nodes[node.id] = [node.lon, node.lat];
         });
 
-        const parsedBuildings: BuildingData[] = response.data.elements
+        const parsedBuildings: BuildingData[] = data.elements
           .filter((el: any) => el.type === 'way' && el.nodes)
           .map((way: any) => {
             const points = way.nodes.map((nodeId: string) => nodes[nodeId]).filter(Boolean);
@@ -50,7 +60,7 @@ export const OSMBuildings: React.FC = () => {
             return {
               id: way.id,
               points,
-              height: height * 0.15, // Scaled for tactical map
+              height: height * 0.15,
               type: way.tags?.building || 'yes'
             };
           });
@@ -62,65 +72,87 @@ export const OSMBuildings: React.FC = () => {
     };
 
     void fetchBuildings();
-  }, []);
+  }, [dynamicBounds, simulationBox]);
 
   const renderedBuildings = useMemo(() => {
-    return buildings.map((b) => {
-      if (b.points.length < 3) return null;
+    if (buildings.length === 0) return null;
+
+    const project = (lon: number, lat: number) => projectTo3D(lat, lon);
+
+    const gearsByType: Record<string, THREE.BufferGeometry[]> = {
+      industrial: [],
+      residential: [],
+      commercial: [],
+      hospital: [],
+      default: []
+    };
+
+    buildings.forEach((b) => {
+      if (b.points.length < 3) return;
 
       const shape = new THREE.Shape();
-      const project = (lon: number, lat: number) => [
-        (lon + 51.9) * 2,
-        -(lat + 14.2) * 2
-      ];
-
-      const start = project(b.points[0][0], b.points[0][1]);
-      shape.moveTo(start[0], start[1]);
+      const [startX, startZ] = project(b.points[0][0], b.points[0][1]);
+      shape.moveTo(startX, startZ);
       
       for (let i = 1; i < b.points.length; i++) {
-        const p = project(b.points[i][0], b.points[i][1]);
-        shape.lineTo(p[0], p[1]);
+        const [px, pz] = project(b.points[i][0], b.points[i][1]);
+        shape.lineTo(px, pz);
       }
 
-      // Material based on building type
+      const geometry = new THREE.ExtrudeGeometry(shape, { depth: b.height, bevelEnabled: false });
+      geometry.rotateX(-Math.PI / 2);
+      geometry.translate(0, -0.4, 0);
+
       const isIndustrial = b.type === 'industrial' || b.type === 'warehouse';
       const isResidential = b.type === 'house' || b.type === 'apartments';
+      const isCommercial = b.type === 'retail' || b.type === 'commercial' || b.type === 'office';
+      const isHospital = b.type === 'hospital';
       
-      let color = "#475569"; // Default Slate
-      if (isIndustrial) color = "#64748b";
-      if (isResidential) color = "#94a3b8";
-
-      return (
-        <group key={b.id}>
-          {/* Main Building Volume */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.4, 0]} castShadow receiveShadow>
-            <extrudeGeometry 
-              args={[shape, { depth: b.height, bevelEnabled: false }]} 
-            />
-            <meshStandardMaterial 
-              color={color} 
-              roughness={0.4}
-              metalness={0.3}
-              emissive={color}
-              emissiveIntensity={0.05}
-            />
-          </mesh>
-          
-          {/* Windows / Detail Overlay (Glowing at night check would be better but let's do a subtle texture feel) */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.39, 0]}>
-             <extrudeGeometry 
-              args={[shape, { depth: b.height, bevelEnabled: false }]} 
-            />
-            <meshStandardMaterial 
-              color="#22d3ee" 
-              transparent 
-              opacity={0.1} 
-              wireframe
-            />
-          </mesh>
-        </group>
-      );
+      if (isIndustrial) gearsByType.industrial.push(geometry);
+      else if (isResidential) gearsByType.residential.push(geometry);
+      else if (isCommercial) gearsByType.commercial.push(geometry);
+      else if (isHospital) gearsByType.hospital.push(geometry);
+      else gearsByType.default.push(geometry);
     });
+
+    return (
+      <group>
+        {Object.entries(gearsByType).map(([type, geos]) => {
+          if (geos.length === 0) return null;
+          
+          const merged = mergeGeometries(geos);
+          let color = "#475569"; 
+          let metalness = 0.6;
+          
+          if (type === 'industrial') color = "#64748b";
+          if (type === 'residential') { color = "#94a3b8"; metalness = 0.2; }
+          if (type === 'commercial') { color = "#334155"; metalness = 0.8; }
+          if (type === 'hospital') color = "#f8fafc";
+
+          return (
+            <group key={type}>
+              <mesh geometry={merged} castShadow receiveShadow>
+                <meshStandardMaterial 
+                  color={color} 
+                  roughness={0.4 - (rainIntensity / 400)} // More "wet" = smoother
+                  metalness={metalness + (rainIntensity / 250)} // More "wet" = more reflective
+                  emissive={color}
+                  emissiveIntensity={0.05}
+                />
+              </mesh>
+              <mesh geometry={merged}>
+                <meshStandardMaterial 
+                  color="#22d3ee" 
+                  transparent 
+                  opacity={0.03} 
+                  wireframe
+                />
+              </mesh>
+            </group>
+          );
+        })}
+      </group>
+    );
   }, [buildings]);
 
   return <group>{renderedBuildings}</group>;

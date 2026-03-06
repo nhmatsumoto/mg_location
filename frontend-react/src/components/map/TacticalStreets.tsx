@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import axios from 'axios';
+import { fetchOSMData } from '../../utils/osmFetcher';
+import { useSimulationStore } from '../../store/useSimulationStore';
+import { projectTo3D } from '../../utils/projection';
 
 interface StreetData {
   id: string;
@@ -10,29 +12,39 @@ interface StreetData {
 
 export const TacticalStreets: React.FC = () => {
   const [streets, setStreets] = useState<StreetData[]>([]);
+  const dynamicBounds = useSimulationStore((state: any) => state.dynamicBounds);
+  const simulationBox = useSimulationStore((state: any) => state.box);
+  const lastFetchedBbox = useRef<string | null>(null);
 
-  const bbox = "-20.94,-43.01,-20.88,-42.95";
+  const defaultBbox = "-20.94,-43.01,-20.88,-42.95";
 
   useEffect(() => {
+    const activeBbox = dynamicBounds || (simulationBox ? 
+      `${simulationBox.center[0] - 0.02},${simulationBox.center[1] - 0.02},${simulationBox.center[0] + 0.02},${simulationBox.center[1] + 0.02}` 
+      : defaultBbox);
+
+    if (activeBbox === lastFetchedBbox.current) return;
+    lastFetchedBbox.current = activeBbox;
+
     const fetchStreets = async () => {
       try {
         const query = `
           [out:json][timeout:25];
           (
-            way["highway"](${bbox});
+            way["highway"](${activeBbox});
           );
           out body;
           >;
           out skel qt;
         `;
-        const response = await axios.post('https://overpass-api.de/api/interpreter', query);
+        const data = await fetchOSMData(query);
         
         const nodes: Record<string, [number, number]> = {};
-        response.data.elements.filter((el: any) => el.type === 'node').forEach((node: any) => {
+        data.elements.filter((el: any) => el.type === 'node').forEach((node: any) => {
           nodes[node.id] = [node.lon, node.lat];
         });
 
-        const parsedStreets: StreetData[] = response.data.elements
+        const parsedStreets: StreetData[] = data.elements
           .filter((el: any) => el.type === 'way' && el.nodes)
           .map((way: any) => ({
             id: way.id,
@@ -42,30 +54,26 @@ export const TacticalStreets: React.FC = () => {
         
         setStreets(parsedStreets);
       } catch (error) {
-        console.error("OSM Streets Fetch Error:", error);
+        console.error("OSM Streets Error:", error);
       }
     };
 
     void fetchStreets();
-  }, []);
+  }, [dynamicBounds, simulationBox]);
 
   const renderedStreets = useMemo(() => {
     return streets.map((s) => {
       if (s.points.length < 2) return null;
 
-      const project = (lon: number, lat: number) => [
-        (lon + 51.9) * 2,
-        -(lat + 14.2) * 2
-      ];
+      const project = (lon: number, lat: number) => projectTo3D(lat, lon);
 
       const points = s.points.map(p => {
         const [x, z] = project(p[0], p[1]);
-        return new THREE.Vector3(x, -0.38, z); // Slightly above terrain
+        return new THREE.Vector3(x, -0.38, z);
       });
 
       const curve = new THREE.CatmullRomCurve3(points);
       
-      // Determine width based on type
       let width = 0.05;
       if (s.type === 'primary' || s.type === 'trunk') width = 0.15;
       if (s.type === 'secondary') width = 0.1;

@@ -27,6 +27,7 @@ from apps.api.views import (
     support_points,
     terrain_context,
     unified_easy_simulation,
+    gee_analysis,
 )
 from apps.api.views_auth import (
     auth_login,
@@ -152,6 +153,7 @@ urlpatterns = [
     path('satellite/layers', satellite_layers, name='satellite_layers'),
     path('integrations/satellite/layers', satellite_layers, name='integrations_satellite_layers'),
     path('integrations/satellite/landsat/catalog', satellite_landsat_catalog, name='integrations_satellite_landsat_catalog'),
+    path('integrations/satellite/gee/analysis', gee_analysis, name='integrations_gee_analysis'),
     path('satellite/stac/search', satellite_stac_search, name='satellite_stac_search'),
     path('satellite/goes/recent', satellite_goes_recent, name='satellite_goes_recent'),
     path('sync', views_sync.sync_events, name='sync_events'),

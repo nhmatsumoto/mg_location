@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, memo, useCallback, lazy, Suspense } from 'react';
+import { latToMeters, lonToMeters } from '../utils/projection';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { MapContainer, TileLayer, useMap, useMapEvents, Marker, Rectangle } from 'react-leaflet';
 import { Modal } from '../components/ui/Modal';
@@ -26,13 +27,25 @@ import {
   MousePointer2,
   Box,
   Camera,
-  BoxSelect,
+  Settings2,
   Crosshair
 } from 'lucide-react';
 import L from 'leaflet';
 import { CountryDropdown } from '../components/ui/CountryDropdown';
 
 type ToolMode = 'inspect' | 'point' | 'area' | 'filter_area' | 'simulation_box' | 'snapshot';
+
+interface WeatherSnapshot {
+  temp?: number;
+  pressure?: number;
+  humidity?: number;
+  wind_speed?: number;
+  rain?: { '1h'?: number };
+}
+
+interface WeatherResponse {
+  current?: WeatherSnapshot;
+}
 
 function MapInteractions({
   tool,
@@ -43,7 +56,8 @@ function MapInteractions({
   spatialFilter,
   setSpatialFilter,
   onFilterComplete,
-  onSnapshotComplete
+  onSnapshotComplete,
+  show3D
 }: {
   tool: ToolMode;
   onPickPoint: (lat: number, lon: number) => void;
@@ -54,10 +68,12 @@ function MapInteractions({
   setSpatialFilter: (next: { center: [number, number], radius: number } | null) => void;
   onFilterComplete: (filter: { center: [number, number], radius: number }) => void;
   onSnapshotComplete: (bounds: Array<[number, number]>) => void;
+  show3D: boolean;
 }) {
   const map = useMap();
   useMapEvents({
     mousemove(e) {
+      if (show3D) return;
       onHover(e.latlng.lat, e.latlng.lng);
       if (tool === 'filter_area' && spatialFilter && !spatialFilter.radius) {
         setSpatialFilter({ ...spatialFilter, radius: map.distance(spatialFilter.center, e.latlng) });
@@ -67,6 +83,7 @@ function MapInteractions({
       }
     },
     click(e) {
+      if (show3D) return;
       if (tool === 'point') {
         onPickPoint(e.latlng.lat, e.latlng.lng);
         return;
@@ -87,17 +104,20 @@ function MapInteractions({
       }
     },
     mousedown(e) {
+      if (show3D) return;
       if (tool === 'snapshot' || tool === 'simulation_box') {
         setAreaDraft([[e.latlng.lat, e.latlng.lng]]);
       }
     },
     mouseup(e) {
+      if (show3D) return;
       if ((tool === 'snapshot' || tool === 'simulation_box') && areaDraft.length === 1) {
         onSnapshotComplete([areaDraft[0], [e.latlng.lat, e.latlng.lng]]);
         setAreaDraft([]);
       }
     },
     contextmenu() {
+      if (show3D) return;
       if (tool === 'area' && areaDraft.length > 2) {
         const [lat, lon] = areaDraft[0];
         onPickPoint(lat, lon);
@@ -107,7 +127,7 @@ function MapInteractions({
 
   return (
     <>
-      {(tool === 'snapshot' || tool === 'simulation_box') && areaDraft.length === 2 && (
+      {!show3D && (tool === 'snapshot' || tool === 'simulation_box') && areaDraft.length === 2 && (
         <Rectangle 
           bounds={[areaDraft[0], areaDraft[1]]} 
           pathOptions={{ color: tool === 'snapshot' ? '#22d3ee' : '#f59e0b', weight: 1, fillOpacity: 0.1, dashArray: '5, 5' }} 
@@ -117,28 +137,37 @@ function MapInteractions({
   );
 }
 
-function ToolButton({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+function ToolButton({ active, onClick, icon, label, disabled }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string, disabled?: boolean }) {
   return (
-    <button
-      onClick={onClick}
-      className={`flex h-10 w-10 items-center justify-center rounded-lg transition-all relative group
+    <button 
+      onClick={!disabled ? onClick : undefined}
+      disabled={disabled}
+      className={`
+        flex items-center gap-3 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-300
         ${active 
-          ? 'bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.5)]' 
-          : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+          ? 'bg-cyan-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] translate-x-1' 
+          : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}
+        ${disabled ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer'}
+      `}
     >
-      {icon}
-      <div className="absolute right-12 bg-slate-900 border border-white/10 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 font-mono">
-        {label}
-      </div>
+      <span className={active ? "animate-pulse" : ""}>{icon}</span>
+      <span>{label}</span>
     </button>
   );
 }
 
-function MapRecenter({ center }: { center: [number, number] }) {
+function MapListener({ onMove }: { onMove: (center: [number, number], zoom: number) => void }) {
   const map = useMap();
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
+  useMapEvents({
+    moveend() {
+      const center = map.getCenter();
+      onMove([center.lat, center.lng], map.getZoom());
+    },
+    zoomend() {
+      const center = map.getCenter();
+      onMove([center.lat, center.lng], map.getZoom());
+    }
+  });
   return null;
 }
 
@@ -169,7 +198,9 @@ export function WarRoomPage() {
   const [alerts, setAlerts] = useState<AlertDto[]>([]);
   const [mapAnnotations, setMapAnnotations] = useState<MapAnnotationDto[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [mapCenter] = useState<[number, number]>([-14.2, -51.9]);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([-20.91, -42.98]); // Start at Ubá
+  const [mapZoom, setMapZoom] = useState(13);
+  const [lastClickedCoords, setLastClickedCoords] = useState<[number, number] | null>(null);
   const [show3D, setShow3D] = useState(false);
   
   const [country, setCountry] = useState('BR');
@@ -201,7 +232,13 @@ export function WarRoomPage() {
   };
 
   const [openOpsModal, setOpenOpsModal] = useState(false);
-  const [opsForm, setOpsForm] = useState({ recordType: 'risk_area' as 'risk_area' | 'support_point' | 'missing_person', personName: '', lastSeenLocation: '', incidentTitle: '', severity: 'high' });
+  const [opsForm, setOpsForm] = useState({ 
+    recordType: 'risk_area' as 'risk_area' | 'support_point' | 'missing_person', 
+    personName: '', 
+    lastSeenLocation: '', 
+    incidentTitle: '', 
+    severity: 'high' 
+  });
 
   const loadData = async () => {
     try {
@@ -242,37 +279,58 @@ export function WarRoomPage() {
 
   const selectedEvent = useMemo(() => {
     if (!hoveredId) return null;
-    return events.find(e => `${e.provider}-${e.provider_event_id}` === hoveredId) || 
+    return (events as any[]).find(e => `${e.provider}-${e.provider_event_id}` === hoveredId) || 
            domainEvents.find(e => e.id === hoveredId) ||
-           alerts.find(a => `alert-${a.id}` === hoveredId) ||
-           mapAnnotations.find(m => `ann-${m.id}` === hoveredId);
+           (alerts as any[]).find(a => `alert-${a.id}` === hoveredId) ||
+           (mapAnnotations as any[]).find(m => `ann-${m.id}` === hoveredId);
   }, [hoveredId, events, domainEvents, alerts, mapAnnotations]);
+
+  const handleReset = () => {
+    setShow3D(false);
+    setMapCenter([-14.2, -51.9]);
+    setHoveredId(null);
+    setTool('inspect');
+  };
 
   const captureSnapshot = async (bounds: Array<[number, number]>) => {
     try {
-      const centerLat = bounds.reduce((acc, b) => acc + b[0], 0) / bounds.length;
-      const centerLon = bounds.reduce((acc, b) => acc + b[1], 0) / bounds.length;
+      const latMin = Math.min(bounds[0][0], bounds[1][0]);
+      const latMax = Math.max(bounds[0][0], bounds[1][0]);
+      const lonMin = Math.min(bounds[0][1], bounds[1][1]);
+      const lonMax = Math.max(bounds[0][1], bounds[1][1]);
+
+      const centerLat = (latMin + latMax) / 2;
+      const centerLon = (lonMin + lonMax) / 2;
       
+      // Calculate size in meters using standardized utility
+      const latDistance = latToMeters(latMax - latMin);
+      const lonDistance = lonToMeters(lonMax - lonMin, centerLat);
+
+      // Update Simulation Box
+      useSimulationStore.getState().setBox({
+        center: [centerLat, centerLon],
+        size: [lonDistance, latDistance]
+      });
+
       // Generate static map URL for satellite texture
-      // Using CartoDB as a fallback or example
       const zoom = 15;
       const x = Math.floor((centerLon + 180) / 360 * Math.pow(2, zoom));
       const y = Math.floor((1 - Math.log(Math.tan(centerLat * Math.PI / 180) + 1 / Math.cos(centerLat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
       const textureUrl = `https://basemaps.cartocdn.com/rastertiles/voyager_labels_under/${zoom}/${x}/${y}.png`;
       useSimulationStore.getState().setSatelliteTextureUrl(textureUrl);
 
-      const weather = await integrationsApi.getWeatherForecast(centerLat, centerLon);
+      const weather = await integrationsApi.getWeatherForecast(centerLat, centerLon) as WeatherResponse;
       const newSnapshot: SituationalSnapshot = {
         id: `snap-${Date.now()}`,
         timestamp: new Date().toISOString(),
         center: [centerLat, centerLon],
         bounds,
         environmentalData: {
-          temp: (weather as any).current?.temp,
-          pressure: (weather as any).current?.pressure,
-          humidity: (weather as any).current?.humidity,
-          windSpeed: (weather as any).current?.wind_speed,
-          rainfall: (weather as any).current?.rain?.['1h'] || 0,
+          temp: weather.current?.temp,
+          pressure: weather.current?.pressure,
+          humidity: weather.current?.humidity,
+          windSpeed: weather.current?.wind_speed,
+          rainfall: weather.current?.rain?.['1h'] || 0,
           soilSaturaion: Math.random() * 100
         }
       };
@@ -284,19 +342,26 @@ export function WarRoomPage() {
   };
 
   const saveOps = async () => {
+    if (!lastClickedCoords) {
+      pushNotice({ type: 'warning', title: 'Coordenadas ausentes', message: 'Clique no mapa para selecionar o local.' });
+      return;
+    }
+
     try {
       await operationsApi.createMapAnnotation({
         recordType: opsForm.recordType,
-        title: opsForm.incidentTitle || (opsForm.recordType === 'missing_person' ? `Busca: ${opsForm.personName}` : 'Nova Anotação'),
-        lat: mapCenter[0],
-        lng: mapCenter[1],
+        title: opsForm.incidentTitle || (opsForm.recordType === 'missing_person' ? `Busca: ${opsForm.personName}` : 'Solicitação de Campo'),
+        lat: lastClickedCoords[0],
+        lng: lastClickedCoords[1],
         severity: opsForm.severity,
         ...(opsForm.recordType === 'risk_area' ? { radiusMeters: 300 } : {}),
       });
       setOpenOpsModal(false);
+      setLastClickedCoords(null);
       await loadData();
+      pushNotice({ type: 'success', title: 'Sucesso', message: 'Registro efetuado com sucesso.' });
     } catch {
-      pushNotice({ type: 'error', title: 'Falha no cadastro', message: 'Erro de comunicação.' });
+      pushNotice({ type: 'error', title: 'Falha no cadastro', message: 'Erro de comunicação com o servidor.' });
     }
   };
 
@@ -320,7 +385,7 @@ export function WarRoomPage() {
              <Box size={16} /> <span className="text-[10px] font-black uppercase tracking-widest">TACTICAL 3D</span>
            </button>
            <button 
-             onClick={() => window.location.reload()} 
+             onClick={handleReset} 
              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 bg-slate-900/80 text-slate-400 hover:text-white backdrop-blur-xl transition-all"
              title="Reset View"
            >
@@ -337,7 +402,13 @@ export function WarRoomPage() {
           <ToolButton active={tool === 'area'} onClick={() => selectTool('area')} icon={<Box size={18} />} label="Área Crítica" />
           <div className="h-px bg-white/10 mx-1 my-1" />
           <ToolButton active={tool === 'snapshot'} onClick={() => selectTool('snapshot')} icon={<Camera size={18} />} label="Snapshot" />
-          <ToolButton active={tool === 'simulation_box'} onClick={() => selectTool('simulation_box')} icon={<BoxSelect size={18} />} label="Cubo Simulação" />
+          <ToolButton 
+            active={simulationPanelOpen} 
+            onClick={() => { if (show3D) setSimulationPanelOpen(!simulationPanelOpen); }} 
+            icon={<Settings2 size={18} className={!show3D ? "opacity-20" : ""} />} 
+            label="Simulação" 
+            disabled={!show3D}
+          />
         </div>
       </div>
 
@@ -354,19 +425,67 @@ export function WarRoomPage() {
       </div>
 
       {/* Top Left: Operational KPIs - Vertical Stack - Pushed down to avoid HUD overlap */}
-      <div className="absolute top-28 left-4 z-40 flex flex-col gap-2 w-[180px]">
-         <div className="flex items-center gap-2 mb-1 px-1">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-            </span>
-            <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">Live Monitor</span>
-         </div>
-         <KpiCard title="EQUIPES" value={opsSnapshot?.kpis.activeTeams ?? '12'} icon={<Users size={16} />} trend="+2" />
-         <KpiCard title="ALERTAS" value={opsSnapshot?.kpis.criticalAlerts ?? '08'} icon={<AlertTriangle size={16} />} trend="CRÍTICO" color="text-amber-400" />
-         <KpiCard title="CHUVA" value={`${opsSnapshot?.kpis.rain24hMm ?? '4.2'}mm`} icon={<CloudRain size={16} />} trend="ESTÁVEL" color="text-blue-400" />
-         <KpiCard title="LOGÍSTICA" value={opsSnapshot?.kpis.suppliesInTransit ?? '92'} icon={<PackageOpen size={16} />} trend="-4" />
-      </div>
+      {!show3D && (
+        <div className="absolute top-28 left-4 z-40 flex flex-col gap-2 w-[180px]">
+           <div className="flex items-center gap-2 mb-1 px-1">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+              </span>
+              <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">Live Monitor</span>
+           </div>
+           <KpiCard title="EQUIPES" value={opsSnapshot?.kpis.activeTeams ?? '12'} icon={<Users size={16} />} trend="+2" />
+           <KpiCard title="ALERTAS" value={opsSnapshot?.kpis.criticalAlerts ?? '08'} icon={<AlertTriangle size={16} />} trend="CRÍTICO" color="text-amber-400" />
+           <KpiCard title="LOGÍSTICA" value={opsSnapshot?.kpis.suppliesInTransit ?? '92'} icon={<PackageOpen size={16} />} trend="-4" />
+        </div>
+      )}
+
+      {/* 3D Tactical HUD: Meteorological Intelligence */}
+      {show3D && (
+        <div className="absolute top-28 left-4 z-40 flex flex-col gap-2 w-[220px] animate-in fade-in slide-in-from-left-4 duration-500">
+           <div className="flex items-center gap-2 mb-1 px-1">
+              <div className="h-1.5 w-1.5 rounded-full bg-cyan-400"></div>
+              <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em]">Regional Intelligence</span>
+           </div>
+           
+           <div className="bg-slate-950/80 backdrop-blur-xl border border-white/5 p-4 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-3">
+                    <CloudRain className="text-cyan-400" size={24} />
+                    <div className="flex flex-col">
+                       <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Weather</span>
+                       <span className="text-lg font-black text-white leading-none tracking-tight text-glow">
+                         {useSimulationStore(state => state.focalWeather).temp}°c
+                       </span>
+                    </div>
+                 </div>
+                 <div className="text-right">
+                    <span className="text-[10px] font-mono text-cyan-500/80 uppercase">
+                      {useSimulationStore(state => state.focalWeather).description}
+                    </span>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/5">
+                 <div className="flex flex-col">
+                    <span className="text-[8px] text-slate-500 uppercase font-bold tracking-widest">Umidade</span>
+                    <span className="text-xs font-black text-slate-200">{useSimulationStore(state => state.focalWeather).humidity}%</span>
+                 </div>
+                 <div className="flex flex-col">
+                    <span className="text-[8px] text-slate-500 uppercase font-bold tracking-widest">Vento</span>
+                    <span className="text-xs font-black text-slate-200">{useSimulationStore(state => state.focalWeather).windSpeed} km/h</span>
+                 </div>
+              </div>
+
+              <div className="pt-1 flex items-center gap-2 group cursor-help">
+                 <div className="h-1 flex-1 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-cyan-500 w-[65%]" />
+                 </div>
+                 <span className="text-[8px] text-cyan-500 font-black">SOLO_SAT: 65%</span>
+              </div>
+           </div>
+        </div>
+      )}
 
       {/* Bottom Center: Quick Action Bar */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-40 group">
@@ -405,7 +524,7 @@ export function WarRoomPage() {
           </div>
         </DraggablePanel>
       )}
-      {simulationPanelOpen && (
+      {simulationPanelOpen && show3D && (
         <SimulationCommandPanel onClose={() => setSimulationPanelOpen(false)} />
       )}
 
@@ -423,15 +542,19 @@ export function WarRoomPage() {
               }}
               activeSnapshots={activeSnapshots}
               enableSimulationBox={tool === 'simulation_box'}
+              initialCenter={mapCenter}
             />
           </Suspense>
         ) : (
-          <MapContainer center={mapCenter} zoom={4} zoomControl={false} style={{ height: '100%', width: '100%' }} className="tactical-map-container">
+          <MapContainer center={mapCenter} zoom={mapZoom} zoomControl={false} style={{ height: '100%', width: '100%' }} className="tactical-map-container">
             <TileLayer attribution='&copy; CARTO' url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' />
-            <MapRecenter center={mapCenter} />
+            <MapListener onMove={(c, z) => { setMapCenter(c); setMapZoom(z); }} />
             <MapInteractions 
               tool={tool} 
-              onPickPoint={() => { setOpenOpsModal(true); }} 
+              onPickPoint={(lat, lon) => { 
+                setLastClickedCoords([lat, lon]);
+                setOpenOpsModal(true); 
+              }} 
               onHover={handleMapHover} 
               areaDraft={areaDraft} 
               setAreaDraft={setAreaDraft} 
@@ -439,6 +562,7 @@ export function WarRoomPage() {
               setSpatialFilter={setSpatialFilter} 
               onFilterComplete={() => {}} 
               onSnapshotComplete={captureSnapshot}
+              show3D={show3D}
             />
             <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
               {currentDisplayEvents.map((e) => (
@@ -492,7 +616,13 @@ function SimulationCommandPanel({ onClose }: { onClose: () => void }) {
     environment, setEnvironment,
     timeOfDay, setTimeOfDay,
     showStreets, setShowStreets,
-    showVegetation, setShowVegetation
+    showVegetation, setShowVegetation,
+    showGEE, setShowGEE,
+    geeAnalysisType, setGeeAnalysisType,
+    simulationDate, setSimulationDate,
+    rainIntensity, setRainIntensity,
+    soilSaturation, setSoilSaturation,
+    soilType, setSoilType
   } = useSimulationStore();
 
   return (
@@ -577,6 +707,93 @@ function SimulationCommandPanel({ onClose }: { onClose: () => void }) {
                   <span className="text-slate-400 uppercase font-mono group-hover:text-cyan-400 transition-colors">Rede Viária</span>
                   <input type="checkbox" checked={showStreets} onChange={e => setShowStreets(e.target.checked)} className="h-3 w-3 rounded border-slate-700 bg-slate-800 accent-cyan-500" />
                 </label>
+              </div>
+           </div>
+
+           <div className="space-y-3 border-t border-white/5 pt-4">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Globe size={12} className="text-emerald-500" /> Google Earth Engine
+              </label>
+              <div className="flex flex-col gap-3 pt-1">
+                <label className="flex items-center justify-between text-[10px] cursor-pointer group">
+                  <span className="text-slate-400 uppercase font-mono group-hover:text-emerald-400 transition-colors">Ativar Análise GEE</span>
+                  <input type="checkbox" checked={showGEE} onChange={e => setShowGEE(e.target.checked)} className="h-3 w-3 rounded border-slate-700 bg-slate-800 accent-emerald-500" />
+                </label>
+                
+                {showGEE && (
+                  <select 
+                    value={geeAnalysisType} 
+                    onChange={e => setGeeAnalysisType(e.target.value as any)}
+                    className="w-full bg-slate-800 border border-white/5 rounded px-2 py-1.5 text-[10px] font-mono text-emerald-400 outline-none"
+                  >
+                    <option value="ndvi">NDVI (Vegetação)</option>
+                    <option value="moisture">Soil Moisture (Umidade)</option>
+                    <option value="thermal">Thermal (Calor)</option>
+                  </select>
+                )}
+              </div>
+           </div>
+
+           <div className="space-y-4 border-t border-white/5 pt-4">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <CloudRain size={12} className="text-cyan-400" /> Clima & Solo
+              </label>
+              
+              <div className="space-y-3">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[9px] text-slate-500 uppercase font-mono">Data da Simulação</span>
+                  <input 
+                    type="date" 
+                    value={simulationDate}
+                    onChange={e => setSimulationDate(e.target.value)}
+                    className="w-full bg-slate-800 border border-white/5 rounded px-2 py-1 text-[10px] font-mono text-cyan-400 outline-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] text-slate-500 uppercase font-mono">Intensidade Chuva</span>
+                    <span className="text-[10px] font-mono text-cyan-400">{rainIntensity}%</span>
+                  </div>
+                  <input 
+                    type="range" min="0" max="100" 
+                    value={rainIntensity} 
+                    onChange={e => setRainIntensity(Number(e.target.value))}
+                    className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] text-slate-500 uppercase font-mono">Saturação do Solo</span>
+                    <span className="text-[10px] font-mono text-cyan-400">{soilSaturation}%</span>
+                  </div>
+                  <input 
+                    type="range" min="0" max="100" 
+                    value={soilSaturation} 
+                    onChange={e => setSoilSaturation(Number(e.target.value))}
+                    className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <span className="text-[9px] text-slate-500 uppercase font-mono">Tipo de Solo</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['clay', 'sandy', 'loam', 'rocky'] as const).map(type => (
+                      <button
+                        key={type}
+                        onClick={() => setSoilType(type)}
+                        className={`px-2 py-1 text-[9px] uppercase font-mono rounded border transition-all ${
+                          soilType === type 
+                            ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400' 
+                            : 'bg-slate-800 border-white/5 text-slate-500 hover:border-white/10'
+                        }`}
+                      >
+                        {type === 'clay' ? 'Argiloso' : type === 'sandy' ? 'Arenoso' : type === 'loam' ? 'Franco' : 'Rochoso'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
            </div>
         </div>

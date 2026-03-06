@@ -97,4 +97,8 @@ export const integrationsApi = {
     const response = await apiClient.get<any>('/api/alerts/intelligence', { params, __skipGlobalNotify: true } as any);
     return response.data;
   },
+  async getGeeAnalysis(bbox: string, analysisType: 'ndvi' | 'moisture' | 'thermal' = 'ndvi') {
+    const response = await apiClient.get<any>('/api/integrations/satellite/gee/analysis', { params: { bbox, analysisType } });
+    return response.data;
+  },
 };

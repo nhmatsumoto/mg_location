@@ -1,17 +1,35 @@
-FROM python:3.11-slim
+# Stage 1: Build dependencies
+FROM python:3.11-slim as builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_ROOT_USER_ACTION=ignore
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /install
+COPY requirements.txt .
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential libpq-dev && \
+    pip install --upgrade pip && \
+    pip install --prefix=/install --prefer-binary -r requirements.txt && \
+    apt-get purge -y --auto-remove build-essential && \
+    rm -rf /var/lib/apt/lists/*
+
+# Stage 2: Runtime
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
 
 WORKDIR /app
 
-COPY requirements.txt /app/requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --prefer-binary -r /app/requirements.txt
+# Copy installed dependencies from builder
+COPY --from=builder /install /usr/local
 
+# Copy application code
+# .dockerignore handles excluding large/unnecessary files
 COPY . /app
 
 EXPOSE 8000

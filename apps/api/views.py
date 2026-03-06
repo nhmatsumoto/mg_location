@@ -1741,3 +1741,53 @@ def operations_snapshot(request):
     }
 
     return JsonResponse(payload, safe=False)
+
+def gee_analysis(request):
+    """
+    Bridge for Google Earth Engine (GEE) analysis.
+    For MVP, returns simulated environmental data indices (NDVI, soil moisture)
+    for requested area.
+    """
+    bbox = request.GET.get('bbox')
+    analysis_type = request.GET.get('analysisType', 'ndvi') # ndvi, moisture, thermal
+    
+    if not bbox:
+        return _json_error('bbox é obrigatório format: minLat,minLon,maxLat,maxLon')
+    
+    try:
+        parts = [float(x) for x in bbox.split(',')]
+        if len(parts) != 4: raise ValueError()
+    except:
+        return _json_error('bbox inválido.')
+
+    # Simulate GEE processing time
+    # In production, this would call earthengine-api or a backend worker
+    
+    # Generate high-precision mock grid for the requested area
+    # 10x10 resolution for tactical display
+    grid = []
+    import random
+    random.seed(bbox + analysis_type)
+    
+    for i in range(10):
+        row = []
+        for j in range(10):
+            # Base value + some noise
+            val = random.random()
+            if analysis_type == 'ndvi':
+                # Higher values for vegetation
+                val = 0.3 + (val * 0.6)
+            elif analysis_type == 'moisture':
+                # Higher values for wet areas
+                val = random.uniform(0, 100)
+            row.append(round(val, 3))
+        grid.append(row)
+
+    return JsonResponse({
+        'source': 'Google Earth Engine (Bridge)',
+        'type': analysis_type,
+        'bbox': bbox,
+        'resolution': '30m',
+        'timestamp': '2026-03-06T18:30:00Z',
+        'data': grid
+    })

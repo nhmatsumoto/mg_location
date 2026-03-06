@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import axios from 'axios';
+import { fetchOSMData } from '../../utils/osmFetcher';
+import { useSimulationStore } from '../../store/useSimulationStore';
+import { projectTo3D } from '../../utils/projection';
 
 interface VegetationData {
   id: string;
@@ -9,31 +11,42 @@ interface VegetationData {
 
 export const TacticalVegetation: React.FC = () => {
   const [forests, setForests] = useState<VegetationData[]>([]);
+  const trunkRef = useRef<THREE.InstancedMesh>(null);
+  const foliageRef = useRef<THREE.InstancedMesh>(null);
+  const { dynamicBounds, box: simulationBox, rainIntensity } = useSimulationStore();
+  const lastFetchedBbox = useRef<string | null>(null);
 
-  const bbox = "-20.94,-43.01,-20.88,-42.95";
+  const defaultBbox = "-20.94,-43.01,-20.88,-42.95";
 
   useEffect(() => {
+    const activeBbox = dynamicBounds || (simulationBox ? 
+      `${simulationBox.center[0] - 0.02},${simulationBox.center[1] - 0.02},${simulationBox.center[0] + 0.02},${simulationBox.center[1] + 0.02}` 
+      : defaultBbox);
+
+    if (activeBbox === lastFetchedBbox.current) return;
+    lastFetchedBbox.current = activeBbox;
+
     const fetchVegetation = async () => {
       try {
         const query = `
           [out:json][timeout:25];
           (
-            way["natural"="forest"](${bbox});
-            way["landuse"="forest"](${bbox});
-            way["natural"="wood"](${bbox});
+            way["natural"="forest"](${activeBbox});
+            way["landuse"="forest"](${activeBbox});
+            way["natural"="wood"](${activeBbox});
           );
           out body;
           >;
           out skel qt;
         `;
-        const response = await axios.post('https://overpass-api.de/api/interpreter', query);
+        const data = await fetchOSMData(query);
         
         const nodes: Record<string, [number, number]> = {};
-        response.data.elements.filter((el: any) => el.type === 'node').forEach((node: any) => {
+        data.elements.filter((el: any) => el.type === 'node').forEach((node: any) => {
           nodes[node.id] = [node.lon, node.lat];
         });
 
-        const parsedForests: VegetationData[] = response.data.elements
+        const parsedForests: VegetationData[] = data.elements
           .filter((el: any) => el.type === 'way' && el.nodes)
           .map((way: any) => ({
             id: way.id,
@@ -47,21 +60,21 @@ export const TacticalVegetation: React.FC = () => {
     };
 
     void fetchVegetation();
-  }, []);
+  }, [dynamicBounds, simulationBox]);
 
-  const treeInstances = useMemo(() => {
-    if (forests.length === 0) return null;
+  const treeMatrices = useMemo(() => {
+    const matrices: THREE.Matrix4[] = [];
+    const project = (lon: number, lat: number) => projectTo3D(lat, lon);
 
-    const trees: THREE.Vector3[] = [];
-    const project = (lon: number, lat: number) => [
-      (lon + 51.9) * 2,
-      -(lat + 14.2) * 2
-    ];
+    const tempMatrix = new THREE.Matrix4();
+    const tempPosition = new THREE.Vector3();
+    const tempRotation = new THREE.Euler();
+    const tempQuaternion = new THREE.Quaternion();
+    const tempScale = new THREE.Vector3();
 
     forests.forEach((f) => {
       if (f.points.length < 3) return;
 
-      // Simple bounding box for the forest area to scatter trees
       let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
       f.points.forEach(p => {
         const [x, z] = project(p[0], p[1]);
@@ -71,40 +84,55 @@ export const TacticalVegetation: React.FC = () => {
         maxZ = Math.max(maxZ, z);
       });
 
-      // Scatter trees within the bounding box (simplified density)
       const area = (maxX - minX) * (maxZ - minZ);
-      const count = Math.min(50, Math.floor(area * 5)); 
+      const density = 25; 
+      const count = Math.min(200, Math.floor(area * density)); 
 
       for (let i = 0; i < count; i++) {
-        trees.push(new THREE.Vector3(
-          minX + Math.random() * (maxX - minX),
-          -0.4,
-          minZ + Math.random() * (maxZ - minZ)
-        ));
+        const x = minX + Math.random() * (maxX - minX);
+        const z = minZ + Math.random() * (maxZ - minZ);
+        
+        tempPosition.set(x, -0.45, z);
+        tempRotation.set(0, Math.random() * Math.PI, 0);
+        tempQuaternion.setFromEuler(tempRotation);
+        const scaleBy = 0.5 + Math.random() * 0.5;
+        tempScale.set(scaleBy, scaleBy, scaleBy);
+        
+        tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
+        matrices.push(tempMatrix.clone());
       }
     });
 
-    return trees;
+    return matrices;
   }, [forests]);
 
-  if (!treeInstances || treeInstances.length === 0) return null;
+  useEffect(() => {
+    if (!trunkRef.current || !foliageRef.current || treeMatrices.length === 0) return;
+
+    treeMatrices.forEach((matrix, i) => {
+      trunkRef.current!.setMatrixAt(i, matrix);
+      foliageRef.current!.setMatrixAt(i, matrix);
+    });
+
+    trunkRef.current.instanceMatrix.needsUpdate = true;
+    foliageRef.current.instanceMatrix.needsUpdate = true;
+  }, [treeMatrices]);
+
+  if (treeMatrices.length === 0) return null;
 
   return (
     <group>
-      {treeInstances.map((pos, i) => (
-        <group key={i} position={pos}>
-          {/* Simple low-poly tree: Trunk */}
-          <mesh position={[0, 0.1, 0]}>
-            <cylinderGeometry args={[0.02, 0.04, 0.2, 8]} />
-            <meshStandardMaterial color="#3f2b1d" />
-          </mesh>
-          {/* Simple low-poly tree: Foliage */}
-          <mesh position={[0, 0.3, 0]}>
-            <coneGeometry args={[0.15, 0.4, 8]} />
-            <meshStandardMaterial color="#064e3b" roughness={1} />
-          </mesh>
-        </group>
-      ))}
+      <instancedMesh ref={trunkRef} args={[undefined as any, undefined as any, treeMatrices.length]} castShadow>
+        <cylinderGeometry args={[0.02, 0.04, 0.2, 8]} />
+        <meshStandardMaterial color="#3f2b1d" />
+      </instancedMesh>
+      <instancedMesh ref={foliageRef} args={[undefined as any, undefined as any, treeMatrices.length]} castShadow>
+        <coneGeometry args={[0.15, 0.4, 8]} />
+        <meshStandardMaterial 
+          color={new THREE.Color("#064e3b").multiplyScalar(1 - (rainIntensity / 400))} 
+          roughness={1 - (rainIntensity / 200)} 
+        />
+      </instancedMesh>
     </group>
   );
 };
