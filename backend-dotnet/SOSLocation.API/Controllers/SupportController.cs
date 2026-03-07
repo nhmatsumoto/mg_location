@@ -27,19 +27,19 @@ namespace SOSLocation.API.Controllers
         }
 
         [HttpGet("campaigns")]
-        public async Task<IActionResult> GetCampaigns(int incidentId)
+        public async Task<IActionResult> GetCampaigns(Guid incidentId)
         {
             return Ok(await _campaignRepository.GetByIncidentIdAsync(incidentId));
         }
 
         [HttpGet("donations")]
-        public async Task<IActionResult> GetDonations(int incidentId)
+        public async Task<IActionResult> GetDonations(Guid incidentId)
         {
             return Ok(await _donationRepository.GetByIncidentIdAsync(incidentId));
         }
 
         [HttpGet("expenses")]
-        public async Task<IActionResult> GetExpenses(int incidentId)
+        public async Task<IActionResult> GetExpenses(Guid incidentId)
         {
             return Ok(await _expenseRepository.GetByIncidentIdAsync(incidentId));
         }

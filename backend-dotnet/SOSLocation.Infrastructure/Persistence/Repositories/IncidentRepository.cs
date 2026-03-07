@@ -25,6 +25,11 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
             return await connection.QueryAsync<Incident>(query);
         }
 
+        public IQueryable<Incident> GetQueryable()
+        {
+            return _efContext.Incidents.AsQueryable();
+        }
+
         public async Task<Incident?> GetByIdAsync(Guid id)
         {
             var query = "SELECT * FROM \"Incidents\" WHERE \"Id\" = @Id";

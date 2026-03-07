@@ -48,6 +48,7 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
     volumes:
       - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./infra/keycloak/theme/sos-theme:/opt/keycloak/themes/sos-theme:ro
     ports:
       - "${KEYCLOAK_PORT:-8080}:8080"
     healthcheck:

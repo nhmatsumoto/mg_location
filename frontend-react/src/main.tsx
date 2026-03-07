@@ -33,15 +33,21 @@ window.addEventListener('unhandledrejection', (event) => {
   });
 });
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <NotificationsProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </NotificationsProvider>
-  </StrictMode>,
-);
+import { initKeycloak } from './lib/keycloak';
+
+const renderApp = () => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <NotificationsProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </NotificationsProvider>
+    </StrictMode>,
+  );
+};
+
+initKeycloak(renderApp);
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

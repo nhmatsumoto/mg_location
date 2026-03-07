@@ -9,6 +9,7 @@ namespace SOSLocation.Domain.Interfaces
     {
         Task<Incident?> GetByIdAsync(Guid id);
         Task<IEnumerable<Incident>> GetAllAsync();
+        IQueryable<Incident> GetQueryable();
         Task AddAsync(Incident incident);
         Task UpdateAsync(Incident incident);
         Task DeleteAsync(Guid id);
@@ -24,18 +25,19 @@ namespace SOSLocation.Domain.Interfaces
     public interface IRescueGroupRepository
     {
         Task<IEnumerable<RescueGroup>> GetAllAsync();
-        Task<int> AddAsync(RescueGroup group);
+        Task AddAsync(RescueGroup group);
     }
 
     public interface ISupplyLogisticsRepository
     {
         Task<IEnumerable<SupplyLogistics>> GetAllAsync();
-        Task<int> AddAsync(SupplyLogistics item);
+        Task AddAsync(SupplyLogistics item);
     }
 
     public interface ISearchAreaRepository
     {
         Task<IEnumerable<SearchArea>> GetByIncidentIdAsync(Guid incidentId);
+        IQueryable<SearchArea> GetQueryable();
         Task AddAsync(SearchArea area);
         Task UpdateAsync(SearchArea area);
     }
@@ -74,18 +76,19 @@ namespace SOSLocation.Domain.Interfaces
     public interface IGeolocationRepository
     {
         Task<IEnumerable<Geolocation>> GetAllAsync();
-        Task<int> AddAsync(Geolocation geolocation);
+        IQueryable<Geolocation> GetQueryable();
+        Task AddAsync(Geolocation geolocation);
     }
 
     public interface IVisitedLocationRepository
     {
         Task<IEnumerable<VisitedLocation>> GetAllAsync();
-        Task<int> AddAsync(VisitedLocation location);
+        Task AddAsync(VisitedLocation location);
     }
 
     public interface IFoundPeopleRepository
     {
         Task<IEnumerable<FoundPeople>> GetAllAsync();
-        Task<int> AddAsync(FoundPeople person);
+        Task AddAsync(FoundPeople person);
     }
 }

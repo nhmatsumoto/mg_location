@@ -25,11 +25,15 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
             return await connection.QueryAsync<Geolocation>(query);
         }
 
-        public async Task<int> AddAsync(Geolocation geolocation)
+        public IQueryable<Geolocation> GetQueryable()
+        {
+            return _efContext.Geolocations.AsQueryable();
+        }
+
+        public async Task AddAsync(Geolocation geolocation)
         {
             _efContext.Geolocations.Add(geolocation);
             await _efContext.SaveChangesAsync();
-            return geolocation.Id;
         }
     }
 
@@ -51,11 +55,10 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
             return await connection.QueryAsync<VisitedLocation>(query);
         }
 
-        public async Task<int> AddAsync(VisitedLocation location)
+        public async Task AddAsync(VisitedLocation location)
         {
             _efContext.VisitedLocations.Add(location);
             await _efContext.SaveChangesAsync();
-            return location.Id;
         }
     }
 
@@ -77,11 +80,10 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
             return await connection.QueryAsync<FoundPeople>(query);
         }
 
-        public async Task<int> AddAsync(FoundPeople person)
+        public async Task AddAsync(FoundPeople person)
         {
             _efContext.FoundPeople.Add(person);
             await _efContext.SaveChangesAsync();
-            return person.Id;
         }
     }
 }

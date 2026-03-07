@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/auth")]
+    [AllowAnonymous]
     public class AuthController : ControllerBase
     {
         [HttpPost("login")]

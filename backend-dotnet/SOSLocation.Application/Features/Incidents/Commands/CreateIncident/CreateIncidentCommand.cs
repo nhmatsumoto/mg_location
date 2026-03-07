@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace SOSLocation.Application.Features.Incidents.Commands.CreateIncident
 {
-    public record CreateIncidentCommand(string Name, string Type, string Country, string Region, DateTime StartsAt) : IRequest<int>;
+    public record CreateIncidentCommand(string Name, string Type, string Country, string Region, DateTime StartsAt) : IRequest<Guid>;
 
     public class CreateIncidentCommandValidator : AbstractValidator<CreateIncidentCommand>
     {
@@ -23,7 +23,7 @@ namespace SOSLocation.Application.Features.Incidents.Commands.CreateIncident
         }
     }
 
-    public class CreateIncidentCommandHandler : IRequestHandler<CreateIncidentCommand, int>
+    public class CreateIncidentCommandHandler : IRequestHandler<CreateIncidentCommand, Guid>
     {
         private readonly IIncidentRepository _repository;
 
@@ -32,7 +32,7 @@ namespace SOSLocation.Application.Features.Incidents.Commands.CreateIncident
             _repository = repository;
         }
 
-        public async Task<int> Handle(CreateIncidentCommand request, CancellationToken cancellationToken)
+        public async Task<Guid> Handle(CreateIncidentCommand request, CancellationToken cancellationToken)
         {
             var incident = new Incident
             {
@@ -44,7 +44,8 @@ namespace SOSLocation.Application.Features.Incidents.Commands.CreateIncident
                 Status = "active"
             };
 
-            return await _repository.AddAsync(incident);
+            await _repository.AddAsync(incident);
+            return incident.Id;
         }
     }
 }

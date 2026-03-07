@@ -25,11 +25,10 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
             return await connection.QueryAsync<RescueGroup>(query);
         }
 
-        public async Task<int> AddAsync(RescueGroup group)
+        public async Task AddAsync(RescueGroup group)
         {
             _efContext.RescueGroups.Add(group);
             await _efContext.SaveChangesAsync();
-            return group.Id;
         }
     }
 
@@ -51,11 +50,10 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
             return await connection.QueryAsync<SupplyLogistics>(query);
         }
 
-        public async Task<int> AddAsync(SupplyLogistics item)
+        public async Task AddAsync(SupplyLogistics item)
         {
             _efContext.SupplyLogistics.Add(item);
             await _efContext.SaveChangesAsync();
-            return item.Id;
         }
     }
 }

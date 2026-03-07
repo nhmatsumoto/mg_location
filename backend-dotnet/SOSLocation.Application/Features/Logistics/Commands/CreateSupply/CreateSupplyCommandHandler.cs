@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SOSLocation.Application.Features.Logistics.Commands.CreateSupply
 {
-    public class CreateSupplyCommandHandler : IRequestHandler<CreateSupplyCommand, int>
+    public class CreateSupplyCommandHandler : IRequestHandler<CreateSupplyCommand, Guid>
     {
         private readonly ISupplyLogisticsRepository _repository;
 
@@ -16,7 +16,7 @@ namespace SOSLocation.Application.Features.Logistics.Commands.CreateSupply
             _repository = repository;
         }
 
-        public async Task<int> Handle(CreateSupplyCommand request, CancellationToken cancellationToken)
+        public async Task<Guid> Handle(CreateSupplyCommand request, CancellationToken cancellationToken)
         {
             var supply = new SupplyLogistics
             {
@@ -30,7 +30,8 @@ namespace SOSLocation.Application.Features.Logistics.Commands.CreateSupply
                 Priority = request.Priority
             };
 
-            return await _repository.AddAsync(supply);
+            await _repository.AddAsync(supply);
+            return supply.Id;
         }
     }
 }

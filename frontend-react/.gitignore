@@ -1,4 +1,6 @@
+############################
 # Logs
+############################
 logs
 *.log
 npm-debug.log*
@@ -7,18 +9,81 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+############################
+# Node / React
+############################
+node_modules/
+dist/
+build/
+dist-ssr/
+coverage/
 *.local
+.env
+.env.*
+!.env.example
 
-# Editor directories and files
+############################
+# Package managers
+############################
+.pnpm-store/
+.npm/
+.yarn/
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+############################
+# Next / Vite / React tools
+############################
+.next/
+out/
+.vite/
+.cache/
+
+############################
+# .NET / C#
+############################
+bin/
+obj/
+Debug/
+Release/
+TestResults/
+
+*.user
+*.userosscache
+*.suo
+*.cache
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+############################
+# Visual Studio / Rider
+############################
+.vs/
+.idea/
+*.sln.iml
+
+############################
+# VSCode
+############################
 .vscode/*
 !.vscode/extensions.json
-.idea
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+############################
+# OS files
+############################
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+
+############################
+# Temporary files
+############################
+*.swp
+*.swo
+*~

@@ -25,6 +25,11 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
             return await connection.QueryAsync<SearchArea>(query, new { IncidentId = incidentId });
         }
 
+        public IQueryable<SearchArea> GetQueryable()
+        {
+            return _efContext.SearchAreas.AsQueryable();
+        }
+
         public async Task AddAsync(SearchArea area)
         {
             _efContext.SearchAreas.Add(area);
@@ -47,6 +52,13 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
         {
             _dapperContext = dapperContext;
             _efContext = efContext;
+        }
+
+        public async Task<IEnumerable<Assignment>> GetAllAsync()
+        {
+            var query = "SELECT * FROM \"Assignments\" ORDER BY \"CreatedAt\" DESC";
+            using var connection = _dapperContext.CreateConnection();
+            return await connection.QueryAsync<Assignment>(query);
         }
 
         public async Task<IEnumerable<Assignment>> GetByIncidentIdAsync(Guid incidentId)

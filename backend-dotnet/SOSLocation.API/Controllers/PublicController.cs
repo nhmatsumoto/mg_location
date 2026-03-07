@@ -2,10 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using SOSLocation.Domain.Interfaces;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/public")]
+    [AllowAnonymous]
     public class PublicController : ControllerBase
     {
         private readonly IIncidentRepository _incidentRepository;
@@ -24,7 +27,7 @@ namespace SOSLocation.API.Controllers
         }
 
         [HttpGet("incidents/{incidentId}/areas")]
-        public async Task<IActionResult> GetAreas(int incidentId)
+        public async Task<IActionResult> GetAreas(Guid incidentId)
         {
             return Ok(await _searchAreaRepository.GetByIncidentIdAsync(incidentId));
         }

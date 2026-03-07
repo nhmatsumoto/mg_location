@@ -36,12 +36,10 @@ namespace SOSLocation.API.Middleware
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-            var result = JsonSerializer.Serialize(new
-            {
-                error = "Internal Server Error",
-                message = exception.Message,
-                detail = "An unexpected error occurred on the server."
-            });
+            var result = JsonSerializer.Serialize(
+                SOSLocation.Domain.Common.Result.Failure($"Internal Server Error: {exception.Message}"),
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
+            );
 
             return context.Response.WriteAsync(result);
         }

@@ -155,3 +155,7 @@ __pycache__/
 *.crt
 secrets/
 infra/keycloak/*.local.json
+
+# .NET build directories
+**/bin/
+**/obj/

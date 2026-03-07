@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -16,8 +15,7 @@ namespace SOSLocation.API.Migrations
                 name: "CollapseReports",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ExternalId = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     LocationName = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
                     Latitude = table.Column<double>(type: "double precision", nullable: false),
@@ -42,8 +40,7 @@ namespace SOSLocation.API.Migrations
                 name: "DisasterEvents",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Provider = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     ProviderEventId = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
                     EventType = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
@@ -73,8 +70,7 @@ namespace SOSLocation.API.Migrations
                 name: "Incidents",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(180)", maxLength: 180, nullable: false),
                     Type = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
                     Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
@@ -94,8 +90,7 @@ namespace SOSLocation.API.Migrations
                 name: "MapAnnotations",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ExternalId = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: false),
                     RecordType = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Title = table.Column<string>(type: "character varying(180)", maxLength: 180, nullable: false),
@@ -136,8 +131,7 @@ namespace SOSLocation.API.Migrations
                 name: "AttentionAlerts",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ExternalId = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Title = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
                     Message = table.Column<string>(type: "text", nullable: false),
@@ -145,7 +139,7 @@ namespace SOSLocation.API.Migrations
                     Lat = table.Column<double>(type: "double precision", nullable: false),
                     Lng = table.Column<double>(type: "double precision", nullable: false),
                     RadiusMeters = table.Column<int>(type: "integer", nullable: false),
-                    IncidentId = table.Column<int>(type: "integer", nullable: true),
+                    IncidentId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -163,8 +157,7 @@ namespace SOSLocation.API.Migrations
                 name: "MissingPersons",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ExternalId = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     PersonName = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
                     Age = table.Column<int>(type: "integer", nullable: true),
@@ -177,7 +170,7 @@ namespace SOSLocation.API.Migrations
                     ContactName = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
                     ContactPhone = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     Source = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
-                    IncidentId = table.Column<int>(type: "integer", nullable: true),
+                    IncidentId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },

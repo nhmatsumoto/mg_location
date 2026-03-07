@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SOSLocation.Application.Features.Logistics.Commands.CreateSupply
 {
-    public record CreateSupplyCommand : IRequest<int>
+    public record CreateSupplyCommand : IRequest<Guid>
     {
         [Required]
         public string Item { get; set; } = string.Empty;

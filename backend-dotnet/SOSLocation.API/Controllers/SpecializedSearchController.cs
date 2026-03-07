@@ -32,8 +32,8 @@ namespace SOSLocation.API.Controllers
         [HttpPost("geolocations")]
         public async Task<IActionResult> CreateGeolocation([FromBody] Geolocation geolocation)
         {
-            var id = await _geoRepository.AddAsync(geolocation);
-            return CreatedAtAction(nameof(GetGeolocations), new { id }, null);
+            await _geoRepository.AddAsync(geolocation);
+            return CreatedAtAction(nameof(GetGeolocations), new { id = geolocation.Id }, null);
         }
 
         [HttpGet("visited-locations")]

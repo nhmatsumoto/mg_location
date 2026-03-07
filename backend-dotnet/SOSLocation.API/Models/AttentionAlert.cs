@@ -21,7 +21,7 @@ namespace SOSLocation.API.Models
         public double Lng { get; set; }
         public int RadiusMeters { get; set; } = 500;
 
-        public int? IncidentId { get; set; }
+        public Guid? IncidentId { get; set; }
         public Incident? Incident { get; set; }
     }
 }

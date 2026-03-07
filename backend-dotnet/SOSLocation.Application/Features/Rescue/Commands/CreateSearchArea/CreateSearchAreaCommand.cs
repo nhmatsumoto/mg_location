@@ -3,9 +3,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SOSLocation.Application.Features.Rescue.Commands.CreateSearchArea
 {
-    public record CreateSearchAreaCommand : IRequest<int>
+    public record CreateSearchAreaCommand : IRequest<Guid>
     {
-        public int IncidentId { get; set; }
+        public Guid IncidentId { get; set; }
         [Required]
         public string Name { get; set; } = string.Empty;
         public string GeometryJson { get; set; } = "{}";

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SOSLocation.Application.Features.Rescue.Commands.CreateSearchArea
 {
-    public class CreateSearchAreaCommandHandler : IRequestHandler<CreateSearchAreaCommand, int>
+    public class CreateSearchAreaCommandHandler : IRequestHandler<CreateSearchAreaCommand, Guid>
     {
         private readonly ISearchAreaRepository _repository;
 
@@ -16,7 +16,7 @@ namespace SOSLocation.Application.Features.Rescue.Commands.CreateSearchArea
             _repository = repository;
         }
 
-        public async Task<int> Handle(CreateSearchAreaCommand request, CancellationToken cancellationToken)
+        public async Task<Guid> Handle(CreateSearchAreaCommand request, CancellationToken cancellationToken)
         {
             var area = new SearchArea
             {
@@ -27,7 +27,8 @@ namespace SOSLocation.Application.Features.Rescue.Commands.CreateSearchArea
                 Status = request.Status
             };
 
-            return await _repository.AddAsync(area);
+            await _repository.AddAsync(area);
+            return area.Id;
         }
     }
 }

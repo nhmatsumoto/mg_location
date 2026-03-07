@@ -1,7 +1,30 @@
 {
   "realm": "sos-location",
   "enabled": true,
-  "registrationAllowed": false,
+  "registrationAllowed": true,
+  "loginTheme": "sos-theme",
+  "rememberMe": true,
+  "resetPasswordAllowed": true,
+  "identityProviders": [
+    {
+      "alias": "google",
+      "providerId": "google",
+      "enabled": true,
+      "config": {
+        "clientId": "placeholder",
+        "clientSecret": "placeholder"
+      }
+    },
+    {
+      "alias": "facebook",
+      "providerId": "facebook",
+      "enabled": true,
+      "config": {
+        "clientId": "placeholder",
+        "clientSecret": "placeholder"
+      }
+    }
+  ],
   "clients": [
     {
       "clientId": "sos-location-frontend",

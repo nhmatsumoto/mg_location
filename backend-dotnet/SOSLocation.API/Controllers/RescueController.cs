@@ -22,13 +22,13 @@ namespace SOSLocation.API.Controllers
         }
 
         [HttpGet("areas")]
-        public async Task<IActionResult> GetAreas(int incidentId)
+        public async Task<IActionResult> GetAreas(Guid incidentId)
         {
             return Ok(await _areaRepository.GetByIncidentIdAsync(incidentId));
         }
 
         [HttpPost("areas")]
-        public async Task<IActionResult> CreateArea(int incidentId, [FromBody] CreateSearchAreaCommand command)
+        public async Task<IActionResult> CreateArea(Guid incidentId, [FromBody] CreateSearchAreaCommand command)
         {
             command.IncidentId = incidentId;
             var id = await _mediator.Send(command);
@@ -36,7 +36,7 @@ namespace SOSLocation.API.Controllers
         }
 
         [HttpGet("assignments")]
-        public async Task<IActionResult> GetAssignments(int incidentId)
+        public async Task<IActionResult> GetAssignments(Guid incidentId)
         {
             return Ok(await _assignmentRepository.GetByIncidentIdAsync(incidentId));
         }

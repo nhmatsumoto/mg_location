@@ -155,6 +155,15 @@ apiClient.interceptors.response.use(
       }
     }
 
+    // Result Pattern unwrapping
+    if (response.data && typeof response.data === 'object' && 'isSuccess' in response.data) {
+      if (response.data.isSuccess) {
+         response.data = response.data.value;
+      } else {
+         return Promise.reject(new Error(response.data.error || 'Server error result'));
+      }
+    }
+
     return response;
   },
   async (error: AxiosError) => {

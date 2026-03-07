@@ -24,11 +24,9 @@ namespace SOSLocation.API.Migrations
 
             modelBuilder.Entity("SOSLocation.API.Models.AttentionAlert", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -38,8 +36,8 @@ namespace SOSLocation.API.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<int?>("IncidentId")
-                        .HasColumnType("integer");
+                    b.Property<Guid?>("IncidentId")
+                        .HasColumnType("uuid");
 
                     b.Property<double>("Lat")
                         .HasColumnType("double precision");
@@ -79,11 +77,9 @@ namespace SOSLocation.API.Migrations
 
             modelBuilder.Entity("SOSLocation.API.Models.CollapseReport", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -154,11 +150,9 @@ namespace SOSLocation.API.Migrations
 
             modelBuilder.Entity("SOSLocation.API.Models.DisasterEvent", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CountryCode")
                         .IsRequired()
@@ -244,11 +238,9 @@ namespace SOSLocation.API.Migrations
 
             modelBuilder.Entity("SOSLocation.API.Models.Incident", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Country")
                         .IsRequired()
@@ -296,11 +288,9 @@ namespace SOSLocation.API.Migrations
 
             modelBuilder.Entity("SOSLocation.API.Models.MapAnnotation", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -356,11 +346,9 @@ namespace SOSLocation.API.Migrations
 
             modelBuilder.Entity("SOSLocation.API.Models.MissingPerson", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("AdditionalInfo")
                         .IsRequired()
@@ -392,8 +380,8 @@ namespace SOSLocation.API.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<int?>("IncidentId")
-                        .HasColumnType("integer");
+                    b.Property<Guid?>("IncidentId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("LastSeenLocation")
                         .IsRequired()

@@ -35,7 +35,7 @@ namespace SOSLocation.API.Models
         [MaxLength(30)]
         public string Source { get; set; } = "manual";
 
-        public int? IncidentId { get; set; }
+        public Guid? IncidentId { get; set; }
         public Incident? Incident { get; set; }
     }
 }
