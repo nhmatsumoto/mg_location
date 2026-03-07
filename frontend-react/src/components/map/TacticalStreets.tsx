@@ -10,9 +10,16 @@ interface StreetData {
   type: string;
 }
 
-export const TacticalStreets: React.FC = () => {
+interface TacticalStreetsProps {
+  clippingPlanes?: THREE.Plane[];
+  overrideBox?: any;
+}
+
+export const TacticalStreets: React.FC<TacticalStreetsProps> = ({ clippingPlanes, overrideBox }) => {
   const [streets, setStreets] = useState<StreetData[]>([]);
-  const { focalPoint, box: simulationBox, activeLayers } = useSimulationStore();
+  const store = useSimulationStore();
+  const { focalPoint, box: globalSimulationBox, activeLayers } = store;
+  const simulationBox = overrideBox || globalSimulationBox;
   const lastFetchedBbox = useRef<string | null>(null);
 
   useEffect(() => {
@@ -79,11 +86,12 @@ export const TacticalStreets: React.FC = () => {
             emissiveIntensity={0}
             roughness={0.9}
             flatShading
+            clippingPlanes={clippingPlanes}
           />
         </mesh>
       );
     });
-  }, [streets]);
+  }, [streets, clippingPlanes]);
 
   return <group>{renderedStreets}</group>;
 };

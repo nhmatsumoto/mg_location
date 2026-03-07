@@ -41,16 +41,17 @@ export const Tactical3DMarkers: React.FC<{ markers: MarkerProps[] }> = ({ marker
 
     markerData.forEach((m, i) => {
       // Setup Pole
-      tempObject.position.set(m.x, 0.5, m.z);
-      tempObject.scale.set(1, 1, 1);
+      tempObject.position.set(m.x, 0.1, m.z);
+      tempObject.scale.set(1, 0.2, 1);
       tempObject.rotation.set(0, 0, 0);
       tempObject.updateMatrix();
       polesRef.current!.setMatrixAt(i, tempObject.matrix);
       polesRef.current!.setColorAt(i, m.color);
 
       // Setup Ring
-      tempObject.position.set(m.x, -0.45, m.z);
+      tempObject.position.set(m.x, 0.01, m.z);
       tempObject.rotation.set(-Math.PI / 2, 0, 0);
+      tempObject.scale.set(1, 1, 1);
       tempObject.updateMatrix();
       ringsRef.current!.setMatrixAt(i, tempObject.matrix);
       ringsRef.current!.setColorAt(i, m.color);
@@ -79,7 +80,7 @@ export const Tactical3DMarkers: React.FC<{ markers: MarkerProps[] }> = ({ marker
       {markers.map((m, i) => {
         const [x, z] = projectTo3D(m.lat, m.lon);
         return (
-          <Html key={i} distanceFactor={15} position={[x, 1.7, z]} transform occlude>
+          <Html key={i} distanceFactor={15} position={[x, 0.4, z]} transform occlude>
             <div className="flex flex-col items-center group pointer-events-auto cursor-pointer">
               <div className={`p-1.5 rounded-full bg-slate-950/80 backdrop-blur-md border animate-bounce ${
                 m.type === 'risk' ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.3)]' :

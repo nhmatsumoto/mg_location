@@ -1,22 +1,31 @@
-# Diagramas (texto)
+# Arquitetura SOS Location
 
-## Visão de alto nível
+## Visão de Alto Nível
 
-```text
-[Frontend Mapa]
-   |  /api/*
-   v
-[Backend Django]
-   |-- apps/api/views.py (cadastros operacionais)
-   |-- apps/api/views_integrations.py (data hub)
-   |-- apps/api/integrations/* (adapters + normalização + cache)
-   v
-[DB SQLite/PostgreSQL]
-   |-- MissingPerson / AttentionAlert / CollapseReport
+```mermaid
+graph TD
+    subgraph "Frontend (React + Three.js)"
+        UI[SOS Terminal]
+        Map[Tactical3DMap]
+        Chunk[useChunkManager]
+        Hero[SosHero]
+    end
 
-[Provedores Externos]
-   |-- Open-Meteo
-   |-- INMET CAP/WIS2(RSS/Atom)
-   |-- Portal da Transparência (CGU)
-   |-- NASA GIBS / Planetary STAC / NOAA GOES
+    subgraph "Backend (Django REST)"
+        API[API Endpoints]
+        Hub[Data Hub / Integrations]
+        Adapters[Adapters: Open-Meteo, INMET, NASA]
+    end
+
+    subgraph "Data Storage"
+        DB[(PostgreSQL / SQLite)]
+    end
+
+    Hero -->|Position| Chunk
+    Chunk -->|BBOX| API
+    API --> Hub
+    Hub --> Adapters
+    Hub --> DB
+    API -->|Features| Map
+    Map --> UI
 ```

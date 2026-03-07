@@ -31,7 +31,7 @@ class HttpClient:
     def get_json(self, url, params=None, headers=None, source='unknown'):
         params = params or {}
         default_headers = {
-            'User-Agent': 'MG-Location-Tactical/1.1 (+https://github.com/nhmatsumoto/mg_location)',
+            'User-Agent': 'MG-Location-Tactical/1.1 (+https://github.com/nhmatsumoto/sos_location)',
             'Accept': 'application/json, application/geo+json',
         }
         if headers:

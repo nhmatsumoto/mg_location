@@ -78,6 +78,14 @@ interface SimulationState {
     loading: boolean;
   };
   setFocalWeather: (weather: Partial<SimulationState['focalWeather']>) => void;
+
+  // SOS Hero / Pegman State
+  heroPosition: [number, number]; // [lat, lon]
+  setHeroPosition: (pos: [number, number]) => void;
+  isPegmanActive: boolean;
+  setIsPegmanActive: (active: boolean) => void;
+  cameraTarget: 'hero' | 'manual';
+  setCameraTarget: (target: 'hero' | 'manual') => void;
 }
 
 export const useSimulationStore = create<SimulationState>((set) => ({
@@ -158,4 +166,12 @@ export const useSimulationStore = create<SimulationState>((set) => ({
   setFocalWeather: (weather) => set((state) => ({
     focalWeather: { ...state.focalWeather, ...weather }
   })),
+
+  // SOS Hero / Pegman Defaults
+  heroPosition: [-20.91, -42.98], // Default to Ubá center
+  setHeroPosition: (heroPosition) => set({ heroPosition }),
+  isPegmanActive: false,
+  setIsPegmanActive: (isPegmanActive) => set({ isPegmanActive }),
+  cameraTarget: 'manual',
+  setCameraTarget: (cameraTarget) => set({ cameraTarget }),
 }));

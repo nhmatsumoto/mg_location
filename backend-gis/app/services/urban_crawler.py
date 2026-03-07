@@ -6,6 +6,19 @@ logger = logging.getLogger(__name__)
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
+def safe_int(value, default=0):
+    try:
+        # Handle cases like '0.5' for building:levels
+        return int(float(value))
+    except (ValueError, TypeError):
+        return default
+
+def safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
+
 async def fetch_and_consolidate_urban_data(min_lat: float, min_lon: float, max_lat: float, max_lon: float):
     """
     Fetches OSM building and street footprints.
@@ -58,8 +71,8 @@ async def fetch_and_consolidate_urban_data(min_lat: float, min_lon: float, max_l
             if 'building' in tags:
                 # Apply SP Código de Obras (Zoning Inference AI Simulation)
                 # If a building doesn't have height or levels, we infer it based on area.
-                levels = int(tags.get('building:levels', 0))
-                height = float(tags.get('height', 0))
+                levels = safe_int(tags.get('building:levels', 0))
+                height = safe_float(tags.get('height', 0))
                 
                 if levels == 0 and height == 0:
                     # Very rough heuristic: longer perimeters might be larger/taller commercial buildings

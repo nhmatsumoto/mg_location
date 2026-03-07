@@ -15,6 +15,7 @@ import { DayNightCycle } from './DayNightCycle';
 import { MapZoneLayer } from './MapZoneLayer';
 import { Tactical3DMarkers } from './Tactical3DMarkers';
 import { Tactical3DAlerts } from './Tactical3DAlerts';
+import { SosHero } from './SosHero';
 
 interface BarrierData {
   id: string;
@@ -32,7 +33,7 @@ const ScanningRay: React.FC = () => {
   });
 
   return (
-    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.15, 0]}>
+    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
       <planeGeometry args={[100, 2]} />
       <meshBasicMaterial color="#22d3ee" transparent opacity={0.1} />
     </mesh>
@@ -218,12 +219,15 @@ interface Tactical3DMapProps {
 export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({ 
   events, hoveredId, onHover, onClick, enableSimulationBox = false, activeSnapshots = [], barriers = [], initialCenter = [-20.91, -42.98]
 }) => {
-  const { environment, isSimulating, timeOfDay, box: simulationBox, cameraMode, activeLayers } = useSimulationStore();
+  const { environment, isSimulating, timeOfDay, box: simulationBox, cameraMode, activeLayers, heroPosition, cameraTarget } = useSimulationStore();
   
+  const heroWorldPos = useMemo(() => projectTo3D(heroPosition[0], heroPosition[1]), [heroPosition]);
+
   const focusPoint = useMemo(() => {
+    if (cameraTarget === 'hero') return heroPosition;
     if (simulationBox) return simulationBox.center;
     return initialCenter;
-  }, [simulationBox, initialCenter]);
+  }, [simulationBox, initialCenter, heroPosition, cameraTarget]);
 
   const [centerX, centerZ] = projectTo3D(focusPoint[0], focusPoint[1]);
 
@@ -238,11 +242,26 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
         const color = getEventColor(e.event_type || e.type, e.severity);
         return {
             ...e,
-            pos3d: [x, e.severity * 0.15, z] as [number, number, number],
+            pos3d: [x, 0.05, z] as [number, number, number],
             color
         };
     });
   }, [events]);
+
+  const clippingPlanes = useMemo(() => {
+    if (!simulationBox) return [];
+    
+    const [cx, cz] = projectTo3D(simulationBox.center[0], simulationBox.center[1]);
+    const halfW = simulationBox.size[0] / 200; // 1 unit = 100m
+    const halfH = simulationBox.size[1] / 200;
+
+    return [
+      new THREE.Plane(new THREE.Vector3(1, 0, 0), -(cx - halfW)),  // West
+      new THREE.Plane(new THREE.Vector3(-1, 0, 0), cx + halfW),   // East
+      new THREE.Plane(new THREE.Vector3(0, 0, 1), -(cz - halfH)),  // North
+      new THREE.Plane(new THREE.Vector3(0, 0, -1), cz + halfH),   // South
+    ];
+  }, [simulationBox]);
 
   return (
     <div className="w-full h-full bg-slate-950 rounded-lg overflow-hidden border border-slate-800">
@@ -269,26 +288,20 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
         
         {/* Only show global grid if no relief layer is active to avoid clutter */}
         {!activeLayers.relief && (
-          <>
+          <group>
             <gridHelper args={[200, 100, 0x1e293b, 0x0f172a]} position={[0, -0.1, 0]} />
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.2, 0]} receiveShadow>
                 <planeGeometry args={[200, 200]} />
                 <meshStandardMaterial color="#020617" roughness={0} metalness={0.8} />
             </mesh>
             <gridHelper args={[200, 20, 0x06b6d4, 0x06b6d4]} position={[0, -0.19, 0]} />
-          </>
+          </group>
         )}
 
-        <TacticalEnvironment />
-        <MapZoneLayer />
+        <TacticalEnvironment clippingPlanes={clippingPlanes} />
+        <MapZoneLayer clippingPlanes={clippingPlanes} />
         
-        {/* showPhotogrammetry && (
-          <Splat 
-            src="https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/bonsai/bonsai-7k.splat" 
-            position={[centerX, 1, centerZ]} 
-            scale={10} 
-          />
-        ) */}
+        <SosHero />
 
         {activeLayers.labels && (
           <>

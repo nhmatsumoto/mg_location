@@ -40,7 +40,7 @@ const AlertZone: React.FC<{ alert: Alert3D }> = ({ alert }) => {
     }
   });
 
-  const pillarHeight = 5 + alert.severity * 2;
+  const pillarHeight = 0.5 + alert.severity * 0.2;
 
   return (
     <group position={[alert.pos3d[0], 0, alert.pos3d[2]]}>

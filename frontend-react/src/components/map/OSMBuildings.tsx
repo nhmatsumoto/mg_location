@@ -12,10 +12,17 @@ interface BuildingData {
   type: string;
 }
 
-export const OSMBuildings: React.FC = () => {
-  const [buildings, setBuildings] = useState<BuildingData[]>([]);
+interface OSMBuildingsProps {
+  clippingPlanes?: THREE.Plane[];
+  overrideBox?: any;
+}
 
-  const { focalPoint, box: simulationBox, rainIntensity, activeLayers } = useSimulationStore();
+export const OSMBuildings: React.FC<OSMBuildingsProps> = ({ clippingPlanes, overrideBox }) => {
+  const [buildings, setBuildings] = useState<BuildingData[]>([]);
+  const store = useSimulationStore();
+  
+  const { focalPoint, box: globalSimulationBox, rainIntensity, activeLayers } = store;
+  const simulationBox = overrideBox || globalSimulationBox;
   const lastFetchedBbox = useRef<string | null>(null);
 
   useEffect(() => {
@@ -120,6 +127,7 @@ export const OSMBuildings: React.FC = () => {
                   metalness={metalness + (rainIntensity / 250)} // More "wet" = more reflective
                   emissive={color}
                   emissiveIntensity={0.05}
+                  clippingPlanes={clippingPlanes}
                 />
               </mesh>
               <mesh geometry={merged}>
@@ -128,6 +136,7 @@ export const OSMBuildings: React.FC = () => {
                   transparent 
                   opacity={0.03} 
                   wireframe
+                  clippingPlanes={clippingPlanes}
                 />
               </mesh>
             </group>
@@ -135,7 +144,7 @@ export const OSMBuildings: React.FC = () => {
         })}
       </group>
     );
-  }, [buildings]);
+  }, [buildings, clippingPlanes, rainIntensity]);
 
   return <group>{renderedBuildings}</group>;
 };

@@ -9,11 +9,18 @@ interface VegetationData {
   points: [number, number][]; // lon, lat
 }
 
-export const TacticalVegetation: React.FC = () => {
+interface TacticalVegetationProps {
+  clippingPlanes?: THREE.Plane[];
+  overrideBox?: any;
+}
+
+export const TacticalVegetation: React.FC<TacticalVegetationProps> = ({ clippingPlanes, overrideBox }) => {
   const [forests, setForests] = useState<VegetationData[]>([]);
   const trunkRef = useRef<THREE.InstancedMesh>(null);
   const foliageRef = useRef<THREE.InstancedMesh>(null);
-  const { focalPoint, box: simulationBox, rainIntensity, activeLayers } = useSimulationStore();
+  const store = useSimulationStore();
+  const { focalPoint, box: globalSimulationBox, rainIntensity, activeLayers } = store;
+  const simulationBox = overrideBox || globalSimulationBox;
   const lastFetchedBbox = useRef<string | null>(null);
 
   useEffect(() => {
@@ -141,13 +148,14 @@ export const TacticalVegetation: React.FC = () => {
     <group>
       <instancedMesh ref={trunkRef} args={[undefined as any, undefined as any, treeMatrices.length]} castShadow>
         <primitive object={trunkGeo} attach="geometry" />
-        <meshStandardMaterial color="#3f2b1d" />
+        <meshStandardMaterial color="#3f2b1d" clippingPlanes={clippingPlanes} />
       </instancedMesh>
       <instancedMesh ref={foliageRef} args={[undefined as any, undefined as any, treeMatrices.length]} castShadow>
         <primitive object={foliageGeo} attach="geometry" />
         <meshStandardMaterial 
           color={new THREE.Color("#064e3b").multiplyScalar(1 - (rainIntensity / 400))} 
           roughness={1 - (rainIntensity / 200)} 
+          clippingPlanes={clippingPlanes}
         />
       </instancedMesh>
     </group>

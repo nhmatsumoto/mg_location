@@ -1,4 +1,4 @@
-name: mg_location_capture
+name: sos_location_capture
 version: 0.1.0+1
 description: App Flutter para captura de deslizamentos, desaparecidos e conversão para Gaussian Splatting.
 publish_to: 'none'

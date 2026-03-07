@@ -11,9 +11,16 @@ interface ZoneData {
   type: string;
 }
 
-export const MapZoneLayer: React.FC = () => {
+interface MapZoneLayerProps {
+  clippingPlanes?: THREE.Plane[];
+  overrideBox?: any;
+}
+
+export const MapZoneLayer: React.FC<MapZoneLayerProps> = ({ clippingPlanes, overrideBox }) => {
   const [zones, setZones] = useState<ZoneData[]>([]);
-  const { box: simulationBox, activeLayers } = useSimulationStore();
+  const store = useSimulationStore();
+  const { box: globalSimulationBox, activeLayers } = store;
+  const simulationBox = overrideBox || globalSimulationBox;
   const lastFetchedBbox = useRef<string | null>(null);
 
   useEffect(() => {
@@ -111,6 +118,7 @@ export const MapZoneLayer: React.FC = () => {
                 opacity={0.4} 
                 roughness={1}
                 metalness={0}
+                clippingPlanes={clippingPlanes}
               />
             </mesh>
           );

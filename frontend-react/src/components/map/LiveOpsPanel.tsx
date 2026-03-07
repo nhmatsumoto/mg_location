@@ -12,7 +12,9 @@ export function LiveOpsPanel({ onClose }: LiveOpsPanelProps) {
     showVegetation, setShowVegetation,
     showPhotogrammetry, setShowPhotogrammetry,
     environment, setEnvironment,
-    activeLayers, setLayer
+    activeLayers, setLayer,
+    isPegmanActive, setIsPegmanActive,
+    cameraTarget, setCameraTarget
   } = useSimulationStore();
 
   return (
@@ -100,6 +102,37 @@ export function LiveOpsPanel({ onClose }: LiveOpsPanelProps) {
                </div>
                <input type="range" min="0" max="1" step="0.1" value={environment.rain} onChange={e => setEnvironment({ rain: Number(e.target.value) })} className="w-20 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500" />
             </label>
+
+            <div className="pt-2 border-t border-slate-800 space-y-3">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Camera size={12} className="text-yellow-400" /> SOS Hero (Pegman)
+              </label>
+              
+              <label className="flex items-center justify-between text-[10px] cursor-pointer group p-2 bg-slate-800/50 rounded-lg border border-white/5 hover:border-yellow-500/50 transition-colors">
+                 <div className="flex items-center gap-2 text-slate-400 group-hover:text-yellow-400">
+                   <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />
+                   <span className="uppercase font-mono">Ativar SOS Hero</span>
+                 </div>
+                 <input type="checkbox" checked={isPegmanActive} onChange={e => setIsPegmanActive(e.target.checked)} className="h-3 w-3 rounded border-slate-700 bg-slate-800 accent-yellow-500" />
+              </label>
+
+              {isPegmanActive && (
+                <div className="flex gap-2 p-1 bg-slate-950/50 rounded-lg">
+                  <button 
+                    onClick={() => setCameraTarget('manual')}
+                    className={`flex-1 text-[8px] py-1 rounded uppercase font-bold transition-all ${cameraTarget === 'manual' ? 'bg-cyan-500 text-white' : 'text-slate-500 hover:bg-slate-800'}`}
+                  >
+                    Foco Manual
+                  </button>
+                  <button 
+                    onClick={() => setCameraTarget('hero')}
+                    className={`flex-1 text-[8px] py-1 rounded uppercase font-bold transition-all ${cameraTarget === 'hero' ? 'bg-yellow-500 text-black' : 'text-slate-500 hover:bg-slate-800'}`}
+                  >
+                    Seguir Hero
+                  </button>
+                </div>
+              )}
+            </div>
             
             {/* Note: OSMBuildings in TacticalEnvironment does not have a toggle in store right now, but streets/vegetation will fix the missing items complain */}
           </div>

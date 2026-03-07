@@ -5,15 +5,24 @@ import { useSimulationStore } from '../../store/useSimulationStore';
 import { projectTo3D } from '../../utils/projection';
 import { gisApi } from '../../services/gisApi';
 
-export const TerrainMesh: React.FC = () => {
+interface TerrainMeshProps {
+  clippingPlanes?: THREE.Plane[];
+  overrideBox?: any;
+}
+
+export const TerrainMesh: React.FC<TerrainMeshProps> = ({ clippingPlanes, overrideBox }) => {
+  const store = useSimulationStore();
+  
   const { 
     satelliteTextureUrl, 
-    box: simulationBox, 
+    box: globalSimulationBox, 
     soilType, 
     soilSaturation,
     focalPoint,
     activeLayers
-  } = useSimulationStore();
+  } = store;
+
+  const simulationBox = overrideBox || globalSimulationBox;
 
   const center = useMemo(() => {
     if (simulationBox) {
@@ -141,6 +150,7 @@ export const TerrainMesh: React.FC = () => {
             metalness={0.1 - (soilSaturation / 1000)}
             transparent
             opacity={0.8}
+            clippingPlanes={clippingPlanes}
           />
         </mesh>
         

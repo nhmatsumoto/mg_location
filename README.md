@@ -1,4 +1,4 @@
-# MG Location: Resilient Tactical Map & 3D Situation Room v1.2
+# SOS Location: Resilient Tactical Map & 3D Situation Room v2.0
 
 > [!CAUTION]
 > **AVISO ÉTICO CRÍTICO / CRITICAL ETHICAL WARNING**
@@ -7,18 +7,18 @@
 >
 > The use of this platform for military purposes, warfare environments, or conflict simulations is **COMPLETELY UNACCEPTABLE**. This project was developed exclusively to **SAVE LIVES** and mitigate the impacts of natural disasters and humanitarian crises. Using this technology for destructive purposes is expressly condemned by the organization and violates the fundamental principles of this software.
 
-![MG Location Banner](https://img.shields.io/badge/MG--Location-Resilience--v1.1-blueviolet?style=for-the-badge)
+![SOS Location Banner](https://img.shields.io/badge/SOS--Location-Resilience--v2.0-blueviolet?style=for-the-badge)
 ![Status Build](https://img.shields.io/badge/Build-Passing-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-**English** | [日本語](./README.ja.md) | [Português](./README.pt.md)
+**English** | [Português](./README.pt.md)
 
-**MG Location** is a decision support and operational coordination system for natural disaster scenarios (floods, landslides, humanitarian crises). The primary goal is to ensure **100% operational availability**, even under catastrophic network infrastructure failure.
+**SOS Location** is a decision support and operational coordination system for natural disaster scenarios (floods, landslides, humanitarian crises). The primary goal is to ensure **100% operational availability**, even under catastrophic network infrastructure failure.
 
 ---
 
 ## 🎯 Our Mission
-To transform complex data into immediate tactical actions. MG Location is not just a dashboard; it is a field tool designed to work where the internet does not reach.
+To transform complex data into immediate tactical actions. SOS Location is not just a dashboard; it is a field tool designed to work where the internet does not reach.
 
 ---
 
@@ -144,7 +144,7 @@ This is an **Open Source** project with real social impact. We need help in seve
 - **Data Analysts**: Creation of predictive risk models.
 
 ### How to join?
-1. Read our [Onboarding Guide](docs/PROJECT_CONSOLIDATION_MG_LOCATION.md).
+1. Read our [Onboarding Guide](docs/PROJECT_CONSOLIDATION_SOS_LOCATION.md).
 2. Explore the [Implementation Gaps](docs/DEEP_IMPLEMENTATION_GAP_PLAN.md).
 3. Open an *Issue* or submit a *Pull Request* with your ideas.
 
@@ -170,4 +170,4 @@ This is an **Open Source** project with real social impact. We need help in seve
 
 ---
 
-**MG Location © 2026** - Developed to save lives with resilient technology.
+**SOS Location © 2026** - Developed to save lives with resilient technology.

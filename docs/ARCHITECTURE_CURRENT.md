@@ -1,21 +1,20 @@
-# Arquitetura atual (baseline)
+# Arquitetura SOS Location (v2.0)
 
 ## Stack
-- Backend: Django + Django REST Framework style (`APIView`/views functionais), SQLite/PostgreSQL configurável.
-- Frontend: React 19 + TypeScript + Vite + Tailwind + Leaflet + **@react-three/fiber** (Three.js) + Zustand.
-- Auth atual: sessão Django + fluxo Google OAuth2 opcional; para MVP foi adicionado parsing de claims JWT Bearer (compatível com tokens Keycloak em modo pass-through).
+- **Backend**: Django + Django REST Framework, SQLite/PostgreSQL.
+- **Frontend**: React 19 + TypeScript + Vite + Tailwind + **@react-three/fiber** (Three.js) + Zustand.
+- **Renderização**: Sistema de **Dynamic Chunks** (Minecraft-style) centrado no usuário/câmera.
+- **Herói SOS**: Componente interativo (Pegman) com Drag & Drop para exploração do cenário.
 
 ## Entrypoints
 - Backend: `manage.py`, `core/urls.py`, `apps/api/urls.py`.
-- Frontend: `frontend-react/src/main.tsx`, `frontend-react/src/AppRoutes.tsx`.
-- Visualização Tática: `Tactical3DMap.tsx` (Situacion Room), `EventScatterPlot.tsx` (Temporal Analysis).
+- Frontend: `sos-location-frontend/src/main.tsx`.
+- Visualização Tática: `Tactical3DMap.tsx` (Situacion Room) integrado com `useChunkManager`.
 
-## Como rodar local
-- Backend: `pip install -r requirements.txt && python manage.py migrate && python manage.py runserver`.
-- Frontend: `cd frontend-react && bun install && bun run dev`.
+## Estratégia de Renderização Dynamica
+Para garantir performance em cenários reais complexos, o sistema agora divide o mapa em chunks de 500m. 
+O `useChunkManager` monitora a posição do **SOS Hero** e carrega apenas os chunks necessários no raio de visão (default: 3x3 grid). Cada chunk é responsável por buscar seus próprios dados de relevo, edificações e vias via `gisApi`.
 
 ## Auth (estado atual)
 - Endpoints de auth em `/api/auth/*` usando sessão.
-- MVP novo adiciona utilitário de autorização por role/incident (`apps/api/authz.py`) com:
-  - `AdminGlobal` (global)
-  - roles por incidente no claim `incident_roles[incidentId]`.
+- Autorização por role/incident (`apps/api/authz.py`) com persistência em claims JWT.
