@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="SOSLocation.API/SOSLocation.API.csproj" />
+  <Project Path="SOSLocation.Application/SOSLocation.Application.csproj" />
+  <Project Path="SOSLocation.Domain/SOSLocation.Domain.csproj" />
+  <Project Path="SOSLocation.Infrastructure/SOSLocation.Infrastructure.csproj" />
+</Solution>

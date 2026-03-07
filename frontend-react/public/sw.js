@@ -1,5 +1,5 @@
 // Basic Service Worker for Background Sync
-const CACHE_NAME = 'mg-location-v1.1-cache';
+const CACHE_NAME = 'sos-location-v1.1-cache';
 
 self.addEventListener('install', (event) => {
   // @ts-ignore

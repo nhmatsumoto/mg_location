@@ -24,7 +24,7 @@ def geocode_city(city, state=None, country='Brasil'):
             'addressdetails': 1,
             'limit': 1,
         },
-        headers={'User-Agent': 'mg-location/1.0 (disaster-intelligence)'},
+        headers={'User-Agent': 'sos-location/1.0 (disaster-intelligence)'},
         source='nominatim-geocode',
     )
 

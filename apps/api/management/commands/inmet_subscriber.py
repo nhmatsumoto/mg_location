@@ -31,7 +31,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS(f"Starting INMET WIS2 Subscriber on {MQTT_BROKER}..."))
         
-        client = mqtt.Client(client_id=f"mg-location-tactical-{int(time.time())}")
+        client = mqtt.Client(client_id=f"sos-location-tactical-{int(time.time())}")
         client.username_pw_set(MQTT_USER, MQTT_PASS)
         client.tls_set()  # Enable TLS for port 8883
         

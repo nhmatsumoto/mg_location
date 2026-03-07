@@ -99,7 +99,7 @@ DATABASES = {
         'OPTIONS': {
             'sslmode': config('DB_SSLMODE', default='prefer'),
             'connect_timeout': config('DB_CONNECT_TIMEOUT', default=10, cast=int),
-            'application_name': config('DB_APPLICATION_NAME', default='mg-location-backend'),
+            'application_name': config('DB_APPLICATION_NAME', default='sos-location-backend'),
             'options': '-c statement_timeout={0} -c lock_timeout={1} -c idle_in_transaction_session_timeout={2}'.format(
                 config('DB_STATEMENT_TIMEOUT_MS', default=120000, cast=int),
                 config('DB_LOCK_TIMEOUT_MS', default=15000, cast=int),
@@ -156,12 +156,12 @@ GOOGLE_OAUTH_CLIENT_ID = config('GOOGLE_OAUTH_CLIENT_ID', default='')
 
 KEYCLOAK_ENABLED = config('KEYCLOAK_ENABLED', default=False, cast=bool)
 KEYCLOAK_SERVER_URL = config('KEYCLOAK_SERVER_URL', default='http://keycloak:8080')
-KEYCLOAK_REALM = config('KEYCLOAK_REALM', default='mg-location')
-KEYCLOAK_CLIENT_ID = config('KEYCLOAK_CLIENT_ID', default='mg-location-web')
+KEYCLOAK_REALM = config('KEYCLOAK_REALM', default='sos-location')
+KEYCLOAK_CLIENT_ID = config('KEYCLOAK_CLIENT_ID', default='sos-location-web')
 KEYCLOAK_VERIFY_AUDIENCE = config('KEYCLOAK_VERIFY_AUDIENCE', default=True, cast=bool)
-KEYCLOAK_ROLE_ADMIN = config('KEYCLOAK_ROLE_ADMIN', default='mg_admin')
-KEYCLOAK_ROLE_OPERATOR = config('KEYCLOAK_ROLE_OPERATOR', default='mg_operator')
-KEYCLOAK_ROLE_VIEWER = config('KEYCLOAK_ROLE_VIEWER', default='mg_viewer')
+KEYCLOAK_ROLE_ADMIN = config('KEYCLOAK_ROLE_ADMIN', default='sos_admin')
+KEYCLOAK_ROLE_OPERATOR = config('KEYCLOAK_ROLE_OPERATOR', default='sos_operator')
+KEYCLOAK_ROLE_VIEWER = config('KEYCLOAK_ROLE_VIEWER', default='sos_viewer')
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=True, cast=bool)

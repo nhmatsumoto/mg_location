@@ -7,7 +7,7 @@ cd "$ROOT_DIR"
 DRY_RUN="${DRY_RUN:-0}"
 FRONTEND_PORT="${FRONTEND_PORT:-8088}"
 BACKEND_PORT="${BACKEND_PORT:-8001}"
-REPO_SLUG="${REPO_SLUG:-nhmatsumoto/mg_location}"
+REPO_SLUG="${REPO_SLUG:-nhmatsumoto/sos_location}"
 REPO_OWNER="${REPO_OWNER:-${REPO_SLUG%%/*}}"
 REPO_NAME="${REPO_NAME:-${REPO_SLUG##*/}}"
 PROJECT_TITLE="${PROJECT_TITLE:-MG Location — Crisis Backlog}"
@@ -120,7 +120,7 @@ run_smoke_test() {
       code="200"
       ok="true"
     else
-      code="$(curl -sS -o /tmp/mg_location_smoke_body.$$ -w '%{http_code}' "$url" || true)"
+      code="$(curl -sS -o /tmp/sos_location_smoke_body.$$ -w '%{http_code}' "$url" || true)"
       if [[ "$code" =~ ^2|3 ]]; then
         ok="true"
       fi

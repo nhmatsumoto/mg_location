@@ -171,9 +171,9 @@
 
 ## 7) Artefatos operacionais de orquestração
 
-- **Skill operacional:** `skills/mg-location-orchestration/SKILL.md`.
-- **Template de Requirement Card:** `skills/mg-location-orchestration/references/requirement-card-template.md`.
-- **Agente de orquestração:** `docs/agents/mg-location-orchestration-agent.md`.
+- **Skill operacional:** `skills/sos-location-orchestration/SKILL.md`.
+- **Template de Requirement Card:** `skills/sos-location-orchestration/references/requirement-card-template.md`.
+- **Agente de orquestração:** `docs/agents/sos-location-orchestration-agent.md`.
 - **Registro de aprendizado:** `docs/agents/learning-log.md`.
 
 ---

@@ -12,7 +12,7 @@ export interface OutboxCommand {
   retries: number;
 }
 
-const DB_NAME = 'mg-location-v1.1';
+const DB_NAME = 'sos-location-v1.1';
 const STORE_NAME = 'outbox';
 
 class SyncEngine {

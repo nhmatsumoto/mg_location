@@ -14,13 +14,13 @@ class SeedAuthCommandTests(TestCase):
         usuario = user_model.objects.get(username='usuario')
 
         self.assertTrue(admin.is_superuser)
-        self.assertTrue(admin.groups.filter(name='mg_admin').exists())
+        self.assertTrue(admin.groups.filter(name='sos_admin').exists())
 
         self.assertTrue(governo.is_staff)
-        self.assertTrue(governo.groups.filter(name='mg_operator').exists())
+        self.assertTrue(governo.groups.filter(name='sos_operator').exists())
 
         self.assertFalse(voluntario.is_staff)
-        self.assertTrue(voluntario.groups.filter(name='mg_viewer').exists())
+        self.assertTrue(voluntario.groups.filter(name='sos_viewer').exists())
 
         self.assertFalse(usuario.is_staff)
         self.assertFalse(usuario.groups.exists())

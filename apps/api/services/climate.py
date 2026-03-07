@@ -144,7 +144,7 @@ def metno_weather_snapshot(lat, lng):
     query = 'https://api.met.no/weatherapi/locationforecast/2.0/compact?lat={}&lon={}'.format(lat, lng)
     payload = _safe_fetch_json_with_headers(
         query,
-        headers={'User-Agent': 'mg-location/1.0 (contact: open-source-demo)'},
+        headers={'User-Agent': 'sos-location/1.0 (contact: open-source-demo)'},
         timeout=5,
     )
     if not payload:

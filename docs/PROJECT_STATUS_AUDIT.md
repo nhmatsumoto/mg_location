@@ -13,10 +13,10 @@
 
 ### 2.1 Containers Docker com nomes mais descritivos
 Foram renomeados os `container_name` para melhorar legibilidade operacional:
-- `mg-location-postgres` -> `mg-location-db-postgres`
-- `mg-location-backend` -> `mg-location-api-backend`
-- `mg-location-risk-agent` -> `mg-location-ml-risk-agent`
-- `simulador-mg-location` -> `mg-location-web-frontend`
+- `sos-location-postgres` -> `sos-location-db-postgres`
+- `sos-location-backend` -> `sos-location-api-backend`
+- `sos-location-risk-agent` -> `sos-location-ml-risk-agent`
+- `simulador-sos-location` -> `sos-location-web-frontend`
 
 Também foi aplicado baseline de segurança e tuning no PostgreSQL:
 - `POSTGRES_INITDB_ARGS` com autenticação SCRAM.

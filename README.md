@@ -46,7 +46,7 @@ graph TD
     end
 
     subgraph "Global Infrastructure"
-        API[Django REST API]
+        API[.NET 10 Web API]
         MP[MessagePack + Zstd]
         EV[Event Store / DDD]
         API --> EV
@@ -83,7 +83,7 @@ Tactical module for task assignment, search area demarcation, and tracking teams
 ## 🛠️ Technology Stack
 
 - **Frontend**: React 19, Vite, Tailwind CSS, **@react-three/fiber** (3D Environment).
-- **Backend**: Django 5.x, Django REST Framework (Robust core).
+- **Backend**: .NET 10, ASP.NET Core Web API, EF Core (Npgsql).
 - **Data**: Postgres + Redis (Central) | IndexedDB (Local/App).
 - **Protocols**: MessagePack, Zstandard, RESTful Events.
 - **SSO/Auth**: Keycloak (Enterprise-level identity management).

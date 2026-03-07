@@ -22,7 +22,7 @@ class CountryResolver:
             payload = http_client.get_json(
                 'https://nominatim.openstreetmap.org/reverse',
                 params={'lat': lat, 'lon': lon, 'format': 'jsonv2', 'zoom': 3},
-                headers={'User-Agent': 'mg-location/1.0'},
+                headers={'User-Agent': 'sos-location/1.0'},
                 source='country-resolver',
             )
             addr = payload.get('address', {})

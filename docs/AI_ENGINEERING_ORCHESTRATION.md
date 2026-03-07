@@ -117,7 +117,7 @@ Quando um agente concluir uma tarefa, ele deve:
 
 ## Protocolo de sincronização do orquestrador (v2)
 1. Classificar demanda por domínio (software, operação, ciência aplicada, emergência).
-2. Roteamento agente-skill via matriz oficial em `skills/mg-location-orchestration/references/agent-skill-routing-matrix.md`.
+2. Roteamento agente-skill via matriz oficial em `skills/sos-location-orchestration/references/agent-skill-routing-matrix.md`.
 3. Definir handoffs de entrada/saída entre especialistas com dependências explícitas.
 4. Consolidar estado em quadro único (`pendente`, `em execução`, `validado`, `bloqueado`).
 5. Encerrar com evidências de validação + risco residual + atualização de aprendizado.

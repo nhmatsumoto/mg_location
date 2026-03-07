@@ -1,15 +1,15 @@
-name: mg-location-simulation
+name: sos-location-simulation
 
 services:
   postgres:
     image: postgres:15-alpine
     pull_policy: always
-    container_name: mg-location-db-postgres
+    container_name: sos-location-db-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: mg_location
-      POSTGRES_USER: mg_location_user
-      POSTGRES_PASSWORD: mg_location_password
+      POSTGRES_DB: sos_location
+      POSTGRES_USER: sos_location_user
+      POSTGRES_PASSWORD: sos_location_password
       POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=scram-sha-256
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -61,57 +61,28 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: mg-location-api-backend
+      context: ./backend-dotnet
+      dockerfile: Dockerfile
+    container_name: sos-location-api-backend-net
     restart: unless-stopped
     environment:
-      SECRET_KEY: ${SECRET_KEY:-troque-isto}
-      DEBUG: ${DEBUG:-False}
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0,backend}
-      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:8088,http://127.0.0.1:8088,http://0.0.0.0:8088}
-      CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-True}
-      DB_ENGINE: ${DB_ENGINE:-django.db.backends.postgresql}
-      DB_NAME: ${DB_NAME:-sos_location}
-      DB_USER: ${DB_USER:-sos_location_user}
-      DB_PASSWORD: ${DB_PASSWORD:-sos_location_password}
-      DB_HOST: ${DB_HOST:-postgres}
-      DB_PORT: ${DB_PORT:-5432}
-      FRONTEND_URL: ${FRONTEND_URL:-http://frontend:8000/}
-      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
-      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
-      MIGRATE_MAX_ATTEMPTS: ${MIGRATE_MAX_ATTEMPTS:-24}
-      RISK_AGENT_URL: ${RISK_AGENT_URL:-http://risk-agent:8091}
-      RISK_AGENT_INTERNAL_TOKEN: ${RISK_AGENT_INTERNAL_TOKEN:-mg-location-internal-token}
-      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
-      KEYCLOAK_ENABLED: ${KEYCLOAK_ENABLED:-true}
-      KEYCLOAK_SERVER_URL: ${KEYCLOAK_SERVER_URL:-http://keycloak:8080}
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-sos-location}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-sos-location-frontend}
-      KEYCLOAK_VERIFY_AUDIENCE: ${KEYCLOAK_VERIFY_AUDIENCE:-true}
-      KEYCLOAK_ROLE_ADMIN: ${KEYCLOAK_ROLE_ADMIN:-mg_admin}
-      KEYCLOAK_ROLE_OPERATOR: ${KEYCLOAK_ROLE_OPERATOR:-mg_operator}
-      KEYCLOAK_ROLE_VIEWER: ${KEYCLOAK_ROLE_VIEWER:-mg_viewer}
-      SEED_ON_STARTUP: ${SEED_ON_STARTUP:-true}
-      RUN_INTEGRATIONS_ON_STARTUP: ${RUN_INTEGRATIONS_ON_STARTUP:-true}
-      SECURE_SSL_REDIRECT: "False"
-    volumes:
-      - .:/app
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8000
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=sos_location;Username=sos_location_user;Password=sos_location_password
+      - Keycloak__Authority=http://keycloak:8080/realms/sos-location
+      - Keycloak__Audience=sos-location-frontend
+      - Keycloak__RequireHttpsMetadata=false
     depends_on:
       postgres:
         condition: service_healthy
       keycloak:
         condition: service_healthy
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'python -c "import socket; s=socket.create_connection((''127.0.0.1'', 8000), 5); s.close()"',
-        ]
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/incidents || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 10
-      start_period: 180s
+      start_period: 40s
     ports:
       - "${BACKEND_PORT:-8001}:8000"
     networks:
@@ -121,7 +92,7 @@ services:
     build:
       context: ./risk_agent
       dockerfile: Dockerfile
-    container_name: mg-location-ml-risk-agent
+    container_name: sos-location-ml-risk-agent
     volumes:
       - ./risk_agent:/app
     restart: unless-stopped
@@ -129,7 +100,7 @@ services:
       ALPHAGEO_API_URL: ${ALPHAGEO_API_URL:-}
       OGC_API_URL: ${OGC_API_URL:-https://demo.pygeoapi.io/master/collections/obs/items}
       NGFS_GUIDE_URL: ${NGFS_GUIDE_URL:-}
-      RISK_AGENT_INTERNAL_TOKEN: ${RISK_AGENT_INTERNAL_TOKEN:-mg-location-internal-token}
+      RISK_AGENT_INTERNAL_TOKEN: ${RISK_AGENT_INTERNAL_TOKEN:-sos-location-internal-token}
     expose:
       - "8091"
     healthcheck:
@@ -150,7 +121,7 @@ services:
       context: ./frontend-react
       dockerfile: Dockerfile.dev
       network: host
-    container_name: mg-location-web-frontend
+    container_name: sos-location-web-frontend
     working_dir: /app
     volumes:
       - ./frontend-react:/app
@@ -203,7 +174,7 @@ services:
     build:
       context: ./backend-gis
       dockerfile: Dockerfile
-    container_name: mg-location-api-gis
+    container_name: sos-location-api-gis
     restart: unless-stopped
     ports:
       - "8002:8000"

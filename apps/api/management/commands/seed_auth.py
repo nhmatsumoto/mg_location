@@ -12,7 +12,7 @@ SEED_USERS = [
         'last_name': 'Sistema',
         'is_staff': True,
         'is_superuser': True,
-        'groups': ['mg_admin'],
+        'groups': ['sos_admin'],
     },
     {
         'username': 'governo',
@@ -22,7 +22,7 @@ SEED_USERS = [
         'last_name': 'Governo',
         'is_staff': True,
         'is_superuser': False,
-        'groups': ['mg_operator'],
+        'groups': ['sos_operator'],
     },
     {
         'username': 'voluntario',
@@ -32,7 +32,7 @@ SEED_USERS = [
         'last_name': 'Voluntária',
         'is_staff': False,
         'is_superuser': False,
-        'groups': ['mg_viewer'],
+        'groups': ['sos_viewer'],
     },
     {
         'username': 'usuario',
@@ -53,7 +53,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         user_model = get_user_model()
 
-        for group_name in ['mg_admin', 'mg_operator', 'mg_viewer']:
+        for group_name in ['sos_admin', 'sos_operator', 'sos_viewer']:
             Group.objects.get_or_create(name=group_name)
 
         summary = []
