@@ -1,0 +1,173 @@
+import { useState, useEffect, useMemo } from 'react';
+import { getEvents } from '../services/disastersApi';
+import { operationsApi, type MapAnnotationDto, type OperationsSnapshot } from '../services/operationsApi';
+import { eventsApi, type DomainEvent } from '../services/eventsApi';
+import { integrationsApi, type AlertDto } from '../services/integrationsApi';
+import { gisApi, type ActiveAlert } from '../services/gisApi';
+import { useNotifications } from '../context/NotificationsContext';
+import { useSimulationStore } from '../store/useSimulationStore';
+import { latToMeters, lonToMeters } from '../utils/projection';
+import type { SituationalSnapshot } from '../types';
+
+export function useSOSPageData() {
+  const { pushNotice } = useNotifications();
+  
+  // Data States
+  const [events, setEvents] = useState<any[]>([]);
+  const [domainEvents, setDomainEvents] = useState<DomainEvent[]>([]);
+  const [alerts, setAlerts] = useState<AlertDto[]>([]);
+  const [mapAnnotations, setMapAnnotations] = useState<MapAnnotationDto[]>([]);
+  const [gisAlerts, setGisAlerts] = useState<ActiveAlert[]>([]);
+  const [opsSnapshot, setOpsSnapshot] = useState<OperationsSnapshot | null>(null);
+  
+  // App States
+  const [country, setCountry] = useState('BR');
+  const [minSeverity] = useState<number>(0);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [savingOps, setSavingOps] = useState(false);
+  const [activeSnapshots, setActiveSnapshots] = useState<SituationalSnapshot[]>([]);
+  const [show3D, setShow3D] = useState(false);
+
+  const loadData = async (isInitial = false) => {
+    if (isInitial) setInitialLoading(true);
+    try {
+      const all: any[] = [];
+      const resp = await getEvents({ country: country || undefined, minSeverity, page: 1, pageSize: 500 });
+      all.push(...resp.items);
+      setEvents(all);
+      
+      const dEvents = await eventsApi.list();
+      setDomainEvents(dEvents);
+      
+      const fetchedAlerts = await integrationsApi.getAlerts();
+      setAlerts(fetchedAlerts?.items || []);
+      
+      const fetchedAnnotations = await operationsApi.listMapAnnotations();
+      setMapAnnotations(fetchedAnnotations || []);
+
+      const activeGisAlerts = await gisApi.getActiveAlerts();
+      setGisAlerts(activeGisAlerts || []);
+
+      const opSnap = await operationsApi.snapshot();
+      setOpsSnapshot(opSnap);
+     } catch (err) {
+      console.error(err);
+    } finally {
+      if (isInitial) setInitialLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadData(true);
+    const interval = setInterval(() => void loadData(), 15000);
+    return () => clearInterval(interval);
+  }, [country, minSeverity]);
+
+  const currentDisplayEvents = useMemo(() => {
+    const mappedAlerts = gisAlerts.map(a => {
+      let lat = -20.91, lon = -42.98;
+      if (a.polygon && a.polygon.coordinates.length > 0 && a.polygon.coordinates[0].length > 0) {
+         lon = a.polygon.coordinates[0][0][0];
+         lat = a.polygon.coordinates[0][0][1];
+      }
+      return {
+        id: a.id,
+        title: a.title,
+        description: a.description,
+        type: 'disaster_alert',
+        severity: a.severity === 'Atenção' ? 2 : (a.severity === 'Perigo' ? 3 : 5),
+        lat, lon,
+        is_gis_alert: true,
+        source: a.source
+      };
+    });
+
+    const combined = [...events, ...mappedAlerts];
+    return country ? combined.filter(e => e.country_code === country || e.is_gis_alert) : combined;
+  }, [events, country, gisAlerts]);
+
+  const captureSnapshot = async (bounds: Array<[number, number]>) => {
+    try {
+      const latMin = Math.min(bounds[0][0], bounds[1][0]);
+      const latMax = Math.max(bounds[0][0], bounds[1][0]);
+      const lonMin = Math.min(bounds[0][1], bounds[1][1]);
+      const lonMax = Math.max(bounds[0][1], bounds[1][1]);
+
+      const centerLat = (latMin + latMax) / 2;
+      const centerLon = (lonMin + lonMax) / 2;
+      
+      const latDistance = latToMeters(latMax - latMin);
+      const lonDistance = lonToMeters(lonMax - lonMin, centerLat);
+
+      useSimulationStore.getState().setBox({
+        center: [centerLat, centerLon],
+        size: [lonDistance, latDistance]
+      });
+
+      const zoom = 15;
+      const x = Math.floor((centerLon + 180) / 360 * Math.pow(2, zoom));
+      const y = Math.floor((1 - Math.log(Math.tan(centerLat * Math.PI / 180) + 1 / Math.cos(centerLat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
+      const textureUrl = `https://basemaps.cartocdn.com/rastertiles/voyager_labels_under/${zoom}/${x}/${y}.png`;
+      useSimulationStore.getState().setSatelliteTextureUrl(textureUrl);
+
+      const weather = await integrationsApi.getWeatherForecast(centerLat, centerLon) as any;
+      const newSnapshot: SituationalSnapshot = {
+        id: `snap-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        center: [centerLat, centerLon],
+        bounds,
+        environmentalData: {
+          temp: weather.current?.temp,
+          pressure: weather.current?.pressure,
+          humidity: weather.current?.humidity,
+          windSpeed: weather.current?.wind_speed,
+          rainfall: weather.current?.rain?.['1h'] || 0,
+          soilSaturaion: Math.random() * 100
+        }
+      };
+      setActiveSnapshots(prev => [...prev, newSnapshot]);
+      setShow3D(true);
+    } catch (err) {
+      pushNotice({ type: 'error', title: 'Falha na Captura', message: 'Erro ao processar dados.' });
+    }
+  };
+
+  const saveOps = async (opsForm: any, lastClickedCoords: [number, number] | null, setOpenOpsModal: (v: boolean) => void, setLastClickedCoords: (v: any) => void) => {
+    if (!lastClickedCoords) {
+      pushNotice({ type: 'warning', title: 'Coordenadas ausentes', message: 'Clique no mapa para selecionar o local.' });
+      return;
+    }
+
+    setSavingOps(true);
+    try {
+      await operationsApi.createMapAnnotation({
+        recordType: opsForm.recordType,
+        title: opsForm.incidentTitle || (opsForm.recordType === 'missing_person' ? `Busca: ${opsForm.personName}` : 'Solicitação de Campo'),
+        lat: lastClickedCoords[0],
+        lng: lastClickedCoords[1],
+        severity: opsForm.severity,
+        ...(opsForm.recordType === 'risk_area' ? { radiusMeters: 300 } : {}),
+      });
+      setOpenOpsModal(false);
+      setLastClickedCoords(null);
+      await loadData();
+      pushNotice({ type: 'success', title: 'Sucesso', message: 'Registro efetuado com sucesso.' });
+    } catch {
+      pushNotice({ type: 'error', title: 'Falha no cadastro', message: 'Erro de comunicação com o servidor.' });
+    } finally {
+      setSavingOps(false);
+    }
+  };
+
+  return {
+    events, domainEvents, alerts, mapAnnotations, gisAlerts, opsSnapshot,
+    country, setCountry,
+    minSeverity,
+    initialLoading,
+    savingOps,
+    activeSnapshots, setActiveSnapshots,
+    show3D, setShow3D,
+    currentDisplayEvents,
+    captureSnapshot, saveOps, loadData
+  };
+}

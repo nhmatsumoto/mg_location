@@ -20,6 +20,7 @@ FROM build AS publish
 RUN dotnet publish "SOSLocation.API/SOSLocation.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS final
+RUN apk add --no-cache curl krb5-libs
 WORKDIR /app
 EXPOSE 8000
 COPY --from=publish /app/publish .
