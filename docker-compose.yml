@@ -73,6 +73,9 @@ services:
       - Keycloak__Authority=http://keycloak:8080/realms/sos-location
       - Keycloak__Audience=sos-location-frontend
       - Keycloak__RequireHttpsMetadata=false
+      - ExternalIntegrations__InmetUrl=${INMET_URL:-https://apiprevmet3.inmet.gov.br/avisos/ativos}
+      - ExternalIntegrations__OpenTopographyUrl=${OPENTOPOGRAPHY_URL:-https://portal.opentopography.org/API/globaldem}
+      - ExternalIntegrations__OverpassUrl=${OVERPASS_URL:-https://overpass-api.de/api/interpreter}
     depends_on:
       postgres:
         condition: service_healthy

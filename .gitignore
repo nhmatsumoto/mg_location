@@ -159,3 +159,4 @@ infra/keycloak/*.local.json
 # .NET build directories
 **/bin/
 **/obj/
+backend-dotnet/SOSLocation.Infrastructure/bin/Debug/net10.0/SOSLocation.Domain.pdb

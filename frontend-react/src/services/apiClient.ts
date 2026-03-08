@@ -114,6 +114,8 @@ apiClient.interceptors.request.use((config) => {
   });
   
   const token = getSessionToken();
+  const isPublicUrl = config.url?.includes('/public/') || config.url?.includes('/api/health');
+
   if (token) {
     config.headers = config.headers ?? {};
     if (token.length === 40 && !token.includes('.')) {
@@ -121,6 +123,10 @@ apiClient.interceptors.request.use((config) => {
     } else {
       config.headers.Authorization = `Bearer ${token}`;
     }
+  } else if (!isPublicUrl) {
+    // Proactive check: if no token and not a known public URL, warn but let it through 
+    // (Keycloak initialization might still be in progress or failing silently)
+    frontendLogger.warn('Attempting protected request without token', { url: config.url });
   }
 
   // Support for MessagePack requests
@@ -168,6 +174,26 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const config = (error.config || {}) as RetryableConfig;
+
+    // Handle 401 Unauthorized - Session Expired or Invalid
+    if (error.response?.status === 401) {
+      frontendLogger.error('Session expired or unauthorized (401). Triggering logout/redirect.', {
+        url: config.url
+      });
+      
+      localStorage.removeItem('sos_location_token');
+      
+      // Only redirect if we're not already on a landing or public page
+      const currentPath = window.location.pathname;
+      if (!currentPath.startsWith('/public') && currentPath !== '/' && currentPath !== '/error') {
+         window.location.href = '/error?code=401';
+      }
+    }
+
+    // Handle 500+ Internal Server Errors
+    if (error.response?.status && error.response.status >= 500) {
+       window.location.href = `/error?code=${error.response.status}`;
+    }
 
     if (shouldRetry(error)) {
       config.__retryCount = (config.__retryCount ?? 0) + 1;

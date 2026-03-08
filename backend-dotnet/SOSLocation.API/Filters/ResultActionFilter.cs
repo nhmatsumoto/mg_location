@@ -15,9 +15,11 @@ namespace SOSLocation.API.Filters
         {
             if (context.Exception == null && context.Result is ObjectResult objectResult)
             {
-                // Prevent wrapping an already wrapped Result<T>
-                if (objectResult.Value?.GetType().IsGenericType == true &&
-                    objectResult.Value.GetType().GetGenericTypeDefinition() == typeof(Result<>))
+                // Prevent wrapping an already wrapped Result<T> or Result
+                var valueType = objectResult.Value?.GetType();
+                if (valueType != null &&
+                    (valueType == typeof(Result) ||
+                    (valueType.IsGenericType && valueType.GetGenericTypeDefinition() == typeof(Result<>))))
                 {
                     return;
                 }
@@ -25,7 +27,11 @@ namespace SOSLocation.API.Filters
                 if (objectResult.StatusCode >= 200 && objectResult.StatusCode < 300)
                 {
                     // Convert success types to Result.Success(value)
-                    context.Result = new ObjectResult(Result<object>.Success(objectResult.Value))
+                    object payload = objectResult.Value != null
+                        ? Result<object>.Success(objectResult.Value)
+                        : Result.Success();
+
+                    context.Result = new ObjectResult(payload)
                     {
                         StatusCode = objectResult.StatusCode
                     };

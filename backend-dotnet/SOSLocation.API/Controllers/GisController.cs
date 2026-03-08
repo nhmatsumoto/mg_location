@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SOSLocation.Domain.Interfaces;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace SOSLocation.API.Controllers
@@ -18,6 +20,7 @@ namespace SOSLocation.API.Controllers
             _alertsService = alertsService;
         }
 
+        [AllowAnonymous]
         [HttpPost("terrain/dem")]
         public async Task<IActionResult> GetDigitalElevationModel([FromBody] DemRequest req)
         {
@@ -35,6 +38,7 @@ namespace SOSLocation.API.Controllers
             });
         }
 
+        [AllowAnonymous]
         [HttpPost("urban/features")]
         public async Task<IActionResult> GetUrbanFeatures([FromBody] UrbanRequest req)
         {
@@ -46,6 +50,7 @@ namespace SOSLocation.API.Controllers
             });
         }
 
+        [AllowAnonymous]
         [HttpGet("alerts/active")]
         public IActionResult GetActiveAlerts()
         {
@@ -61,18 +66,26 @@ namespace SOSLocation.API.Controllers
 
     public class DemRequest
     {
+        [JsonPropertyName("min_lat")]
         public double MinLat { get; set; }
+        [JsonPropertyName("min_lon")]
         public double MinLon { get; set; }
+        [JsonPropertyName("max_lat")]
         public double MaxLat { get; set; }
+        [JsonPropertyName("max_lon")]
         public double MaxLon { get; set; }
         public int Resolution { get; set; } = 128;
     }
 
     public class UrbanRequest
     {
+        [JsonPropertyName("min_lat")]
         public double MinLat { get; set; }
+        [JsonPropertyName("min_lon")]
         public double MinLon { get; set; }
+        [JsonPropertyName("max_lat")]
         public double MaxLat { get; set; }
+        [JsonPropertyName("max_lon")]
         public double MaxLon { get; set; }
     }
 }

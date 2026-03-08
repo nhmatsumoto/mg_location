@@ -1,21 +1,23 @@
-type LogContext = Record<string, unknown>;
-
-const formatContext = (context?: LogContext) => (context ? JSON.stringify(context) : '');
-
-const shouldLogDebug = import.meta.env.DEV;
-
+// removed formatContext
 export const frontendLogger = {
-  info: (message: string, context?: LogContext) => {
-    console.info(`[frontend] ${message}`, formatContext(context));
+  info: (message: string, context?: any) => {
+    if (import.meta.env.DEV) {
+      console.log(`%c[frontend] ${message}`, 'color: #3b82f6; font-weight: bold', context || '');
+    }
   },
-  warn: (message: string, context?: LogContext) => {
-    console.warn(`[frontend] ${message}`, formatContext(context));
+  warn: (message: string, context?: any) => {
+    if (import.meta.env.DEV) {
+      console.warn(`%c[frontend] ${message}`, 'color: #eab308; font-weight: bold', context || '');
+    }
   },
-  error: (message: string, context?: LogContext) => {
-    console.error(`[frontend] ${message}`, formatContext(context));
+  error: (message: string, context?: any) => {
+    if (import.meta.env.DEV) {
+      console.error(`%c[frontend] ${message}`, 'color: #f43f5e; font-weight: bold', context || '');
+    }
   },
-  debug: (message: string, context?: LogContext) => {
-    if (!shouldLogDebug) return;
-    console.debug(`[frontend] ${message}`, formatContext(context));
+  debug: (message: string, context?: any) => {
+    if (import.meta.env.DEV) {
+      console.debug(`%c[frontend] ${message}`, 'color: #94a3b8; font-weight: bold', context || '');
+    }
   },
 };

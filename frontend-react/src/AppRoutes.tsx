@@ -1,10 +1,9 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
-import { getSessionToken } from './lib/authSession';
-import { LoginPage } from './pages/LoginPage';
 import { LandingPage } from './pages/LandingPage';
 import { PublicMapPage } from './pages/PublicMapPage';
+import { ErrorPage } from './pages/ErrorPage';
 
 const SOSPage = lazy(() => import('./pages/SOSPage').then((m) => ({ default: m.SOSPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
@@ -18,9 +17,7 @@ function PrivateLayout() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
-  if (!getSessionToken()) {
-    return <Navigate to="/login" replace />;
-  }
+  // Redirection to /login removed to allow Keycloak SSO to handle auth
 
   const isSOS = location.pathname === '/app/sos';
 
@@ -51,9 +48,9 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<LoginPage />} />
       <Route path="/public/map" element={<PublicMapPage />} />
       <Route path="/public/transparency" element={<PublicIncidentDashboardPage />} />
+      <Route path="/error" element={<ErrorPage />} />
       <Route path="/app/*" element={<PrivateLayout />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

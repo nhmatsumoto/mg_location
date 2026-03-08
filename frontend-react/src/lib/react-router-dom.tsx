@@ -67,6 +67,35 @@ export function useNavigate() {
   return (to: string, options?: { replace?: boolean }) => context.navigate(to, options?.replace);
 }
 
+export function useSearchParams() {
+  const [search, setSearch] = useState(() => window.location.search);
+
+  useEffect(() => {
+    const onPopState = () => setSearch(window.location.search);
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const searchParams = useMemo(() => new URLSearchParams(search), [search]);
+  
+  const setSearchParams = (nextParams: URLSearchParams | Record<string, string>, options?: { replace?: boolean }) => {
+    const nextSearch = (nextParams instanceof URLSearchParams ? nextParams : new URLSearchParams(nextParams)).toString();
+    const to = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}`;
+    
+    if (options?.replace) {
+      window.history.replaceState(null, '', to);
+    } else {
+      window.history.pushState(null, '', to);
+    }
+    // No need to setPath or setSearch here as popstate doesn't fire on pushState
+    // But since this is a mini-router, we might need a better way to notify everyone.
+    // For now, let's just trigger a manual reload or provide a functional update if needed.
+    // However, for the ErrorPage, we only READ searchParams, so this is enough.
+  };
+
+  return [searchParams, setSearchParams] as const;
+}
+
 export function useParams<T extends Record<string, string>>() {
   const context = useContext(RouterContext);
   if (!context) throw new Error('useParams must be used within BrowserRouter');
