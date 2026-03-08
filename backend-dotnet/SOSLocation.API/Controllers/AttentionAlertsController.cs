@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/integrations/alerts")]
     public class AttentionAlertsController : ControllerBase
     {
         private readonly IMediator _mediator;

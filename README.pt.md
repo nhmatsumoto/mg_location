@@ -59,43 +59,22 @@ graph TD
 
 ## 🚀 Como Funciona
 
-### 1. Sala de Situação 3D (v1.2)
+### 1. Sala de Situação 3D (v2.0)
 Ambiente tático imersivo usando **Three.js** para visualizar eventos como "beacons" 3D pulsantes. Oferece percepção de profundidade e clusterização espacial de desastres.
 
-### 2. Análise Tática (Scatter Plot 2.0)
-Análise temporal avançada integrada ao mapa. Permite identificar padrões e tendências de severidade ao longo do tempo.
+### 2. API Padronizada e Monitoramento de Saúde
+Integração robusta com **ASPNET Core v10**. Inclui endpoints especializados para monitoramento de alta disponibilidade:
+- `GET /api/health`: Fornece o status do serviço e verificação de uptime.
 
-### 3. Captura de Pontos de Precisão
-Sistema de mira tática (crosshair) para marcação de coordenadas com alta precisão. Integrado a ícones semânticos (Lucide) para classificação instantânea de relatórios de campo.
-
-### 4. Operações de Busca e Resgate
-Módulo tático para atribuição de tarefas, demarcação de áreas de busca e acompanhamento de equipes em campo.
-
----
-
-## 🛠️ Stack Tecnológica
-
-- **Frontend**: React 19, Vite, Tailwind CSS, **@react-three/fiber** (Ambiente 3D).
-- **Backend**: Django 5.x, Django REST Framework (Core robusto).
-- **Dados**: Postgres + Redis (Central) | IndexedDB (Local/App).
-- **Protocolos**: MessagePack, Zstandard, RESTful Events.
-- **SSO/Auth**: Keycloak (Gerenciamento de identidades nível Enterprise).
-
----
-
-## 💻 Iniciando o Desenvolvimento
-
-### Pré-requisitos
-- Docker & Docker Compose
-- Node.js / Bun (opcional para local)
-- Python 3.11+ (opcional para local)
-
+### 3. Análise Tática (Scatter Plot 2.0)
+...
 ### Rápido (Docker)
 ```bash
 ./dev.sh up
 ```
-- **App**: `http://localhost:8088`
-- **API**: `http://localhost:8001`
+- **App**: `http://localhost:8088` (Frontend React)
+- **API**: `http://localhost:8001` (Backend .NET)
+- **Saúde**: `http://localhost:8001/api/health`
 
 ### Semente de Dados (Importante)
 Para ver o sistema populado com dados de simulação de enchentes em Ubá (MG):
@@ -105,27 +84,11 @@ Para ver o sistema populado com dados de simulação de enchentes em Ubá (MG):
 
 ---
 
-## 🤝 Convite para Contribuição
-
-Este é um projeto **Open Source** com impacto social real. Precisamos de ajuda em várias frentes:
-
-- **Desenvolvedores**: Otimização de algoritmos de sincronização, novos módulos de IA.
-- **Especialistas em UX**: Melhoria da interface para uso sob stress e alta luminosidade.
-- **Especialistas em GIS**: Integração de mais modelos de terreno e camadas de satélite.
-- **Analistas de Dados**: Criação de modelos preditivos de risco.
-
-### Como ingressar?
-1. Leia nosso [Guia de Onboarding](docs/PROJECT_CONSOLIDATION_MG_LOCATION.md).
-2. Explore os [Gaps de Implementação](docs/DEEP_IMPLEMENTATION_GAP_PLAN.md).
-3. Abra uma *Issue* ou submeta um *Pull Request* com suas ideias.
-
----
-
 ## 📂 Organização do Projeto
 
 ```bash
-├── apps/               # Aplicações Django (Backend)
-├── frontend-react/     # Aplicação React (Frontend)
+├── backend-dotnet/     # ASP.NET Core 10 Web API
+├── frontend-react/     # Aplicação React 19 + Vite
 ├── agents/             # Agentes de IA e Automação
 ├── docs/               # Documentação profunda e planos
 ├── dev.sh              # Canivete suíço tático para DX

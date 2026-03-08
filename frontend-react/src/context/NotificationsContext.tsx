@@ -1,5 +1,6 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState, useEffect, type ReactNode } from 'react';
 import { generateUuid } from '../lib/uuid';
+import { setApiNotifier } from '../services/apiClient';
 
 export type NoticeType = 'info' | 'success' | 'error' | 'warning';
 
@@ -34,6 +35,12 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const removeNotice = (id: string) => {
     setNotices((prev) => prev.filter((n) => n.id !== id));
   };
+
+  useEffect(() => {
+    setApiNotifier((title, message) => {
+      pushNotice({ title, message, type: 'error' });
+    });
+  }, []);
 
   const value = useMemo(() => ({ notices, pushNotice, removeNotice }), [notices]);
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;

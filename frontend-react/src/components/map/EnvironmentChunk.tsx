@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { TerrainMesh } from './TerrainMesh';
 import { TacticalStreets } from './TacticalStreets';
 import { OSMBuildings } from './OSMBuildings';
 import { TacticalVegetation } from './TacticalVegetation';
 import { MapZoneLayer } from './MapZoneLayer';
+import { gisApi } from '../../services/gisApi';
 
 interface EnvironmentChunkProps {
   bbox: [number, number, number, number]; // minLat, minLon, maxLat, maxLon
@@ -11,6 +12,8 @@ interface EnvironmentChunkProps {
 }
 
 export const EnvironmentChunk: React.FC<EnvironmentChunkProps> = ({ bbox, chunkId }) => {
+  const [urbanData, setUrbanData] = useState<any>(null);
+
   const localSimulationBox = useMemo(() => {
     const minLat = bbox[0];
     const minLon = bbox[1];
@@ -29,12 +32,43 @@ export const EnvironmentChunk: React.FC<EnvironmentChunkProps> = ({ bbox, chunkI
     };
   }, [bbox]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await gisApi.getUrbanFeatures(bbox[0], bbox[1], bbox[2], bbox[3]);
+        setUrbanData(data);
+      } catch (err) {
+        console.error("Failed to fetch urban data for chunk:", chunkId, err);
+      }
+    };
+    fetchData();
+  }, [bbox, chunkId]);
+
   return (
     <group key={chunkId}>
       <TerrainMesh clippingPlanes={[]} overrideBox={localSimulationBox} /> 
-      <TacticalStreets clippingPlanes={[] } overrideBox={localSimulationBox} />
-      <OSMBuildings clippingPlanes={[]} overrideBox={localSimulationBox} />
-      <TacticalVegetation clippingPlanes={[]} overrideBox={localSimulationBox} />
+      
+      <React.Suspense fallback={null}>
+        <TacticalStreets 
+          clippingPlanes={[]} 
+          data={urbanData?.highways} 
+        />
+      </React.Suspense>
+
+      <React.Suspense fallback={null}>
+        <OSMBuildings 
+          clippingPlanes={[]} 
+          data={urbanData?.buildings} 
+        />
+      </React.Suspense>
+
+      <React.Suspense fallback={null}>
+        <TacticalVegetation 
+          clippingPlanes={[]} 
+          data={urbanData?.forests} 
+        />
+      </React.Suspense>
+
       <MapZoneLayer clippingPlanes={[]} overrideBox={localSimulationBox} />
     </group>
   );

@@ -1,9 +1,10 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
-import { LandingPage } from './pages/LandingPage';
 import { PublicMapPage } from './pages/PublicMapPage';
 import { ErrorPage } from './pages/ErrorPage';
+import { keycloak } from './lib/keycloak';
+import { LoadingScreen } from './components/common/LoadingScreen';
 
 const SOSPage = lazy(() => import('./pages/SOSPage').then((m) => ({ default: m.SOSPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
@@ -17,16 +18,21 @@ function PrivateLayout() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
-  // Redirection to /login removed to allow Keycloak SSO to handle auth
+  // Redirection to login if not authenticated
+  if (!keycloak.authenticated) {
+    keycloak.login();
+    return <LoadingScreen message="Redirecionando para o portal de acesso..." />;
+  }
 
   const isSOS = location.pathname === '/app/sos';
 
   return (
-    <AppShell 
-      theme={theme} 
-      onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-      variant={isSOS ? 'tactical' : 'default'}
-    >
+    <div className="animate-in fade-in duration-700 ease-out">
+      <AppShell 
+        theme={theme} 
+        onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+        variant={isSOS ? 'tactical' : 'default'}
+      >
       <Suspense fallback={<div style={{ padding: 16 }}>Carregando módulo…</div>}>
         <Routes>
           <Route path="/app/sos" element={<SOSPage />} />
@@ -41,14 +47,15 @@ function PrivateLayout() {
         </Routes>
       </Suspense>
     </AppShell>
-  );
+  </div>
+);
 }
 
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/public/map" element={<PublicMapPage />} />
+      <Route path="/" element={<PublicMapPage />} />
+      <Route path="/public/map" element={<Navigate to="/" replace />} />
       <Route path="/public/transparency" element={<PublicIncidentDashboardPage />} />
       <Route path="/error" element={<ErrorPage />} />
       <Route path="/app/*" element={<PrivateLayout />} />

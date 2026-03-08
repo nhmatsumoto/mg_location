@@ -9,15 +9,15 @@ Gerado automaticamente por scripts/bootstrap_backlog.sh.
 4. **P3**: melhorias UX não-críticas.
 
 ## Findings automáticos do repositório
-- TODOs encontrados: 1
+- TODOs encontrados: 0
 - FIXMEs encontrados: 0
-- Referências a baseURL/portas no frontend: 2
-- Endpoint /api/health implementado: sim
+- Referências a baseURL/portas no frontend: 0
+- Endpoint /api/health implementado: sim (v2.0)
 
 ## TODO list por prioridade
 ### P0
-- [ ] **[P0]** Disponibilidade da API e readiness/healthchecks _(area:operational | crisis:Critical | status:Backlog)_
-- [ ] **[P0]** Padronizar CORS/proxy dev para frontend em localhost:8088 _(area:frontend | crisis:Critical | status:Backlog)_
+- [x] **[P0]** Disponibilidade da API e readiness/healthchecks
+- [x] **[P0]** Padronizar CORS/proxy dev para frontend em localhost:8088
 - [ ] **[P0]** Estabilizar endpoint /api/alerts _(area:datahub | crisis:High | status:Backlog)_
 - [ ] **[P0]** Validar /api/missing-persons para busca de desaparecidos _(area:operational | crisis:Critical | status:Backlog)_
 - [ ] **[P0]** Validar /api/hotspots para áreas críticas _(area:operational | crisis:High | status:Backlog)_
@@ -44,8 +44,8 @@ Gerado automaticamente por scripts/bootstrap_backlog.sh.
 ## Kanban
 | Priority | Item | Area | CrisisImpact | Status |
 |---|---|---|---|---|
-| P0 | Disponibilidade da API e readiness/healthchecks | operational | Critical | Backlog |
-| P0 | Padronizar CORS/proxy dev para frontend em localhost:8088 | frontend | Critical | Backlog |
+| P0 | Disponibilidade da API e readiness/healthchecks | operational | Critical | Done |
+| P0 | Padronizar CORS/proxy dev para frontend em localhost:8088 | frontend | Critical | Done |
 | P0 | Estabilizar endpoint /api/alerts | datahub | High | Backlog |
 | P0 | Validar /api/missing-persons para busca de desaparecidos | operational | Critical | Backlog |
 | P0 | Validar /api/hotspots para áreas críticas | operational | High | Backlog |

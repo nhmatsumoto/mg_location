@@ -95,82 +95,90 @@ export const Tactical3DMap: React.FC<Tactical3DMapProps> = ({
     <div className="w-full h-full bg-slate-950 rounded-lg overflow-hidden border border-slate-800">
       <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 2]}>
         <color attach="background" args={['#020617']} />
-        <CameraBoundsTracker />
-        <FocalIntelligence />
-        <PerspectiveCamera makeDefault position={[centerX + camOffset, camHeight, centerZ + camOffset]} fov={50} />
         
-        {cameraMode === 'orbit' ? (
-          <OrbitControls makeDefault enablePan={true} maxPolarAngle={Math.PI / 2.1} minDistance={0.5} maxDistance={1000} target={[centerX, 0, centerZ]} />
-        ) : (
-          <FlyControls makeDefault movementSpeed={mapSizeInUnits * 0.5} rollSpeed={1.0} dragToLook={true} />
-        )}
+        <React.Suspense fallback={null}>
+          <CameraBoundsTracker />
+          <FocalIntelligence />
+          <PerspectiveCamera makeDefault position={[centerX + camOffset, camHeight, centerZ + camOffset]} fov={50} />
+          
+          {cameraMode === 'orbit' ? (
+            <OrbitControls makeDefault enablePan={true} maxPolarAngle={Math.PI / 2.1} minDistance={0.5} maxDistance={1000} target={[centerX, 0, centerZ]} />
+          ) : (
+            <FlyControls makeDefault movementSpeed={mapSizeInUnits * 0.5} rollSpeed={1.0} dragToLook={true} />
+          )}
 
-        <GizmoHelper
-          alignment="bottom-left"
-          margin={[80, 80]}
-        >
-          <GizmoViewport axisColors={['#ef4444', '#4ade80', '#3b82f6']} labelColor="white" />
-        </GizmoHelper>
+          <GizmoHelper
+            alignment="bottom-left"
+            margin={[80, 80]}
+          >
+            <GizmoViewport axisColors={['#ef4444', '#4ade80', '#3b82f6']} labelColor="white" />
+          </GizmoHelper>
 
-        <DayNightCycle timeOfDay={timeOfDay} />
-        
-        {/* Only show global grid if no relief layer is active to avoid clutter */}
-        {!activeLayers.relief && (
-          <group>
-            <gridHelper args={[200, 100, 0x1e293b, 0x0f172a]} position={[0, -0.1, 0]} />
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.2, 0]} receiveShadow>
-                <planeGeometry args={[200, 200]} />
-                <meshStandardMaterial color="#020617" roughness={0} metalness={0.8} />
-            </mesh>
-            <gridHelper args={[200, 20, 0x06b6d4, 0x06b6d4]} position={[0, -0.19, 0]} />
-          </group>
-        )}
+          <DayNightCycle timeOfDay={timeOfDay} />
+          
+          {/* Only show global grid if no relief layer is active to avoid clutter */}
+          {!activeLayers.relief && (
+            <group>
+              <gridHelper args={[200, 100, 0x1e293b, 0x0f172a]} position={[0, -0.1, 0]} />
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.2, 0]} receiveShadow>
+                  <planeGeometry args={[200, 200]} />
+                  <meshStandardMaterial color="#020617" roughness={0} metalness={0.8} />
+              </mesh>
+              <gridHelper args={[200, 20, 0x06b6d4, 0x06b6d4]} position={[0, -0.19, 0]} />
+            </group>
+          )}
 
-        <TacticalEnvironment clippingPlanes={clippingPlanes} />
-        <MapZoneLayer clippingPlanes={clippingPlanes} />
-        
-        <SosHero />
+          <React.Suspense fallback={<gridHelper args={[20, 20, 0x334155, 0x1e293b]} position={[centerX, -0.1, centerZ]} />}>
+            <TacticalEnvironment clippingPlanes={clippingPlanes} />
+          </React.Suspense>
+          
+          <React.Suspense fallback={null}>
+            <MapZoneLayer clippingPlanes={clippingPlanes} />
+          </React.Suspense>
+          
+          <SosHero />
 
-        {activeLayers.labels && (
-          <>
-            <Tactical3DMarkers markers={[
-                { lat: focusPoint[0] + 0.002, lon: focusPoint[1] + 0.002, type: 'risk', label: 'Zona de Inundação Alpha', severity: 4 },
-                { lat: focusPoint[0] - 0.001, lon: focusPoint[1] + 0.003, type: 'hospital', label: 'Centro Médico Regional' },
-                { lat: focusPoint[1], lon: focusPoint[1], type: 'base', label: 'Posto de Comando' }
-            ]} />
+          {activeLayers.labels && (
+            <React.Suspense fallback={null}>
+              <Tactical3DMarkers markers={[
+                  { lat: focusPoint[0] + 0.002, lon: focusPoint[1] + 0.002, type: 'risk', label: 'Zona de Inundação Alpha', severity: 4 },
+                  { lat: focusPoint[0] - 0.001, lon: focusPoint[1] + 0.003, type: 'hospital', label: 'Centro Médico Regional' },
+                  { lat: focusPoint[1], lon: focusPoint[1], type: 'base', label: 'Posto de Comando' }
+              ]} />
 
-            <ScanningRay />
+              <ScanningRay />
 
-            <Tactical3DAlerts events={events} />
+              <Tactical3DAlerts events={events} />
 
-            <InstancedEventBeacons
-              coords={coords}
-              hoveredId={hoveredId}
-              onHover={onHover}
-              onClick={(e) => onClick(e)}
+              <InstancedEventBeacons
+                coords={coords}
+                hoveredId={hoveredId}
+                onHover={onHover}
+                onClick={(e) => onClick(e)}
+              />
+            </React.Suspense>
+          )}
+
+          <fog attach="fog" args={['#020617', 10, 60 - environment.fog * 40]} />
+
+          {activeSnapshots.map((snap) => (
+            <SnapshotVolume key={snap.id} snapshot={snap} />
+          ))}
+
+          {barriers.map((barrier) => (
+            <AnimatedBarrier 
+              key={barrier.id} 
+              points={barrier.points} 
+              color={barrier.color || (barrier.type === 'hazard' ? '#ef4444' : '#22d3ee')}
+              height={barrier.type === 'containment' ? 1.5 : 2.5}
             />
-          </>
-        )}
+          ))}
 
-        <fog attach="fog" args={['#020617', 10, 60 - environment.fog * 40]} />
+          {enableSimulationBox && <SimulationBoxEditor />}
+          {enableSimulationBox && <HazardOverlay />}
 
-        {activeSnapshots.map((snap) => (
-          <SnapshotVolume key={snap.id} snapshot={snap} />
-        ))}
-
-        {barriers.map((barrier) => (
-          <AnimatedBarrier 
-            key={barrier.id} 
-            points={barrier.points} 
-            color={barrier.color || (barrier.type === 'hazard' ? '#ef4444' : '#22d3ee')}
-            height={barrier.type === 'containment' ? 1.5 : 2.5}
-          />
-        ))}
-
-        {enableSimulationBox && <SimulationBoxEditor />}
-        {enableSimulationBox && <HazardOverlay />}
-
-        <WeatherParticles intensity={environment.rain} isSimulating={isSimulating} />
+          <WeatherParticles intensity={environment.rain} isSimulating={isSimulating} />
+        </React.Suspense>
       </Canvas>
 
       <div className="absolute bottom-4 left-4 pointer-events-none z-40">

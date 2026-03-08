@@ -59,43 +59,22 @@ graph TD
 
 ## 🚀 仕組み
 
-### 1. 3Dシチュエーションルーム (v1.2)
+### 1. 3Dシチュエーションルーム (v2.0)
 **Three.js** を使用した没入型戦術環境。イベントを脈動する 3D ビーコンとして視覚化し、災害の空間的クラスター化と深度把握を可能にします。
 
-### 2. 戦術分析 (Scatter Plot 2.0)
-マップと統合された高度な時系列分析。GDACS、USGS、ローカルイベントを横断して、深刻度の傾向やパターンを特定できます。
+### 2. 標準化されたAPIとヘルスモニタリング
+**ASPNET Core v10** との堅牢な統合。高可用性監視のための専用エンドポイントが含まれています：
+- `GET /api/health`: サービスのステータスとアップタイムの確認を提供します。
 
-### 3. 精密地点キャプチャ
-高精度な座標マーキングのための戦術的クロスヘア（照準）システム。現場レポートを即座に視覚分類するためのセマンティックアイコン（Lucide）を統合。
-
-### 4. 捜索救助活動
-タスクの割り当て、捜索エリアの境界画定、現場チームの追跡のための戦術モジュール。
-
----
-
-## 🛠️ テクノロジースタック
-
-- **Frontend**: React 19, Vite, Tailwind CSS, **@react-three/fiber** (3D 環境)。
-- **Backend**: Django 5.x, Django REST Framework (堅牢なコア)。
-- **Data**: Postgres + Redis (中央) | IndexedDB (ローカル/アプリ)。
-- **Protocols**: MessagePack, Zstandard, RESTful Events。
-- **SSO/Auth**: Keycloak (エンタープライズレベルの識別。管理)。
-
----
-
-## 💻 開発の開始
-
-### 前提条件
-- Docker & Docker Compose
-- Node.js / Bun (ローカル用オプション)
-- Python 3.11+ (ローカル用オプション)
-
+### 3. 戦術分析 (Scatter Plot 2.0)
+...
 ### クイックスタート (Docker)
 ```bash
 ./dev.sh up
 ```
-- **App**: `http://localhost:8088`
-- **API**: `http://localhost:8001`
+- **アプリ**: `http://localhost:8088` (Frontend React)
+- **API**: `http://localhost:8001` (.NET Backend)
+- **ヘルスチェック**: `http://localhost:8001/api/health`
 
 ### データシード (重要)
 ブラジル・ミナスジェライス州ウバ（Ubá）の洪水シミュレーションデータを投入するには：
@@ -105,27 +84,11 @@ graph TD
 
 ---
 
-## 🤝 貢献のお願い
-
-これは実際の社会的インパクトを持つ **オープンソース** プロジェクトです。さまざまな分野で助けを必要としています：
-
-- **開発者**: 同期アルゴリズムの最適化、新しい AI モジュール。
-- **UX スペシャリスト**: ストレス下や高輝度下での使用に適したインターフェースの改善。
-- **GIS スペシャリスト**: より多くの地形モデルや衛星レイヤーの統合。
-- **データアナリスト**: リスク予測モデルの作成。
-
-### 参加方法
-1. [オンボーディングガイド](docs/PROJECT_CONSOLIDATION_MG_LOCATION.md)を読む。
-2. [実装ギャップ](docs/DEEP_IMPLEMENTATION_GAP_PLAN.md)を確認する。
-3. *Issue* を作成するか、アイデアを *Pull Request* で送信してください。
-
----
-
 ## 📂 プロジェクト構成
 
 ```bash
-├── apps/               # Django アプリケーション (バックエンド)
-├── frontend-react/     # React アプリケーション (フロントエンド)
+├── backend-dotnet/     # ASP.NET Core 10 Web API
+├── frontend-react/     # React 19 + Vite アプリケーション
 ├── agents/             # AI エージェントと自動化
 ├── docs/               # 詳細なドキュメントと計画
 ├── dev.sh              # DX 用の戦術的ツール

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SOSLocation.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6ff7ef0d8d481e86ab176c0afa98d6b9503bee87")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e4bc6dd9b47a0d047bead38043fabc27e4ceb9ab")]
 [assembly: System.Reflection.AssemblyProductAttribute("SOSLocation.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SOSLocation.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

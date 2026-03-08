@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
-    [Route("api/weather")]
+    [Route("api/integrations/weather")]
     public class WeatherController : ControllerBase
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -13,8 +13,8 @@ namespace SOSLocation.API.Controllers
             _httpClientFactory = httpClientFactory;
         }
 
-        [HttpGet]
-        public async Task<ActionResult> GetNowcast([FromQuery] double lat, [FromQuery] double lon)
+        [HttpGet("forecast")]
+        public async Task<ActionResult> GetWeatherForecast([FromQuery] double lat, [FromQuery] double lon)
         {
             var client = _httpClientFactory.CreateClient();
             var url = $"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true";

@@ -37,7 +37,7 @@ namespace SOSLocation.API.Tests
         }
 
         [Fact]
-        public async Task GetActiveAlerts_ReturnsOkWithAlerts()
+        public void GetActiveAlerts_ReturnsOkWithAlerts()
         {
             // Arrange
             var mockAlerts = new List<object> { new { id = "1", title = "Test Alert" } };

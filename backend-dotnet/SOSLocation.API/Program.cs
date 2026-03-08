@@ -43,7 +43,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContext<SOSLocation.API.Data.SOSLocationDbContext>(options =>
+builder.Services.AddDbContext<SOSLocation.Infrastructure.Persistence.SOSLocationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // JWT Authentication Configuration
@@ -56,15 +56,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
+            ValidateIssuer = !builder.Environment.IsDevelopment(),
             ValidIssuers = new[] {
                 builder.Configuration["Keycloak:Authority"],
-                "http://localhost:8080/realms/sos-location" // Support browser local requests
+                "https://localhost:8080/realms/sos-location",
+                "http://localhost:8080/realms/sos-location"
             },
-            ValidateAudience = true,
-            ValidAudience = builder.Configuration["Keycloak:Audience"],
+            ValidateAudience = false,
             ValidateLifetime = true
         };
+
+        if (builder.Environment.IsDevelopment())
+        {
+            options.BackchannelHttpHandler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+        }
     });
 
 builder.Services.AddAuthorization();
@@ -73,7 +81,7 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<SOSLocation.API.Data.SOSLocationDbContext>();
+    var context = scope.ServiceProvider.GetRequiredService<SOSLocation.Infrastructure.Persistence.SOSLocationDbContext>();
     context.Database.Migrate();
 }
 

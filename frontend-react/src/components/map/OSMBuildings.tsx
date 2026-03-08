@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { gisApi } from '../../services/gisApi';
 import { useSimulationStore } from '../../store/useSimulationStore';
 import { projectTo3D } from '../../utils/projection';
 
@@ -14,54 +13,20 @@ interface BuildingData {
 
 interface OSMBuildingsProps {
   clippingPlanes?: THREE.Plane[];
-  overrideBox?: any;
+  data?: BuildingData[];
 }
 
-export const OSMBuildings: React.FC<OSMBuildingsProps> = ({ clippingPlanes, overrideBox }) => {
+export const OSMBuildings: React.FC<OSMBuildingsProps> = ({ clippingPlanes, data }) => {
   const [buildings, setBuildings] = useState<BuildingData[]>([]);
   const store = useSimulationStore();
   
-  const { focalPoint, box: globalSimulationBox, rainIntensity, activeLayers } = store;
-  const simulationBox = overrideBox || globalSimulationBox;
-  const lastFetchedBbox = useRef<string | null>(null);
+  const { rainIntensity, activeLayers } = store;
 
   useEffect(() => {
-    const center = simulationBox ? simulationBox.center : (focalPoint || [-20.91, -42.98]);
-    let activeBbox: string;
-    
-    if (simulationBox) {
-      const latDelta = (simulationBox.size[1] / 2) / 111320;
-      const lonDelta = (simulationBox.size[0] / 2) / (40075000 * Math.cos(simulationBox.center[0] * Math.PI / 180) / 360);
-      activeBbox = `${(simulationBox.center[0] - latDelta).toFixed(4)},${(simulationBox.center[1] - lonDelta).toFixed(4)},${(simulationBox.center[0] + latDelta).toFixed(4)},${(simulationBox.center[1] + lonDelta).toFixed(4)}`;
-    } else {
-      activeBbox = `${(center[0] - 0.01).toFixed(4)},${(center[1] - 0.01).toFixed(4)},${(center[0] + 0.01).toFixed(4)},${(center[1] + 0.01).toFixed(4)}`;
+    if (data) {
+      setBuildings(data);
     }
-
-    if (activeBbox === lastFetchedBbox.current) return;
-    lastFetchedBbox.current = activeBbox;
-
-    const fetchBuildings = async () => {
-      try {
-        const parts = activeBbox.split(',').map(Number);
-        const data = await gisApi.getUrbanFeatures(parts[0], parts[1], parts[2], parts[3]);
-        
-        if (!data || !data.buildings) return;
-
-        const parsedBuildings: BuildingData[] = data.buildings.map((b: any) => ({
-          id: b.id.toString(),
-          points: b.coordinates.map((c: any) => [c[1], c[0]]), // Lon, Lat
-          height: (b.height || b.levels * 3 || (4 + Math.random() * 6)) / 100,
-          type: b.type
-        }));
-        
-        setBuildings(parsedBuildings);
-      } catch (error) {
-        console.error("Error fetching buildings from GIS:", error);
-      }
-    };
-
-    void fetchBuildings();
-  }, [focalPoint, simulationBox]);
+  }, [data]);
 
   const renderedBuildings = useMemo(() => {
     if (buildings.length === 0 || !activeLayers.buildings) return null;

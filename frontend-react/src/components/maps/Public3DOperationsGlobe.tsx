@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, Suspense } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { OrbitControls, Stars } from '@react-three/drei';
+import { OrbitControls, Stars, Text, Float } from '@react-three/drei';
 import { CircleMarker, MapContainer, Polygon, Popup, TileLayer } from 'react-leaflet';
 import * as THREE from 'three';
 import type { OperationsSnapshot } from '../../services/operationsApi';
@@ -38,7 +38,8 @@ function markerColor(kind: MarkerKind): string {
 
 function GlobeMarkerMesh({ marker, index }: { marker: GlobeMarker; index: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const position = useMemo(() => latLngToVector3(marker.lat, marker.lng, GLOBE_RADIUS + 0.055), [marker.lat, marker.lng]);
+  const position = useMemo(() => latLngToVector3(marker.lat, marker.lng, GLOBE_RADIUS + 0.045), [marker.lat, marker.lng]);
+  const labelPosition = useMemo(() => latLngToVector3(marker.lat, marker.lng, GLOBE_RADIUS + 0.22), [marker.lat, marker.lng]);
   const baseScale = marker.kind === 'critical' || marker.kind === 'manual' ? 0.11 : 0.07;
 
   useFrame(({ clock }) => {
@@ -53,14 +54,31 @@ function GlobeMarkerMesh({ marker, index }: { marker: GlobeMarker; index: number
   });
 
   return (
-    <mesh ref={meshRef} position={position}>
-      <coneGeometry args={[0.12, 0.36, 8]} />
-      <meshStandardMaterial
-        color={markerColor(marker.kind)}
-        emissive={markerColor(marker.kind)}
-        emissiveIntensity={marker.kind === 'manual' ? 0.95 : 0.65}
-      />
-    </mesh>
+    <group>
+      <mesh ref={meshRef} position={position}>
+        <coneGeometry args={[0.08, 0.28, 8]} />
+        <meshStandardMaterial
+          color={markerColor(marker.kind)}
+          emissive={markerColor(marker.kind)}
+          emissiveIntensity={marker.kind === 'manual' ? 1.2 : 0.8}
+        />
+      </mesh>
+      
+      {(marker.kind === 'critical' || marker.kind === 'manual') && (
+        <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+          <Text
+            position={labelPosition}
+            fontSize={0.06}
+            color="white"
+            anchorX="center"
+            anchorY="middle"
+            font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZJhjpY0.woff"
+          >
+            {marker.label}
+          </Text>
+        </Float>
+      )}
+    </group>
   );
 }
 
@@ -83,10 +101,12 @@ function GlobeScene({ markers }: { markers: GlobeMarker[] }) {
   const groupRef = useRef<THREE.Group>(null);
 
   const [albedoMap, bumpMap, specularMap] = useLoader(THREE.TextureLoader, [
-    'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
-    'https://threejs.org/examples/textures/planets/earth_bump_2048.jpg',
-    'https://threejs.org/examples/textures/planets/earth_specular_2048.jpg',
-  ]);
+    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/earth_atmos_2048.jpg',
+    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/earth_bump_2048.jpg',
+    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/earth_specular_2048.jpg',
+  ], (loader) => {
+    loader.crossOrigin = 'anonymous';
+  });
 
   useMemo(() => {
     albedoMap.colorSpace = THREE.SRGBColorSpace;
@@ -104,36 +124,47 @@ function GlobeScene({ markers }: { markers: GlobeMarker[] }) {
 
   return (
     <group ref={groupRef}>
-      <ambientLight intensity={0.22} />
-      <hemisphereLight args={['#c7e2ff', '#0b1020', 0.4]} />
-      <directionalLight position={[6, 3, 5]} intensity={1.2} color="#dbeafe" castShadow />
-      <pointLight position={[-8, -3, -6]} intensity={0.7} color="#60a5fa" />
-      <Stars radius={60} depth={30} count={4000} factor={3} saturation={0} fade speed={0.4} />
+      <ambientLight intensity={0.4} />
+      <hemisphereLight args={['#c7e2ff', '#0b1020', 0.6]} />
+      <directionalLight position={[10, 5, 8]} intensity={1.8} color="#ffffff" />
+      <pointLight position={[-10, -5, -8]} intensity={1.2} color="#4578ff" />
+      <Stars radius={100} depth={50} count={6000} factor={4} saturation={0} fade speed={1} />
 
       <mesh>
-        <sphereGeometry args={[GLOBE_RADIUS, 180, 180]} />
+        <sphereGeometry args={[GLOBE_RADIUS, 128, 128]} />
         <meshPhongMaterial
           map={albedoMap}
           bumpMap={bumpMap}
-          bumpScale={0.07}
-          displacementMap={bumpMap}
-          displacementScale={0.03}
+          bumpScale={0.05}
           specularMap={specularMap}
-          specular={new THREE.Color('#93c5fd')}
-          shininess={12}
+          specular={new THREE.Color('#333333')}
+          shininess={5}
+        />
+      </mesh>
+
+      {/* Atmospheric Glow */}
+      <mesh>
+        <sphereGeometry args={[GLOBE_RADIUS + 0.025, 128, 128]} />
+        <meshStandardMaterial
+          color="#38bdf8"
+          transparent
+          opacity={0.15}
+          emissive="#38bdf8"
+          emissiveIntensity={0.2}
+          side={THREE.BackSide}
         />
       </mesh>
 
       <mesh>
-        <sphereGeometry args={[GLOBE_RADIUS + 0.018, 90, 90]} />
-        <meshStandardMaterial color="#7dd3fc" transparent opacity={0.12} emissive="#1d4ed8" emissiveIntensity={0.15} />
+        <sphereGeometry args={[GLOBE_RADIUS + 0.015, 64, 64]} />
+        <meshStandardMaterial color="#7dd3fc" transparent opacity={0.05} emissive="#1d4ed8" emissiveIntensity={0.05} />
       </mesh>
 
       {markers.map((marker, index) => (
         <GlobeMarkerMesh key={marker.id} marker={marker} index={index} />
       ))}
 
-      <OrbitControls enablePan={false} minDistance={2.4} maxDistance={6} />
+      <OrbitControls enablePan={false} minDistance={2.4} maxDistance={6} rotateSpeed={0.8} />
       <CameraRig />
     </group>
   );
@@ -219,7 +250,9 @@ export function Public3DOperationsGlobe({ data }: { data: OperationsSnapshot | n
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 relative">
         <Canvas camera={{ position: [0, 0.2, 4.2], fov: 42 }}>
-          <GlobeScene markers={markers} />
+          <Suspense fallback={null}>
+            <GlobeScene markers={markers} />
+          </Suspense>
         </Canvas>
         
         {/* Interactive Overlay for Coords */}

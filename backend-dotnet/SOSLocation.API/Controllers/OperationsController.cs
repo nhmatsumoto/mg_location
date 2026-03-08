@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SOSLocation.Application.Features.Operations.Queries.GetSnapshot;
 using System.Threading.Tasks;
 
@@ -16,6 +17,7 @@ namespace SOSLocation.API.Controllers
             _mediator = mediator;
         }
 
+        [AllowAnonymous]
         [HttpGet("snapshot")]
         public async Task<IActionResult> GetSnapshot()
         {

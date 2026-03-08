@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -15,27 +16,17 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        '/api/v1/urban': {
-          target: env.VITE_DEV_GIS_TARGET || 'http://localhost:8002',
-          changeOrigin: true,
-        },
-        '/api/v1/terrain': {
-          target: env.VITE_DEV_GIS_TARGET || 'http://localhost:8002',
-          changeOrigin: true,
-        },
-        '/api/v1/alerts': {
-          target: env.VITE_DEV_GIS_TARGET || 'http://localhost:8002',
-          changeOrigin: true,
-        },
         '/api': {
           target: devApiTarget,
           changeOrigin: true,
+          secure: false,
         },
       },
     },
     plugins: [
       tailwindcss(),
       react(),
+      basicSsl(),
     ],
     build: {
       chunkSizeWarningLimit: 1000,

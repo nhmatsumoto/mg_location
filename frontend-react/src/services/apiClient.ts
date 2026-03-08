@@ -89,7 +89,7 @@ export const setApiNotifier = (handler: (title: string, message: string) => void
 };
 
 export const apiClient = axios.create({
-  baseURL: inferApiBaseUrl(),
+  baseURL: import.meta.env.VITE_API_BASE_URL || '',
   timeout: 10000,
   withCredentials: true,
   xsrfCookieName: 'csrftoken',
@@ -108,13 +108,20 @@ export const checkBackendHealth = async () => {
 };
 
 apiClient.interceptors.request.use((config) => {
+  const url = `${config.baseURL ?? ''}${config.url ?? ''}`;
   frontendLogger.debug('API request started', {
     method: config.method,
-    url: `${config.baseURL ?? ''}${config.url ?? ''}`,
+    url: url,
   });
   
+  if (import.meta.env.DEV) {
+    console.debug("API CALL", url);
+  }
+  
   const token = getSessionToken();
-  const isPublicUrl = config.url?.includes('/public/') || config.url?.includes('/api/health');
+  const isPublicUrl = config.url?.includes('/public/') || 
+                     config.url?.includes('/api/health') || 
+                     config.url?.includes('/api/operations/snapshot');
 
   if (token) {
     config.headers = config.headers ?? {};
@@ -177,17 +184,23 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized - Session Expired or Invalid
     if (error.response?.status === 401) {
-      frontendLogger.error('Session expired or unauthorized (401). Triggering logout/redirect.', {
+      frontendLogger.error('Session expired or unauthorized (401).', {
         url: config.url
       });
       
+      // Notify user about session expiration
+      notifyWithCooldown('Sessão Expirada', 'Sua sessão expirou ou é inválida. Redirecionando para novo login...');
+
       localStorage.removeItem('sos_location_token');
       
-      // Only redirect if we're not already on a landing or public page
-      const currentPath = window.location.pathname;
-      if (!currentPath.startsWith('/public') && currentPath !== '/' && currentPath !== '/error') {
-         window.location.href = '/error?code=401';
-      }
+      // Delay to allow user to see notification before redirect
+      setTimeout(() => {
+        const currentPath = window.location.pathname;
+        if (!currentPath.startsWith('/public') && currentPath !== '/' && currentPath !== '/error') {
+           // Redirect to landing which will trigger keycloak.login() via AppRoutes/PrivateLayout
+           window.location.href = '/';
+        }
+      }, 2000);
     }
 
     // Handle 500+ Internal Server Errors

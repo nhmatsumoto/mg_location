@@ -36,12 +36,30 @@ export const TerrainMesh: React.FC<TerrainMeshProps> = ({ clippingPlanes, overri
 
   const [centerX, centerZ] = useMemo(() => projectTo3D(center.lat, center.lon), [center]);
   
-  const mapTextureUrl = 'https://basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png'; // Example map tile
-  const currentTextureUrl = activeLayers.satellite ? (satelliteTextureUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}') : (activeLayers.map ? mapTextureUrl : null);
+  const tileUrl = useMemo(() => {
+    const zoom = 15;
+    const latRad = center.lat * Math.PI / 180;
+    const n = Math.pow(2, zoom);
+    const x = Math.floor((center.lon + 180) / 360 * n);
+    const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+    
+    const mapTextureUrl = 'https://basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png';
+    const satUrl = satelliteTextureUrl || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    
+    let base = activeLayers.satellite ? satUrl : (activeLayers.map ? mapTextureUrl : null);
+    if (!base) return null;
+    
+    // Normalize {z} {x} {y} placeholders
+    return base
+      .replace('{z}', zoom.toString())
+      .replace('{x}', x.toString())
+      .replace('{y}', y.toString())
+      .replace('{y}', y.toString()); // Some APIs use {y} twice or in different order, but usually it's z/x/y or z/y/x
+  }, [center, activeLayers, satelliteTextureUrl]);
 
   const texture = useLoader(
     THREE.TextureLoader, 
-    currentTextureUrl?.replace('{z}/{x}/{y}', '15/18585/11993') || 'https://basemaps.cartocdn.com/rastertiles/voyager_labels_under/0/0/0.png', // Placeholder URL replacement for useLoader
+    tileUrl || 'https://basemaps.cartocdn.com/rastertiles/voyager_labels_under/0/0/0.png',
     (loader) => {
       loader.setCrossOrigin('anonymous');
     }

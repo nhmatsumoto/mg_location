@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SOSLocation.API.Data;
-using SOSLocation.API.Models;
+using SOSLocation.Infrastructure.Persistence;
+using SOSLocation.Domain.Entities;
 
 namespace SOSLocation.API.Controllers
 {

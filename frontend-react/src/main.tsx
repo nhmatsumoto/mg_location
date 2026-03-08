@@ -34,9 +34,15 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 import { initKeycloak } from './lib/keycloak';
+import { LoadingScreen } from './components/common/LoadingScreen';
+
+const root = createRoot(document.getElementById('root')!);
+
+// Render loading screen immediately
+root.render(<LoadingScreen />);
 
 const renderApp = () => {
-  createRoot(document.getElementById('root')!).render(
+  root.render(
     <StrictMode>
       <NotificationsProvider>
         <BrowserRouter>
@@ -47,14 +53,17 @@ const renderApp = () => {
   );
 };
 
+// Start initialization
 initKeycloak(renderApp);
 
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then((registration) => {
       frontendLogger.info('ServiceWorker registered', { scope: registration.scope });
     }).catch((err) => {
-      frontendLogger.error('ServiceWorker registration failed', { error: err });
+      // In development, SW often fails due to self-signed certs or non-secure origins like 0.0.0.0
+      // We log as debug to avoid cluttering the console while still allowing tracing if needed
+      frontendLogger.debug('ServiceWorker registration skipped/failed', { error: err.message });
     });
   });
 }

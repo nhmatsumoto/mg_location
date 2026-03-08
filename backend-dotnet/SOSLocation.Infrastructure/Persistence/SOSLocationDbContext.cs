@@ -34,11 +34,19 @@ namespace SOSLocation.Infrastructure.Persistence
         public DbSet<Geolocation> Geolocations { get; set; } = null!;
         public DbSet<VisitedLocation> VisitedLocations { get; set; } = null!;
         public DbSet<FoundPeople> FoundPeople { get; set; } = null!;
+        public DbSet<MissingPerson> MissingPersons { get; set; } = null!;
+        public DbSet<CollapseReport> CollapseReports { get; set; } = null!;
+        public DbSet<MapAnnotation> MapAnnotations { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(SOSLocationDbContext).Assembly);
+
+            modelBuilder.Entity<MissingPerson>().HasIndex(m => m.ExternalId).IsUnique();
+            modelBuilder.Entity<MapAnnotation>().HasIndex(m => m.ExternalId).IsUnique();
+            modelBuilder.Entity<CollapseReport>().HasIndex(c => c.ExternalId).IsUnique();
+            modelBuilder.Entity<DisasterEvent>().HasIndex(d => new { d.Provider, d.ProviderEventId }).IsUnique();
         }
 
         public override int SaveChanges()

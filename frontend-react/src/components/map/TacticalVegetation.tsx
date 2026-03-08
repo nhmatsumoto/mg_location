@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { fetchOSMData } from '../../utils/osmFetcher';
 import { useSimulationStore } from '../../store/useSimulationStore';
 import { projectTo3D } from '../../utils/projection';
 
@@ -11,68 +10,21 @@ interface VegetationData {
 
 interface TacticalVegetationProps {
   clippingPlanes?: THREE.Plane[];
-  overrideBox?: any;
+  data?: VegetationData[];
 }
 
-export const TacticalVegetation: React.FC<TacticalVegetationProps> = ({ clippingPlanes, overrideBox }) => {
+export const TacticalVegetation: React.FC<TacticalVegetationProps> = ({ clippingPlanes, data }) => {
   const [forests, setForests] = useState<VegetationData[]>([]);
   const trunkRef = useRef<THREE.InstancedMesh>(null);
   const foliageRef = useRef<THREE.InstancedMesh>(null);
   const store = useSimulationStore();
-  const { focalPoint, box: globalSimulationBox, rainIntensity, activeLayers } = store;
-  const simulationBox = overrideBox || globalSimulationBox;
-  const lastFetchedBbox = useRef<string | null>(null);
+  const { rainIntensity, activeLayers } = store;
 
   useEffect(() => {
-    const center = simulationBox ? simulationBox.center : (focalPoint || [-20.91, -42.98]);
-    let activeBbox: string;
-    
-    if (simulationBox) {
-      const latDelta = (simulationBox.size[1] / 2) / 111320;
-      const lonDelta = (simulationBox.size[0] / 2) / (40075000 * Math.cos(simulationBox.center[0] * Math.PI / 180) / 360);
-      activeBbox = `${(simulationBox.center[0] - latDelta).toFixed(4)},${(simulationBox.center[1] - lonDelta).toFixed(4)},${(simulationBox.center[0] + latDelta).toFixed(4)},${(simulationBox.center[1] + lonDelta).toFixed(4)}`;
-    } else {
-      activeBbox = `${(center[0] - 0.01).toFixed(4)},${(center[1] - 0.01).toFixed(4)},${(center[0] + 0.01).toFixed(4)},${(center[1] + 0.01).toFixed(4)}`;
+    if (data) {
+      setForests(data);
     }
-
-    if (activeBbox === lastFetchedBbox.current) return;
-    lastFetchedBbox.current = activeBbox;
-
-    const fetchVegetation = async () => {
-      try {
-        const query = `
-          [out:json][timeout:25];
-          (
-            way["natural"="forest"](${activeBbox});
-            way["landuse"="forest"](${activeBbox});
-            way["natural"="wood"](${activeBbox});
-          );
-          out body;
-          >;
-          out skel qt;
-        `;
-        const data = await fetchOSMData(query);
-        
-        const nodes: Record<string, [number, number]> = {};
-        data.elements.filter((el: any) => el.type === 'node').forEach((node: any) => {
-          nodes[node.id] = [node.lon, node.lat];
-        });
-
-        const parsedForests: VegetationData[] = data.elements
-          .filter((el: any) => el.type === 'way' && el.nodes)
-          .map((way: any) => ({
-            id: way.id,
-            points: way.nodes.map((nodeId: string) => nodes[nodeId]).filter(Boolean)
-          }));
-        
-        setForests(parsedForests);
-      } catch (error) {
-        console.error("OSM Vegetation Fetch Error:", error);
-      }
-    };
-
-    void fetchVegetation();
-  }, [focalPoint, simulationBox]);
+  }, [data]);
 
   const treeMatrices = useMemo(() => {
     const matrices: THREE.Matrix4[] = [];

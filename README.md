@@ -66,65 +66,23 @@ graph TD
 
 ## 🚀 How It Works
 
-### 1. 3D Situation Room (v1.2)
+### 1. 3D Situation Room (v2.0)
 Immersive tactical environment using **Three.js** to visualize events as pulsing 3D beacons. Provides depth awareness and spatial clustering of disasters.
 
-### 2. Tactical Analysis (Scatter Plot 2.0)
+### 2. Standardized API & Health Monitoring
+Robust integration with **ASPNET Core v10**. Includes specialized endpoints for high-availability monitoring:
+- `GET /api/health`: Provides service status and uptime verification.
+
+### 3. Tactical Analysis (Scatter Plot 2.0)
 Advanced temporal analysis integrated with the map. Allows identifying patterns and severity trends over time across different providers (GDACS, USGS, local).
-
-### 3. Precision Point Capture
-Tactical crosshair system for high-accuracy coordinate marking. Integrated with custom semantic icons (Lucide) for immediate visual classification of field reports.
-
-### 4. Search & Rescue Operations
-Tactical module for task assignment, search area demarcation, and tracking teams in the field.
-
----
-
-## 🛠️ Technology Stack
-
-- **Frontend**: React 19, Vite, Tailwind CSS, **@react-three/fiber** (3D Environment).
-- **Backend**: .NET 10, ASP.NET Core Web API, EF Core (Npgsql).
-- **Data**: Postgres + Redis (Central) | IndexedDB (Local/App).
-- **Protocols**: MessagePack, Zstandard, RESTful Events.
-- **SSO/Auth**: Keycloak (Enterprise-level identity management).
-
----
-
-## 📉 Operation Flow
-
-```mermaid
-sequenceDiagram
-    participant User as Field Officer
-    participant App as PWA (Offline)
-    participant Hub as Edge Hub
-    participant Cloud as Central Cloud
-    
-    User->>App: Create Rescue Task
-    App->>App: Store in IndexedDB (Outbox)
-    Note over App: No Internet
-    App->>Hub: Local Discovery (WiFi/BLE)
-    App->>Hub: Push Binary Events
-    Hub->>Cloud: Forward Sync (when backhaul active)
-    Cloud->>Cloud: Replicate to Event Store
-    Cloud-->>Hub: Ack
-    Hub-->>App: Sync Complete
-```
-
----
-
-## 💻 Getting Started
-
-### Prerequisites
-- Docker & Docker Compose
-- Node.js / Bun (optional for local)
-- Python 3.11+ (optional for local)
-
+...
 ### Quick Start (Docker)
 ```bash
 ./dev.sh up
 ```
-- **App**: `http://localhost:8088`
-- **API**: `http://localhost:8001`
+- **App**: `http://localhost:8088` (Frontend React)
+- **API**: `http://localhost:8001` (.NET Backend)
+- **Health**: `http://localhost:8001/api/health`
 
 ### Seed Data (Important)
 To see the system populated with flood simulation data in Ubá (MG, Brazil):
@@ -134,27 +92,11 @@ To see the system populated with flood simulation data in Ubá (MG, Brazil):
 
 ---
 
-## 🤝 Invite for Contribution
-
-This is an **Open Source** project with real social impact. We need help in several areas:
-
-- **Developers**: Optimization of synchronization algorithms, new AI modules.
-- **UX Specialists**: Improving the interface for use under stress and high brightness.
-- **GIS Specialists**: Integration of more terrain models and satellite layers.
-- **Data Analysts**: Creation of predictive risk models.
-
-### How to join?
-1. Read our [Onboarding Guide](docs/PROJECT_CONSOLIDATION_SOS_LOCATION.md).
-2. Explore the [Implementation Gaps](docs/DEEP_IMPLEMENTATION_GAP_PLAN.md).
-3. Open an *Issue* or submit a *Pull Request* with your ideas.
-
----
-
 ## 📂 Project Structure
 
 ```bash
-├── apps/               # Django Applications (Backend)
-├── frontend-react/     # React Application (Frontend)
+├── backend-dotnet/     # ASP.NET Core 10 Web API
+├── frontend-react/     # React 19 + Vite Application
 ├── agents/             # AI Agents & Automation
 ├── docs/               # Deep documentation & plans
 ├── dev.sh              # Tactical pocket knife for DX
