@@ -71,10 +71,10 @@ namespace SOSLocation.API.Controllers
         [AllowAnonymous]
         [HttpGet("alerts/active")]
         [OutputCache(PolicyName = "Cache5Min")]
-        public ActionResult<Result<ListResponseDto<ExternalAlertDto>>> GetActiveAlerts()
+        public ActionResult<Result<ListResponseDto<ExternalAlert>>> GetActiveAlerts()
         {
             var alerts = _alertsService.GetActiveAlerts().ToList();
-            return Ok(Result<ListResponseDto<ExternalAlertDto>>.Success(new ListResponseDto<ExternalAlertDto>
+            return Ok(Result<ListResponseDto<ExternalAlert>>.Success(new ListResponseDto<ExternalAlert>
             {
                 Items = alerts,
                 TotalCount = alerts.Count

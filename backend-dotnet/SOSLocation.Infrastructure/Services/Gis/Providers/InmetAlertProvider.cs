@@ -25,10 +25,10 @@ namespace SOSLocation.Infrastructure.Services.Gis.Providers
             _inmetUrl = configuration["ExternalIntegrations:InmetUrl"] ?? "https://apiprevmet3.inmet.gov.br/avisos/ativos";
         }
 
-        public async Task<IEnumerable<ExternalAlertDto>> FetchAlertsAsync()
+        public async Task<IEnumerable<ExternalAlert>> FetchAlertsAsync()
         {
             _logger.LogInformation("Fetching INMET alerts from {url}", _inmetUrl);
-            var alerts = new List<ExternalAlertDto>();
+            var alerts = new List<ExternalAlert>();
 
             try
             {
@@ -55,16 +55,16 @@ namespace SOSLocation.Infrastructure.Services.Gis.Providers
             return alerts;
         }
 
-        private List<ExternalAlertDto> ParseInmetSection(JsonElement section)
+        private List<ExternalAlert> ParseInmetSection(JsonElement section)
         {
-            var result = new List<ExternalAlertDto>();
+            var result = new List<ExternalAlert>();
             if (section.ValueKind != JsonValueKind.Array) return result;
 
             foreach (var item in section.EnumerateArray())
             {
                 try
                 {
-                    result.Add(new ExternalAlertDto
+                    result.Add(new ExternalAlert
                     {
                         Id = item.TryGetProperty("aviso_id", out var id) ? id.GetString() ?? Guid.NewGuid().ToString() : Guid.NewGuid().ToString(),
                         Title = item.TryGetProperty("titulo", out var t) ? t.GetString() ?? "Alerta de Risco" : "Alerta de Risco",

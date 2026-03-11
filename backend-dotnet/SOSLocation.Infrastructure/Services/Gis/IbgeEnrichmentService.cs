@@ -11,7 +11,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
 {
     public interface IIbgeEnrichmentService
     {
-        Task EnrichAlertsAsync(IEnumerable<ExternalAlertDto> alerts);
+        Task EnrichAlertsAsync(IEnumerable<ExternalAlert> alerts);
     }
 
     public class IbgeEnrichmentService : IIbgeEnrichmentService
@@ -29,7 +29,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
             _ibgeApiUrl = configuration["ExternalIntegrations:IbgeApiUrl"] ?? "https://servicodados.ibge.gov.br/api/v1/localidades/municipios";
         }
 
-        public async Task EnrichAlertsAsync(IEnumerable<ExternalAlertDto> alerts)
+        public async Task EnrichAlertsAsync(IEnumerable<ExternalAlert> alerts)
         {
             foreach (var alert in alerts)
             {
@@ -60,7 +60,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
             await Task.CompletedTask;
         }
 
-        private string? ExtractCityName(ExternalAlertDto alert)
+        private string? ExtractCityName(ExternalAlert alert)
         {
             // CEMADEN titles usually have "Município: NM"
             if (alert.Source == "CEMADEN" && alert.Title.Contains(": "))

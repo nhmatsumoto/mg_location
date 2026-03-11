@@ -15,12 +15,12 @@ namespace SOSLocation.Domain.Interfaces
     public interface IAlertsService
     {
         Task PollAlertsAsync();
-        IEnumerable<ExternalAlertDto> GetActiveAlerts();
+        IEnumerable<ExternalAlert> GetActiveAlerts();
     }
 
     public interface IAlertProvider
     {
         string Name { get; }
-        Task<IEnumerable<ExternalAlertDto>> FetchAlertsAsync();
+        Task<IEnumerable<ExternalAlert>> FetchAlertsAsync();
     }
 }

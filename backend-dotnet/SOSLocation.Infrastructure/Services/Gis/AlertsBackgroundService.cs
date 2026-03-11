@@ -15,7 +15,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
         private readonly ILogger<AlertsBackgroundService> _logger;
         private readonly IEnumerable<IAlertProvider> _providers;
         private readonly IIbgeEnrichmentService _enrichmentService;
-        private readonly List<ExternalAlertDto> _activeAlerts = new();
+        private readonly List<ExternalAlert> _activeAlerts = new();
         private const int PollIntervalMinutes = 30;
 
         public AlertsBackgroundService(
@@ -42,7 +42,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
         {
             _logger.LogInformation("Polling {count} providers for active disaster alerts...", _providers.Count());
 
-            var allAlerts = new List<ExternalAlertDto>();
+            var allAlerts = new List<ExternalAlert>();
 
             foreach (var provider in _providers)
             {
@@ -59,7 +59,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
             }
 
             // Emergency Seeding for requested critical regions
-            allAlerts.Add(new ExternalAlertDto
+            allAlerts.Add(new ExternalAlert
             {
                 Id = "seed-uba-001",
                 Title = "Ubá: Emergência por Alagamento",
@@ -72,7 +72,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
                 SourceUrl = "https://www.uba.mg.gov.br/"
             });
 
-            allAlerts.Add(new ExternalAlertDto
+            allAlerts.Add(new ExternalAlert
             {
                 Id = "seed-jf-001",
                 Title = "Juiz de Fora: Alerta de Inundação",
@@ -104,7 +104,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
             _logger.LogInformation("Total active alerts available: {count}", allAlerts.Count);
         }
 
-        public IEnumerable<ExternalAlertDto> GetActiveAlerts()
+        public IEnumerable<ExternalAlert> GetActiveAlerts()
         {
             lock (_activeAlerts)
             {

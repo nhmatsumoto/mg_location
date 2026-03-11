@@ -26,10 +26,10 @@ namespace SOSLocation.Infrastructure.Services.Gis.Providers
             _defesaCivilUrl = configuration["ExternalIntegrations:DefesaCivilUrl"] ?? "https://alertas24h.com.br/rss.xml";
         }
 
-        public async Task<IEnumerable<ExternalAlertDto>> FetchAlertsAsync()
+        public async Task<IEnumerable<ExternalAlert>> FetchAlertsAsync()
         {
             _logger.LogInformation("Fetching Defesa Civil alerts from {url}", _defesaCivilUrl);
-            var alerts = new List<ExternalAlertDto>();
+            var alerts = new List<ExternalAlert>();
 
             try
             {
@@ -52,7 +52,7 @@ namespace SOSLocation.Infrastructure.Services.Gis.Providers
 
                         DateTime.TryParse(pubDateStr, out var timestamp);
 
-                        alerts.Add(new ExternalAlertDto
+                        alerts.Add(new ExternalAlert
                         {
                             Id = Guid.NewGuid().ToString(),
                             Title = title,
