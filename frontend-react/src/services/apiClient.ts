@@ -168,10 +168,10 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Result Pattern unwrapping
+    // Result Pattern unwrapping (aligned with .NET Result<T>)
     if (response.data && typeof response.data === 'object' && 'isSuccess' in response.data) {
       if (response.data.isSuccess) {
-         response.data = response.data.value;
+         response.data = response.data.data;
       } else {
          return Promise.reject(new Error(response.data.error || 'Server error result'));
       }

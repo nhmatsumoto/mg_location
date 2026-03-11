@@ -11,6 +11,9 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ de
 const PublicIncidentDashboardPage = lazy(() => import('./pages/PublicIncidentDashboardPage').then((m) => ({ default: m.PublicIncidentDashboardPage })));
 const SplatScenePage = lazy(() => import('./pages/SplatScenePage').then((m) => ({ default: m.SplatScenePage })));
 const VolunteerDashboardPage = lazy(() => import('./pages/VolunteerDashboardPage').then((m) => ({ default: m.VolunteerDashboardPage })));
+const LogisticsPage = lazy(() => import('./pages/LogisticsPage.tsx').then((m) => ({ default: m.LogisticsPage })));
+const RiskAssessmentPage = lazy(() => import('./pages/RiskAssessmentPage.tsx').then((m) => ({ default: m.RiskAssessmentPage })));
+const SupportDashboardPage = lazy(() => import('./pages/SupportDashboardPage.tsx').then((m) => ({ default: m.SupportDashboardPage })));
 function PrivateLayout() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const location = useLocation();
@@ -45,6 +48,9 @@ function PrivateLayout() {
           <Route path="/app/splat-scenes/:id" element={<SplatScenePage />} />
           <Route path="/app/splat-scenes" element={<SplatScenePage />} />
           <Route path="/app/volunteer" element={<VolunteerDashboardPage />} />
+          <Route path="/app/logistics" element={<LogisticsPage />} />
+          <Route path="/app/risk-assessment" element={<RiskAssessmentPage />} />
+          <Route path="/app/support" element={<SupportDashboardPage />} />
           <Route path="*" element={<Navigate to="/app/sos" replace />} />
         </Routes>
       </Suspense>

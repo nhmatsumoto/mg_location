@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, BarChart3, FileWarning, Layers3, LifeBuoy, Radar, Search, Settings, Users, PlugZap, Globe, Heart } from 'lucide-react';
+import { Activity, AlertTriangle, BarChart3, FileWarning, Layers3, LifeBuoy, Radar, Search, Settings, Users, PlugZap, Globe, Heart, Truck, ShieldAlert, Coins } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const navItems = [
@@ -14,6 +14,9 @@ const navItems = [
   { to: '/app/integrations', label: 'Integrações', icon: PlugZap },
   { to: '/app/global-disasters', label: 'Eventos Globais', icon: Globe },
   { to: '/app/volunteer', label: 'Dashboard Voluntário', icon: Heart },
+  { to: '/app/logistics', label: 'Logística', icon: Truck },
+  { to: '/app/risk-assessment', label: 'Análise de Risco', icon: ShieldAlert },
+  { to: '/app/support', label: 'Apoio Financeiro', icon: Coins },
   { to: '/public/transparency', label: 'Transparência Pública', icon: Globe },
   { to: '/app/settings', label: 'Configurações', icon: Settings },
 ];
