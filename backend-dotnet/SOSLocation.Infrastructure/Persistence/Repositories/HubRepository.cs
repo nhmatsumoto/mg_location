@@ -1,9 +1,10 @@
 using Dapper;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Domain.Tracking;
 using SOSLocation.Domain.Interfaces;
 using SOSLocation.Infrastructure.Persistence.Dapper;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System;
 
 namespace SOSLocation.Infrastructure.Persistence.Repositories
 {

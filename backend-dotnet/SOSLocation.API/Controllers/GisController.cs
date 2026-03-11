@@ -1,9 +1,18 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SOSLocation.Domain.Interfaces;
+using SOSLocation.Domain.Common;
+using SOSLocation.Application.DTOs.Gis;
+using SOSLocation.Application.DTOs.External;
+using SOSLocation.Application.DTOs.Common;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Linq;
+
+using System.Linq;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace SOSLocation.API.Controllers
 {
@@ -22,61 +31,56 @@ namespace SOSLocation.API.Controllers
 
         [AllowAnonymous]
         [HttpPost("terrain/dem")]
-        public async Task<IActionResult> GetDigitalElevationModel([FromBody] DemRequest req)
+        [OutputCache(PolicyName = "CacheLongLived")]
+        public async Task<ActionResult<Result<TerrainElevationDto>>> GetDigitalElevationModel([FromBody] DemRequest req)
         {
             var grid = await _gisService.FetchElevationGridAsync(req.MinLat, req.MinLon, req.MaxLat, req.MaxLon, req.Resolution);
 
-            return Ok(new
+            return Ok(Result<TerrainElevationDto>.Success(new TerrainElevationDto
             {
-                status = "success",
-                metadata = new
-                {
-                    source = "SRTM GL3 / OpenTopography",
-                    resolution = req.Resolution
-                },
-                data = grid
-            });
+                Resolution = req.Resolution,
+                Grid = grid
+            }));
         }
 
         [AllowAnonymous]
         [HttpPost("urban/features")]
-        public async Task<IActionResult> GetUrbanFeatures([FromBody] UrbanRequest req)
+        [OutputCache(PolicyName = "CacheLongLived")]
+        public async Task<ActionResult<Result<object>>> GetUrbanFeatures([FromBody] UrbanRequest req)
         {
             var data = await _gisService.FetchUrbanFeaturesAsync(req.MinLat, req.MinLon, req.MaxLat, req.MaxLon);
-            return Ok(new
-            {
-                status = "success",
-                data = data
-            });
+            return Ok(Result<object>.Success(data));
         }
 
         [AllowAnonymous]
         [HttpPost("soil/data")]
-        public async Task<IActionResult> GetSoilData([FromBody] GisAreaRequest req)
+        [OutputCache(PolicyName = "CacheLongLived")]
+        public async Task<ActionResult<Result<object>>> GetSoilData([FromBody] GisAreaRequest req)
         {
             var data = await _gisService.FetchSoilDataAsync(req.MinLat, req.MinLon, req.MaxLat, req.MaxLon);
-            return Ok(new { status = "success", data = data });
+            return Ok(Result<object>.Success(data));
         }
 
         [AllowAnonymous]
         [HttpPost("vegetation/data")]
-        public async Task<IActionResult> GetVegetationData([FromBody] GisAreaRequest req)
+        [OutputCache(PolicyName = "CacheLongLived")]
+        public async Task<ActionResult<Result<object>>> GetVegetationData([FromBody] GisAreaRequest req)
         {
             var data = await _gisService.FetchVegetationDataAsync(req.MinLat, req.MinLon, req.MaxLat, req.MaxLon);
-            return Ok(new { status = "success", data = data });
+            return Ok(Result<object>.Success(data));
         }
 
         [AllowAnonymous]
         [HttpGet("alerts/active")]
-        public IActionResult GetActiveAlerts()
+        [OutputCache(PolicyName = "Cache5Min")]
+        public ActionResult<Result<ListResponseDto<ExternalAlertDto>>> GetActiveAlerts()
         {
-            var alerts = _alertsService.GetActiveAlerts();
-            return Ok(new
+            var alerts = _alertsService.GetActiveAlerts().ToList();
+            return Ok(Result<ListResponseDto<ExternalAlertDto>>.Success(new ListResponseDto<ExternalAlertDto>
             {
-                status = "success",
-                count = 0, // Placeholder for count
-                data = alerts
-            });
+                Items = alerts,
+                TotalCount = alerts.Count
+            }));
         }
     }
 

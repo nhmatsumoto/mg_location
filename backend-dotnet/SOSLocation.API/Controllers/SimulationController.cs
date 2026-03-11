@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using SOSLocation.Infrastructure.Persistence;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Domain.Common;
+using SOSLocation.Application.DTOs.Common;
+using SOSLocation.Application.DTOs.Simulation;
+using System.Collections.Generic;
 
 namespace SOSLocation.API.Controllers
 {
@@ -16,16 +19,24 @@ namespace SOSLocation.API.Controllers
         }
 
         [HttpGet("hotspots")]
-        public ActionResult GetHotspots()
+        public ActionResult<Result<List<HotspotDto>>> GetHotspots()
         {
             // Placeholder for simulation logic
-            return Ok(new[] { new { id = 1, lat = -20.12, lng = -44.12, intensity = 0.8 } });
+            var hotspots = new List<HotspotDto> 
+            { 
+                new HotspotDto { Id = 1, Lat = -20.12, Lng = -44.12, Intensity = 0.8 } 
+            };
+            return Ok(Result<List<HotspotDto>>.Success(hotspots));
         }
 
         [HttpPost("easy")]
-        public ActionResult EasySimulation([FromBody] object parameters)
+        public ActionResult<Result<ActionResponseDto>> EasySimulation([FromBody] object parameters)
         {
-            return Ok(new { status = "success", message = "Simulation started" });
+            return Ok(Result<ActionResponseDto>.Success(new ActionResponseDto 
+            { 
+                Success = true, 
+                Message = "Simulation started" 
+            }));
         }
     }
 }

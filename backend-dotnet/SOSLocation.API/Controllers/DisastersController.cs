@@ -1,9 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
-using SOSLocation.Domain.Entities;
-using SOSLocation.Domain.Interfaces;
-using System;
+using SOSLocation.Domain.Incidents;
+using SOSLocation.Domain.Common;
+using SOSLocation.Application.DTOs.Common;
+using SOSLocation.Application.DTOs.Disasters;
+using SOSLocation.Infrastructure.Persistence;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace SOSLocation.API.Controllers
 {
@@ -11,15 +15,16 @@ namespace SOSLocation.API.Controllers
     [Route("api/disasters")]
     public class DisastersController : ControllerBase
     {
-        private readonly SOSLocation.Infrastructure.Persistence.SOSLocationDbContext _context;
+        private readonly SOSLocationDbContext _context;
 
-        public DisastersController(SOSLocation.Infrastructure.Persistence.SOSLocationDbContext context)
+        public DisastersController(SOSLocationDbContext context)
         {
             _context = context;
         }
 
         [HttpGet("events")]
-        public IActionResult GetEvents([FromQuery] string? bbox, [FromQuery] string? types)
+        [OutputCache(PolicyName = "Cache1Min")]
+        public ActionResult<Result<ListResponseDto<DisasterEvent>>> GetEvents([FromQuery] string? bbox, [FromQuery] string? types)
         {
             var query = _context.DisasterEvents.AsQueryable();
 
@@ -29,26 +34,46 @@ namespace SOSLocation.API.Controllers
                 query = query.Where(e => typesList.Contains(e.EventType));
             }
 
-            // Simplified mapping
-            return Ok(new { items = query.OrderByDescending(e => e.StartAt).Take(100).ToList() });
+            var events = query.OrderByDescending(e => e.StartAt).Take(100).ToList();
+            
+            return Ok(Result<ListResponseDto<DisasterEvent>>.Success(new ListResponseDto<DisasterEvent> 
+            { 
+                Items = events,
+                TotalCount = events.Count
+            }));
         }
 
         [HttpGet("stats/by-country")]
-        public IActionResult GetStatsByCountry()
+        [OutputCache(PolicyName = "Cache5Min")]
+        public ActionResult<Result<ListResponseDto<DisasterStatsDto>>> GetStatsByCountry()
         {
             var stats = _context.DisasterEvents
                 .GroupBy(e => new { e.CountryCode, e.CountryName })
-                .Select(g => new { CountryCode = g.Key.CountryCode, CountryName = g.Key.CountryName, Count = g.Count(), MaxSeverity = g.Max(e => e.Severity) })
+                .Select(g => new DisasterStatsDto 
+                { 
+                    CountryCode = g.Key.CountryCode, 
+                    CountryName = g.Key.CountryName, 
+                    Count = g.Count(), 
+                    MaxSeverity = g.Max(e => e.Severity) 
+                })
                 .OrderByDescending(x => x.Count)
                 .ToList();
 
-            return Ok(new { items = stats });
+            return Ok(Result<ListResponseDto<DisasterStatsDto>>.Success(new ListResponseDto<DisasterStatsDto>
+            {
+                Items = stats,
+                TotalCount = stats.Count
+            }));
         }
 
         [HttpPost("crawl")]
-        public IActionResult TriggerCrawl()
+        public ActionResult<Result<ActionResponseDto>> TriggerCrawl()
         {
-            return Ok(new { ok = true, message = "Simulation: Crawl triggered." });
+            return Ok(Result<ActionResponseDto>.Success(new ActionResponseDto 
+            { 
+                Success = true, 
+                Message = "Simulation: Crawl triggered." 
+            }));
         }
     }
 }

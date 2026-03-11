@@ -2,10 +2,14 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using SOSLocation.API.Extensions;
 using SOSLocation.API.Middleware;
+using SOSLocation.API.Filters;
+using SOSLocation.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.AspNetCore.OutputCaching;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,10 +28,17 @@ builder.Services.AddControllers(options =>
         .RequireAuthenticatedUser()
         .Build();
     options.Filters.Add(new AuthorizeFilter(policy));
-    options.Filters.Add<SOSLocation.API.Filters.ResultActionFilter>();
+    options.Filters.Add<ResultActionFilter>();
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddOutputCache(options =>
+{
+    options.AddPolicy("Cache1Min", builder => builder.Expire(TimeSpan.FromMinutes(1)));
+    options.AddPolicy("Cache5Min", builder => builder.Expire(TimeSpan.FromMinutes(5)));
+    options.AddPolicy("CacheLongLived", builder => builder.Expire(TimeSpan.FromMinutes(10)));
+});
 
 // Clean Architecture DI Extensions
 builder.Services.AddApplication();
@@ -45,7 +56,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContext<SOSLocation.Infrastructure.Persistence.SOSLocationDbContext>(options =>
+builder.Services.AddDbContext<SOSLocationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // JWT Authentication Configuration
@@ -83,7 +94,7 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<SOSLocation.Infrastructure.Persistence.SOSLocationDbContext>();
+    var context = scope.ServiceProvider.GetRequiredService<SOSLocationDbContext>();
     context.Database.Migrate();
 }
 
@@ -98,6 +109,8 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseCors("SOSPolicy");
+
+app.UseOutputCache();
 
 app.UseAuthentication();
 app.UseAuthorization();

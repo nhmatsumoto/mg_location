@@ -1,9 +1,9 @@
 using MediatR;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Domain.Missions;
 using SOSLocation.Domain.Interfaces;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System;
 
 namespace SOSLocation.Application.Features.Rescue.Commands.CreateSearchArea
 {
@@ -20,11 +20,10 @@ namespace SOSLocation.Application.Features.Rescue.Commands.CreateSearchArea
         {
             var area = new SearchArea
             {
-                ExternalId = Guid.NewGuid(),
                 IncidentId = request.IncidentId,
                 Name = request.Name,
                 GeometryJson = request.GeometryJson,
-                Status = request.Status
+                Status = "Pending"
             };
 
             await _repository.AddAsync(area);

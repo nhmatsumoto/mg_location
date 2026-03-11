@@ -1,4 +1,4 @@
-using SOSLocation.Domain.Entities;
+using SOSLocation.Application.DTOs.External;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -15,12 +15,12 @@ namespace SOSLocation.Domain.Interfaces
     public interface IAlertsService
     {
         Task PollAlertsAsync();
-        IEnumerable<AlertDto> GetActiveAlerts();
+        IEnumerable<ExternalAlertDto> GetActiveAlerts();
     }
 
     public interface IAlertProvider
     {
         string Name { get; }
-        Task<IEnumerable<AlertDto>> FetchAlertsAsync();
+        Task<IEnumerable<ExternalAlertDto>> FetchAlertsAsync();
     }
 }

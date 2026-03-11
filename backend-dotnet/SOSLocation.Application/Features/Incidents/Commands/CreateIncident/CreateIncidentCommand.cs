@@ -1,7 +1,7 @@
 using FluentValidation;
 using MediatR;
 using SOSLocation.Application.DTOs.Incidents;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Domain.Incidents;
 using SOSLocation.Domain.Interfaces;
 using System;
 using System.Threading;

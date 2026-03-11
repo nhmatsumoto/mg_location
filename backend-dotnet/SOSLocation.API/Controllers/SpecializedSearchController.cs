@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Domain.Missions;
 using SOSLocation.Domain.Interfaces;
 using System.Threading.Tasks;
+using System;
 
 namespace SOSLocation.API.Controllers
 {

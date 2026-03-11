@@ -1,12 +1,14 @@
 using MediatR;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Domain.Missions;
 using SOSLocation.Domain.Interfaces;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System;
 
 namespace SOSLocation.Application.Features.Logistics.Commands.CreateSupply
 {
+    public record CreateSupplyCommand(string Item, int Quantity, string Unit, string Origin, string Destination, string Priority) : IRequest<Guid>;
+
     public class CreateSupplyCommandHandler : IRequestHandler<CreateSupplyCommand, Guid>
     {
         private readonly ISupplyLogisticsRepository _repository;
@@ -20,14 +22,13 @@ namespace SOSLocation.Application.Features.Logistics.Commands.CreateSupply
         {
             var supply = new SupplyLogistics
             {
-                ExternalId = $"LG-{Guid.NewGuid().ToString().Substring(0, 8)}",
                 Item = request.Item,
-                Quantity = (int)request.Quantity,
+                Quantity = request.Quantity,
                 Unit = request.Unit,
                 Origin = request.Origin,
                 Destination = request.Destination,
-                Status = request.Status,
-                Priority = request.Priority
+                Priority = request.Priority,
+                Status = "planejado"
             };
 
             await _repository.AddAsync(supply);

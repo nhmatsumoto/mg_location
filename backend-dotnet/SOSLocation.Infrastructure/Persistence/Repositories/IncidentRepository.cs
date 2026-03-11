@@ -1,9 +1,11 @@
 using Dapper;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Domain.Incidents;
 using SOSLocation.Domain.Interfaces;
 using SOSLocation.Infrastructure.Persistence.Dapper;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
+using System;
 
 namespace SOSLocation.Infrastructure.Persistence.Repositories
 {

@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Application.DTOs.External;
 using SOSLocation.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -25,10 +25,10 @@ namespace SOSLocation.Infrastructure.Services.Gis.Providers
             _inmetUrl = configuration["ExternalIntegrations:InmetUrl"] ?? "https://apiprevmet3.inmet.gov.br/avisos/ativos";
         }
 
-        public async Task<IEnumerable<AlertDto>> FetchAlertsAsync()
+        public async Task<IEnumerable<ExternalAlertDto>> FetchAlertsAsync()
         {
             _logger.LogInformation("Fetching INMET alerts from {url}", _inmetUrl);
-            var alerts = new List<AlertDto>();
+            var alerts = new List<ExternalAlertDto>();
 
             try
             {
@@ -55,16 +55,16 @@ namespace SOSLocation.Infrastructure.Services.Gis.Providers
             return alerts;
         }
 
-        private List<AlertDto> ParseInmetSection(JsonElement section)
+        private List<ExternalAlertDto> ParseInmetSection(JsonElement section)
         {
-            var result = new List<AlertDto>();
+            var result = new List<ExternalAlertDto>();
             if (section.ValueKind != JsonValueKind.Array) return result;
 
             foreach (var item in section.EnumerateArray())
             {
                 try
                 {
-                    result.Add(new AlertDto
+                    result.Add(new ExternalAlertDto
                     {
                         Id = item.TryGetProperty("aviso_id", out var id) ? id.GetString() ?? Guid.NewGuid().ToString() : Guid.NewGuid().ToString(),
                         Title = item.TryGetProperty("titulo", out var t) ? t.GetString() ?? "Alerta de Risco" : "Alerta de Risco",

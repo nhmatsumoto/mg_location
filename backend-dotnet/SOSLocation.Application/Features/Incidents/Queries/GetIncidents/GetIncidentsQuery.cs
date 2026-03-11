@@ -1,6 +1,7 @@
 using MediatR;
 using SOSLocation.Application.DTOs.Incidents;
 using SOSLocation.Domain.Interfaces;
+using SOSLocation.Domain.Incidents;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;

@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using SOSLocation.Domain.Common;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Domain.Shared;
+using SOSLocation.Domain.Incidents;
+using SOSLocation.Domain.Missions;
+using SOSLocation.Domain.Tracking;
 using System;
 using System.Linq;
 using System.Threading;

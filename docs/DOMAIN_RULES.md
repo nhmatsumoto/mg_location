@@ -1,5 +1,8 @@
 # Regras de Domínio
 
+> [!NOTE]
+> Esta documentação foca em regras específicas. Para uma visão completa do modelo de domínio, consulte a [Especificação de Domínio](DOMAIN_SPECIFICATION.md).
+
 ## Missing Person
 - Cadastro mínimo: `personName` + `lastSeenLocation`.
 - `lat`/`lng` são opcionais, mas recomendados para mapa.

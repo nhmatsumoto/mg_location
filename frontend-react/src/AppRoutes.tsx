@@ -10,6 +10,7 @@ const SOSPage = lazy(() => import('./pages/SOSPage').then((m) => ({ default: m.S
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const PublicIncidentDashboardPage = lazy(() => import('./pages/PublicIncidentDashboardPage').then((m) => ({ default: m.PublicIncidentDashboardPage })));
 const SplatScenePage = lazy(() => import('./pages/SplatScenePage').then((m) => ({ default: m.SplatScenePage })));
+const VolunteerDashboardPage = lazy(() => import('./pages/VolunteerDashboardPage').then((m) => ({ default: m.VolunteerDashboardPage })));
 function PrivateLayout() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const location = useLocation();
@@ -43,6 +44,7 @@ function PrivateLayout() {
           <Route path="/app/settings" element={<SettingsPage />} />
           <Route path="/app/splat-scenes/:id" element={<SplatScenePage />} />
           <Route path="/app/splat-scenes" element={<SplatScenePage />} />
+          <Route path="/app/volunteer" element={<VolunteerDashboardPage />} />
           <Route path="*" element={<Navigate to="/app/sos" replace />} />
         </Routes>
       </Suspense>

@@ -106,7 +106,9 @@ To see the system populated with flood simulation data in Ubá (MG, Brazil):
 ---
 
 ## 📑 Detailed Documentation
+- 📖 [Domain Specification & DDD](docs/DOMAIN_SPECIFICATION.md)
 - 📖 [Current Architecture](docs/ARCHITECTURE_CURRENT.md)
+- 📖 [Domain Rules](docs/DOMAIN_RULES.md)
 - ⚖️ [Transparency Policies](docs/PRIVACY_TRANSPARENCY_POLICY.md)
 - 🧪 [Test Plan](docs/SECURITY_TEST_CHECKLIST.md)
 

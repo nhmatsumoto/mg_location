@@ -1,8 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using SOSLocation.Domain.Common;
 using SOSLocation.Application.Features.Operations.Queries.GetSnapshot;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace SOSLocation.API.Controllers
 {
@@ -19,9 +21,11 @@ namespace SOSLocation.API.Controllers
 
         [AllowAnonymous]
         [HttpGet("snapshot")]
-        public async Task<IActionResult> GetSnapshot()
+        [OutputCache(PolicyName = "Cache1Min")]
+        public async Task<ActionResult<Result<OperationsSnapshotDto>>> GetSnapshot()
         {
-            return Ok(await _mediator.Send(new GetOperationsSnapshotQuery()));
+            var result = await _mediator.Send(new GetOperationsSnapshotQuery());
+            return Ok(Result<OperationsSnapshotDto>.Success(result));
         }
     }
 }

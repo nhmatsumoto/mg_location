@@ -1,10 +1,12 @@
 using MediatR;
 using SOSLocation.Application.DTOs.Alerts;
 using SOSLocation.Domain.Interfaces;
+using SOSLocation.Domain.Incidents;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System;
 
 namespace SOSLocation.Application.Features.AttentionAlerts.Queries.GetAlerts
 {

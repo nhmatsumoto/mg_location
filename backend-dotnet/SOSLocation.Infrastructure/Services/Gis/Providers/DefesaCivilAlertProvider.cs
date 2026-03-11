@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Application.DTOs.External;
 using SOSLocation.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -26,10 +26,10 @@ namespace SOSLocation.Infrastructure.Services.Gis.Providers
             _defesaCivilUrl = configuration["ExternalIntegrations:DefesaCivilUrl"] ?? "https://alertas24h.com.br/rss.xml";
         }
 
-        public async Task<IEnumerable<AlertDto>> FetchAlertsAsync()
+        public async Task<IEnumerable<ExternalAlertDto>> FetchAlertsAsync()
         {
             _logger.LogInformation("Fetching Defesa Civil alerts from {url}", _defesaCivilUrl);
-            var alerts = new List<AlertDto>();
+            var alerts = new List<ExternalAlertDto>();
 
             try
             {
@@ -52,7 +52,7 @@ namespace SOSLocation.Infrastructure.Services.Gis.Providers
 
                         DateTime.TryParse(pubDateStr, out var timestamp);
 
-                        alerts.Add(new AlertDto
+                        alerts.Add(new ExternalAlertDto
                         {
                             Id = Guid.NewGuid().ToString(),
                             Title = title,

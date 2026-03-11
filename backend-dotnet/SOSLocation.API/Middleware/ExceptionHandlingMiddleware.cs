@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using SOSLocation.Domain.Common;
 
 namespace SOSLocation.API.Middleware
 {
@@ -35,9 +36,12 @@ namespace SOSLocation.API.Middleware
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
             var message = isDevelopment ? $"Internal Server Error: {exception.Message}" : "Ocorreu um erro interno no servidor. Por favor, tente novamente mais tarde.";
+            var detail = isDevelopment ? exception.StackTrace : null;
+
+            var resultModel = Result.Failure(message, "Operation failed", (int)HttpStatusCode.InternalServerError);
 
             var result = JsonSerializer.Serialize(
-                SOSLocation.Domain.Common.Result.Failure(message),
+                resultModel,
                 new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
             );
 

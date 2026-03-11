@@ -1,13 +1,11 @@
 using MediatR;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Domain.Incidents;
 using SOSLocation.Application.DTOs.Incidents;
 using System;
 using System.Collections.Generic;
 
 namespace SOSLocation.Application.Features.Operations.Queries.GetSnapshot
 {
-    public record GetOperationsSnapshotQuery : IRequest<OperationsSnapshotDto>;
-
     public class OperationsSnapshotDto
     {
         public DateTime GeneratedAtUtc { get; set; }

@@ -1,12 +1,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Application.DTOs.External;
 using SOSLocation.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace SOSLocation.Infrastructure.Services.Gis.Providers
 {
@@ -26,10 +27,10 @@ namespace SOSLocation.Infrastructure.Services.Gis.Providers
             _cemadenUrl = configuration["ExternalIntegrations:CemadenUrl"] ?? "https://sws.cemaden.gov.br/PED/rest/pcds-acum/acumulados-recentes";
         }
 
-        public async Task<IEnumerable<AlertDto>> FetchAlertsAsync()
+        public async Task<IEnumerable<ExternalAlertDto>> FetchAlertsAsync()
         {
             _logger.LogInformation("Fetching CEMADEN risk data from {url}", _cemadenUrl);
-            var alerts = new List<AlertDto>();
+            var alerts = new List<ExternalAlertDto>();
 
             try
             {
@@ -50,7 +51,7 @@ namespace SOSLocation.Infrastructure.Services.Gis.Providers
                         // Create alert if precipitation is high
                         if (valor > 50.0) // Example threshold for 50mm recent rain
                         {
-                            alerts.Add(new AlertDto
+                            alerts.Add(new ExternalAlertDto
                             {
                                 Id = Guid.NewGuid().ToString(),
                                 Title = $"Risco Hidrológico: {municipio} ({uf})",

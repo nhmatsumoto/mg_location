@@ -1,50 +1,79 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using SOSLocation.Domain.Common;
+using System;
+using System.Net;
 
 namespace SOSLocation.API.Filters
 {
-    public class ResultActionFilter : IActionFilter
+    public class ResultActionFilter : IAsyncActionFilter
     {
-        public void OnActionExecuting(ActionExecutingContext context)
+        public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            // Do nothing before the action executes
-        }
+            var executedContext = await next();
 
-        public void OnActionExecuted(ActionExecutedContext context)
-        {
-            if (context.Exception == null && context.Result is ObjectResult objectResult)
+            if (executedContext.Exception != null)
             {
-                // Prevent wrapping an already wrapped Result<T> or Result
-                var valueType = objectResult.Value?.GetType();
-                if (valueType != null &&
-                    (valueType == typeof(Result) ||
-                    (valueType.IsGenericType && valueType.GetGenericTypeDefinition() == typeof(Result<>))))
+                return;
+            }
+
+            if (executedContext.Result is ObjectResult objectResult)
+            {
+                // Prevent double wrapping
+                if (objectResult.Value != null)
                 {
-                    return;
+                    var valueType = objectResult.Value.GetType();
+                    
+                    // Check if it's already a Result or Result<T>
+                    bool isAlreadyResult = valueType == typeof(Result) || 
+                                         (valueType.IsGenericType && valueType.GetGenericTypeDefinition() == typeof(Result<>));
+
+                    if (isAlreadyResult)
+                    {
+                        return;
+                    }
                 }
 
-                if (objectResult.StatusCode >= 200 && objectResult.StatusCode < 300)
-                {
-                    // Convert success types to Result.Success(value)
-                    object payload = objectResult.Value != null
-                        ? Result<object>.Success(objectResult.Value)
-                        : Result.Success();
+                int statusCode = objectResult.StatusCode ?? (int)HttpStatusCode.OK;
+                bool isSuccess = statusCode >= 200 && statusCode < 300;
 
-                    context.Result = new ObjectResult(payload)
-                    {
-                        StatusCode = objectResult.StatusCode
-                    };
+                object? wrappedValue;
+
+                if (isSuccess)
+                {
+                    wrappedValue = Result<object>.Success(objectResult.Value!, "Operation successful", statusCode);
                 }
                 else
                 {
-                    // Convert explicit error responses (e.g. BadRequest(string)) to Result.Failure
                     var errorMessage = objectResult.Value?.ToString() ?? "An error occurred";
-                    context.Result = new ObjectResult(Result.Failure(errorMessage))
-                    {
-                        StatusCode = objectResult.StatusCode
-                    };
+                    wrappedValue = Result.Failure(errorMessage, "Operation failed", statusCode);
                 }
+
+                executedContext.Result = new ObjectResult(wrappedValue)
+                {
+                    StatusCode = statusCode
+                };
+            }
+            else if (executedContext.Result is EmptyResult)
+            {
+                executedContext.Result = new ObjectResult(Result.Success("Operation successful", (int)HttpStatusCode.NoContent))
+                {
+                    StatusCode = (int)HttpStatusCode.NoContent
+                };
+            }
+            else if (executedContext.Result is StatusCodeResult statusCodeResult)
+            {
+                int statusCode = statusCodeResult.StatusCode;
+                bool isSuccess = statusCode >= 200 && statusCode < 300;
+
+                object wrappedValue = isSuccess 
+                    ? Result.Success("Operation successful", statusCode)
+                    : Result.Failure("An error occurred", "Operation failed", statusCode);
+
+                executedContext.Result = new ObjectResult(wrappedValue)
+                {
+                    StatusCode = statusCode
+                };
             }
         }
     }

@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SOSLocation.Domain.Entities;
+using SOSLocation.Application.DTOs.External;
 using SOSLocation.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
         private readonly ILogger<AlertsBackgroundService> _logger;
         private readonly IEnumerable<IAlertProvider> _providers;
         private readonly IIbgeEnrichmentService _enrichmentService;
-        private readonly List<AlertDto> _activeAlerts = new();
+        private readonly List<ExternalAlertDto> _activeAlerts = new();
         private const int PollIntervalMinutes = 30;
 
         public AlertsBackgroundService(
@@ -42,7 +42,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
         {
             _logger.LogInformation("Polling {count} providers for active disaster alerts...", _providers.Count());
 
-            var allAlerts = new List<AlertDto>();
+            var allAlerts = new List<ExternalAlertDto>();
 
             foreach (var provider in _providers)
             {
@@ -59,7 +59,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
             }
 
             // Emergency Seeding for requested critical regions
-            allAlerts.Add(new AlertDto
+            allAlerts.Add(new ExternalAlertDto
             {
                 Id = "seed-uba-001",
                 Title = "Ubá: Emergência por Alagamento",
@@ -72,7 +72,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
                 SourceUrl = "https://www.uba.mg.gov.br/"
             });
 
-            allAlerts.Add(new AlertDto
+            allAlerts.Add(new ExternalAlertDto
             {
                 Id = "seed-jf-001",
                 Title = "Juiz de Fora: Alerta de Inundação",
@@ -92,7 +92,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to enrich alerts with demographic data");
+                _logger.LogWarning(ex, "Failed to enrichment alerts with demographic data");
             }
 
             lock (_activeAlerts)
@@ -104,7 +104,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
             _logger.LogInformation("Total active alerts available: {count}", allAlerts.Count);
         }
 
-        public IEnumerable<AlertDto> GetActiveAlerts()
+        public IEnumerable<ExternalAlertDto> GetActiveAlerts()
         {
             lock (_activeAlerts)
             {
