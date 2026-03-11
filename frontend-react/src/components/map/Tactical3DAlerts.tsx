@@ -1,8 +1,9 @@
 import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
+import { useSimulationStore } from '../../store/useSimulationStore';
 import { Text, Float } from '@react-three/drei';
-import { projectTo3D } from '../../utils/projection';
+import { projectTo3D } from 'sos-3d-engine';
 
 interface Alert3D {
   id: string;

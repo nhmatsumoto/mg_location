@@ -9,7 +9,7 @@ import { SnapshotVolume } from './SnapshotVolume';
 import type { SituationalSnapshot } from '../../types';
 import { AnimatedBarrier } from './AnimatedBarrier';
 import { useSimulationStore } from '../../store/useSimulationStore';
-import { projectTo3D } from '../../utils/projection';
+import { projectTo3D } from 'sos-3d-engine';
 import { DayNightCycle } from './DayNightCycle';
 import { MapZoneLayer } from './MapZoneLayer';
 import { Tactical3DMarkers } from './Tactical3DMarkers';

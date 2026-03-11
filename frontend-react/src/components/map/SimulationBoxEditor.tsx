@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { TransformControls } from '@react-three/drei';
 import * as THREE from 'three';
+import { projectTo3D, invertFrom3D } from 'sos-3d-engine';
 import { useSimulationStore } from '../../store/useSimulationStore';
-import { projectTo3D, invertFrom3D } from '../../utils/projection';
 
 type TransformMode = 'translate' | 'rotate' | 'scale';
 

@@ -7,7 +7,9 @@
     "module": "ESNext",
     "baseUrl": ".",
     "paths": {
-      "react-router-dom": ["src/lib/react-router-dom.tsx"]
+      "react-router-dom": ["src/lib/react-router-dom.tsx"],
+      "sos-3d-engine": ["../sos-3d-engine/src/index.ts"],
+      "sos-3d-engine/*": ["../sos-3d-engine/src/*"]
     },
     "types": ["vite/client"],
     "skipLibCheck": true,

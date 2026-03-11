@@ -31,6 +31,7 @@
     "react-leaflet": "^5.0.0",
     "react-leaflet-cluster": "^4.0.0",
     "react-router-dom": "^7.9.6",
+    "sos-3d-engine": "file:../sos-3d-engine",
     "supercluster": "^8.0.1",
     "tailwindcss": "^4.2.1",
     "three": "^0.183.1",
@@ -54,6 +55,7 @@
   },
   "packageManager": "bun@1.2.14",
   "engines": {
-    "bun": ">=1.2.14"
+    "bun": ">=1.2.14",
+    "node": "25.8.1"
   }
 }

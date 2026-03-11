@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useSimulationStore } from '../../store/useSimulationStore';
-import { projectTo3D } from '../../utils/projection';
+import { projectTo3D } from 'sos-3d-engine';
 
 interface VegetationData {
   id: string;

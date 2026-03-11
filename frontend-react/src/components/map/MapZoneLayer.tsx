@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { fetchOSMData } from '../../utils/osmFetcher';
 import { useSimulationStore } from '../../store/useSimulationStore';
-import { projectTo3D } from '../../utils/projection';
+import { projectTo3D } from 'sos-3d-engine';
 
 interface ZoneData {
   id: string;

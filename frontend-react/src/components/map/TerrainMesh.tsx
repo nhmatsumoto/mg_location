@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import * as THREE from 'three';
 import { useLoader } from '@react-three/fiber';
 import { useSimulationStore } from '../../store/useSimulationStore';
-import { projectTo3D } from '../../utils/projection';
+import { projectTo3D } from 'sos-3d-engine';
 import { gisApi } from '../../services/gisApi';
 
 interface TerrainMeshProps {

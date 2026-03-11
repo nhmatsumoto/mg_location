@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { projectTo3D } from '../../utils/projection';
+import { projectTo3D } from 'sos-3d-engine';
 import { MapPin, AlertCircle, Home, Hospital, TreePine } from 'lucide-react';
 
 interface MarkerProps {

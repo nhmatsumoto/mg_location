@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { gisApi } from '../../services/gisApi';
 import { useSimulationStore } from '../../store/useSimulationStore';
-import { projectTo3D } from '../../utils/projection';
+import { projectTo3D } from 'sos-3d-engine';
 
 interface BuildingData {
   id: number;

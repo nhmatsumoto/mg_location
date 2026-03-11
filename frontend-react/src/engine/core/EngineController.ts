@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
-import { RenderOrchestrator } from '../core/RenderOrchestrator';
+import { RenderOrchestrator } from 'sos-3d-engine';
 import { useSimulationStore } from '../../store/useSimulationStore';
 
 export const EngineController: React.FC = () => {

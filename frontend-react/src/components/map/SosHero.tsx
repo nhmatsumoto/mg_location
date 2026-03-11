@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useCursor, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useSimulationStore } from '../../store/useSimulationStore';
-import { projectTo3D, invertFrom3D } from '../../utils/projection';
+import { projectTo3D, invertFrom3D } from 'sos-3d-engine';
 
 export const SosHero: React.FC = () => {
   const meshRef = useRef<THREE.Group>(null);

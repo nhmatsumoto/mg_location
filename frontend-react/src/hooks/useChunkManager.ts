@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { projectTo3D, invertFrom3D } from '../utils/projection';
+import { projectTo3D, invertFrom3D } from 'sos-3d-engine';
 
 export interface Chunk {
   id: string;
