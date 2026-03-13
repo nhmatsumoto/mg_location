@@ -54,12 +54,13 @@ namespace SOSLocation.Application.Features.Operations.Queries.GetSnapshot
 
             return new OperationsSnapshotDto
             {
-                TotalIncidents = totalIncidents,
-                TotalAlerts = totalAlerts,
-                CriticalAlerts = criticalAlerts,
-                ActiveRescueGroups = rescueStats.Ready + rescueStats.Active,
-                PendingLogistics = logisticsStats.Pending + logisticsStats.InProgress,
-                Timestamp = DateTime.UtcNow
+                GeneratedAtUtc = DateTime.UtcNow,
+                Kpis = new OperationsKpis
+                {
+                    CriticalAlerts = criticalAlerts,
+                    ActiveTeams = rescueStats.Ready + rescueStats.Active,
+                    SuppliesInTransit = logisticsStats.Pending + logisticsStats.InProgress
+                }
             };
         }
     }

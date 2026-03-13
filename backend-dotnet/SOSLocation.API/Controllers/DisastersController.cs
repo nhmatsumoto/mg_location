@@ -54,7 +54,7 @@ namespace SOSLocation.API.Controllers
                     CountryCode = g.Key.CountryCode, 
                     CountryName = g.Key.CountryName, 
                     Count = g.Count(), 
-                    MaxSeverity = g.Max(e => e.Severity) 
+                    MaxSeverity = g.Max(e => e.Severity).ToString() 
                 })
                 .OrderByDescending(x => x.Count)
                 .ToList();

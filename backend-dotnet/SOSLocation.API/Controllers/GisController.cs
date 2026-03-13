@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SOSLocation.Domain.Interfaces;
 using SOSLocation.Domain.Common;
 using SOSLocation.Application.DTOs.Common;
+using SOSLocation.Application.DTOs.Gis;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
