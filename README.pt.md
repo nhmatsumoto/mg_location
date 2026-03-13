@@ -1,11 +1,13 @@
-# SOS Location: Mapa Tático Resiliente e Sala de Situação 3D v2.0
+# SOS Location: Dashboard de Operações Resiliente e Gestão Tática v2.0
 
 > [!NOTE]
-> **COMPROMISSO ÉTICO / ETHICAL COMMITMENT**
+> **COMPROMISSO ÉTICO / ETHICAL COMMITMENT / 倫理防衛**
 >
 > Este projeto é movido pela missão de **SALVAR VIDAS** e mitigar os impactos de desastres naturais e crises humanitárias. O uso desta plataforma para fins militares, atividades bélicas ou simulações de conflito não alinha-se com nossos valores fundamentais e propósito humanitário.
 >
 > This project is driven by the mission to **SAVE LIVES** and mitigate the impacts of natural disasters and humanitarian crises. The use of this platform for military purposes, warfare activities, or conflict simulations does not align with our core values and humanitarian purpose.
+>
+> このプロジェクトは、自然災害や人道危機の際に**人命を救い**、その影響を軽減するというミッションの下に運営されています。本プラットフォームを軍事目的、戦闘活動、または紛争シミュレーションに使用することは、私たちの基本原則や人道的な目的とは一致しません。
 
 ![SOS Location Banner](https://img.shields.io/badge/SOS--Location-Resilience--v2.0-blueviolet?style=for-the-badge)
 ![Status Build](https://img.shields.io/badge/Build-Passing-success?style=for-the-badge)
@@ -13,81 +15,85 @@
 
 [English](./README.md) | [日本語](./README.ja.md) | **Português**
 
-**SOS Location** é um sistema de suporte à decisão e coordenação operacional para cenários de desastres naturais (enchentes, deslizamentos, crises humanitárias). O objetivo principal é garantir **100% de disponibilidade operacional**, mesmo sob falha catastrófica de infraestrutura de rede.
+**SOS Location** é uma plataforma de suporte à decisão resiliente projetada para cenários de catástrofe. Nosso foco é o **Dashboard de Operações**, um centro nevrálgico de alta disponibilidade que coordena múltiplos atores humanitários mesmo quando a rede global falha.
 
 ---
 
 ## 🎯 Nossa Missão
-Transformar dados complexos em ações táticas imediatas. O SOS Location não é apenas um dashboard, é uma ferramenta de campo projetada para funcionar onde a internet não chega.
+Unir os dados de campo à coordenação estratégica. O SOS Location oferece ferramentas especializadas para cada perfil no ecossistema, garantindo que os recursos cheguem a quem precisa com precisão e agilidade.
 
 ---
 
-## 🏗️ Arquitetura de Resiliência (v2.0)
+## 👥 Perfis Operacionais e Funcionalidades
 
-A versão 2.0 consolidou o redesenho **Resilience-First**, focado em quatro pilares fundamentais:
+A plataforma é estruturada em torno de quatro perfis principais:
+
+### 🏛️ Governo e Defesa Civil
+*Focado em comando, controle e supervisão tática.*
+- **Visualização Tática**: Mapa operacional em tempo real e rastreamento de eventos.
+- **Gestão de Incidentes**: Suporte e coordenação de operações de resgate de alto nível.
+- **Controle Estratégico**: Monitoramento do status de saúde e infraestrutura regional.
+
+### 🧡 Voluntários e ONGs
+*Focado em atividades de campo e suporte à comunidade.*
+- **Gestão de Doações**: Controle de campanhas, pontos de coleta e logística de distribuição.
+- **Registro em Campo**: Mapeamento de áreas de risco e registro de pessoas desaparecidas.
+- **Pedidos de Ajuda**: Processamento direto e triagem de solicitações de emergência.
+
+### 🛡️ Admins e Setor Privado
+*Focado na integridade da plataforma e alocação de recursos especializados.*
+- **Supervisão do Ecossistema**: Gestão de usuários, permissões e saúde do sistema.
+- **Integração de Recursos**: Engajamento de recursos privados (logística, suprimentos) no esforço de socorro.
+
+---
+
+## 🏗️ Arquitetura de Resiliência (v2.1)
 
 ```mermaid
 graph TD
-    subgraph "Interface Tática 2.0"
-        UI[PWA Frontend] --> T3D[Sala de Situação 3D]
-        UI --> SPT[Scatter Plot Tático]
-        UI --> MCP[Captura de Pontos de Precisão]
-        T3D -.->|Estado Compartilhado| SPT
+    subgraph "Interface Tática 2.1"
+        UI[PWA Dashboard de Operações] --> SPT[Scatter Plot Tático]
+        UI --> MCP[Captura de Dados em Campo]
+        UI -.-> RD[Sala 3D - Pesquisa/Pausado]
     end
 
-    subgraph "Campo / Offline"
+    subgraph "Motor de Resiliência (Offline-First)"
         UI --> DB[(IndexedDB)]
         DB --> OB[Fila Outbox]
     end
 
-    subgraph "Proxy Tático"
-        EH[Edge Hub / RPi] 
-        EH -->|Sincronia Local| OB
+    subgraph "Camadas de Conectividade"
+        EH[Edge Hub / RPi] -->|Sincronia Local| OB
+        MP[MessagePack + Zstd] -.->|Sincronia Binária| OB
     end
 
     subgraph "Infraestrutura Global"
         API[.NET 10 Web API]
-        MP[MessagePack + Zstd]
         EV[Event Store / DDD]
         API --> EV
     end
 
-    OB -.->|Sincronia Binária| MP
+    OB -.-> MP
     MP -.-> API
     EH -.->|Backhaul| API
 ```
 
-1. **Local-first (Offline Outbox)**: O app PWA funciona sem internet usando IndexedDB. Ações são enfileiradas e sincronizadas automaticamente quando houver conectividade.
-2. **Protocolo Binário (MessagePack + Zstd)**: Substituímos o JSON pesado por MessagePack comprimido com Zstandard, reduzindo o tráfego de dados em até 80% — vital para rádio ou satélite.
-3. **Event-Souring (DDD)**: Todas as alterações no sistema são tratadas como eventos imutáveis. Isso permite reconciliação automática de conflitos (CRDT-lite) e uma trilha de auditoria completa.
-4. **Edge Hubs (Comando Descentralizado)**: Suporte para servidores locais (como Raspberry Pi) que servem como proxies táticos em áreas isoladas.
+1. **Local-first (Offline Outbox)**: Totalmente funcional sem internet; sincroniza automaticamente ao recuperar a conexão.
+2. **Protocolo Binário (MessagePack + Zstd)**: Otimizado para links de baixa largura de banda (rádio, satélite).
+3. **Event-Sourced DDD**: Trilha de auditoria completa e resolução automática de conflitos.
+4. **Edge Computing**: Suporte para hubs descentralizados em áreas isoladas.
 
 ---
 
-## 🚀 Como Funciona
+## 🚀 Início Rápido (Docker)
 
-### 1. Sala de Situação 3D (v2.0)
-Ambiente tático imersivo usando **Three.js** para visualizar eventos como "beacons" 3D pulsantes. Oferece percepção de profundidade e clusterização espacial de desastres.
-
-### 2. API Padronizada e Monitoramento de Saúde
-Integração robusta com **ASPNET Core v10**. Inclui endpoints especializados para monitoramento de alta disponibilidade:
-- `GET /api/health`: Fornece o status do serviço e verificação de uptime.
-
-### 3. Análise Tática (Scatter Plot 2.0)
-Análise temporal avançada integrada ao mapa. Permite identificar padrões e tendências de gravidade ao longo do tempo por meio de diferentes provedores (GDACS, USGS, local).
-
----
-
-### Início Rápido (Docker)
 ```bash
 ./dev.sh up
 ```
-- **App**: `http://localhost:8088` (Frontend React)
-- **API**: `http://localhost:8001` (Backend .NET)
-- **Saúde**: `http://localhost:8001/api/health`
+- **Dashboard de Operações**: `http://localhost:8088`
+- **API (Monitor de Saúde)**: `http://localhost:8001/api/health`
 
-### Semente de Dados (Importante)
-Para ver o sistema populado com dados de simulação de enchentes em Ubá (MG, Brasil):
+### Simulação de Dados
 ```bash
 ./dev.sh seed
 ```
@@ -95,13 +101,15 @@ Para ver o sistema populado com dados de simulação de enchentes em Ubá (MG, B
 ---
 
 ## 📂 Organização do Projeto
+- `backend-dotnet/`: API Web ASP.NET Core 10.
+- `frontend-react/`: Dashboard de Operações em React 19 + Vite.
+- `agents/`: Agentes de IA para coordenação automatizada.
+- `sos-3d-engine/`: Motor de visualização imersiva (**Status: Pesquisa/Pausado**).
 
-```bash
-├── backend-dotnet/     # ASP.NET Core 10 Web API
-├── frontend-react/     # Aplicação React 19 + Vite
-├── agents/             # Agentes de IA e Automação
-├── docs/               # Documentação profunda e planos
-├── dev.sh              # Canivete suíço tático para DX
+---
+
+**SOS Location © 2026** - Tecnologia para a Vida.
+         # Canivete suíço tático para DX
 └── Dockerfile.*        # Definições de ambiente
 ```
 

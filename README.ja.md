@@ -1,11 +1,13 @@
 # SOS Location: レジリエント戦術マップ & 3Dシチュエーションルーム v2.0
 
 > [!NOTE]
-> **倫理的声明 (ETHICAL COMMITMENT)**
+> **倫理的声明 / ETHICAL COMMITMENT / COMPROMISSO ÉTICO**
 >
-> このプロジェクトは、自然災害や人道危機の際に**人命を救い**、その影響を軽減するというミッションの下に運営されています。本プラットフォームを軍事目的、戦闘活動、または紛争シミュレーションに使用することは、私たちの基本原則や人道的目的とは一致しません。
+> このプロジェクトは、自然災害や人道危機の際に**人命を救い**、その影響を軽減するというミッションの下に運営されています。本プラットフォームを軍事目的、戦闘活動、または紛争シミュレーションに使用することは、私たちの基本原則や人道的な目的とは一致しません。
 >
 > This project is driven by the mission to **SAVE LIVES** and mitigate the impacts of natural disasters and humanitarian crises. The use of this platform for military purposes, warfare activities, or conflict simulations does not align with our core values and humanitarian purpose.
+>
+> Este projeto é movido pela missão de **SALVAR VIDAS** e mitigar os impactos de desastres naturais e crises humanitárias. O uso desta plataforma para fins militares, atividades bélicas ou simulações de conflito não alinha-se com nossos valores fundamentais e propósito humanitário.
 
 ![SOS Location Banner](https://img.shields.io/badge/SOS--Location-Resilience--v2.0-blueviolet?style=for-the-badge)
 ![Status Build](https://img.shields.io/badge/Build-Passing-success?style=for-the-badge)
