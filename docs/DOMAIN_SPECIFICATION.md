@@ -16,22 +16,17 @@ This document consolidates the domain vision, ubiquitous language, and the core 
 
 ---
 
-## 2. Consolidated Ubiquitous Language
-
 ### Core Entities
-- **Incident**: A critical event requiring operational attention (e.g., flood, landslide, fire).
+- **Incident**: A primary disaster event occurring at a specific time and place. Forms the root of most operational data.
+- **Attention Alert**: A critical, real-time localized warning (e.g., flash flood, landslide risk) indexed from providers like CEMADEN or Defesa Civil.
 - **SOS Request**: An explicit request for help originated by a person or device.
-- **Reporter**: The source of the incident or SOS request (Civilian, Field Agent, Sensor, Authority).
-- **Victim**: A person impacted by an incident and a potential target for rescue.
-- **Responder**: Person, team, or organization in charge of the response.
-- **Mission**: A tactical operation created to address one or more incidents.
-- **Safe Zone**: Validated area for evacuation, triage, or logistics.
-- **Danger Zone**: Area with relevant operational risk.
-- **GeoPosition**: Geographic position (lat/lng, and optionally altitude/precision).
-- **Route**: Calculated or defined path for movement.
-- **Communication Node**: Network element capable of sending/receiving/relaying messages.
-- **Sensor Reading**: Raw or processed data from a sensor.
-- **Risk Assessment**: Calculated evaluation of risk associated with an area or route.
+- **Rescue Group**: A coordinated team of volunteers or professionals assigned to tasks (e.g., firefighters, civil defense units).
+- **Mission**: A tactical operation created to address one or more incidents, involving Search Areas and Assignments.
+- **Search Area**: A geofenced polygon where rescue operations or sweeps are actively being conducted.
+- **Edge Hub**: A local gateway node (RPi, mobile server) responsible for data synchronization in degraded environments.
+- **Mesh Network**: A peer-to-peer communication layer allowing nodes (Hubs, Mobile Apps) to communicate without a central internet uplink.
+- **Tactical Map**: The specialized 2D/3D interface used by Responders and Admins for mission coordination.
+- **Gaussian Splatting**: 3D reconstruction technology used for high-fidelity situational awareness in the SOS dashboard.
 
 ---
 
@@ -119,4 +114,4 @@ To evolve this domain, the following order is recommended:
 7. Integrate networks/sensors via defined contracts.
 
 ---
-**SOS Location © 2026** - *Documentation consolidated on 2026-03-12.*
+**SOS Location © 2026** - *Documentation consolidated and updated on 2026-03-14.*

@@ -10,6 +10,8 @@ This document organizes the backend into specialized modules and validates front
 | `/api/operations/snapshot` | GET | Operational KPIs and layers | ✅ `operationsApi.ts` |
 | `/api/health` | GET | System health & status | ✅ `apiClient.ts` |
 | `/api/events` | GET | Event log / Sync | ✅ `eventsApi.ts` |
+| `/api/v1/news` | GET | List operative news | ✅ `newsApi.ts` |
+| `/api/v1/attention-alerts` | GET | Real-time critical alerts | ✅ `integrationsApi.ts` |
 
 ## Specialized Search & Public Access
 

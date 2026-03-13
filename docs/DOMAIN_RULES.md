@@ -11,3 +11,7 @@
 ## Alertas
 - Alertas podem vir de feed CAP, RSS ou Atom.
 - Normalização para schema interno único é obrigatória.
+
+## Controle de Acesso
+- O Dashboard Tático (`/app/sos`) é restrito exclusivamente ao perfil `admin`.
+- Usuários sem a role `admin` são redirecionados automaticamente para o mapa público.

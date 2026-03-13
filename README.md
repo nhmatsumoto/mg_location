@@ -145,6 +145,7 @@ graph TD
 
 ## 📑 Detailed Documentation
 - 📖 [Domain & DDD](docs/DOMAIN_SPECIFICATION.md)
+- 📖 [Requirements & Ubiquitous Language](file:///home/nhmatsumoto/.gemini/antigravity/brain/99e5ff8e-f2f6-4adf-be65-0d33e9aaa49f/requirements_and_ddd.md)
 - 📖 [Current Architecture](docs/ARCHITECTURE_CURRENT.md)
 - 📖 [Domain Rules](docs/DOMAIN_RULES.md)
 - ⚖️ [Transparency Policies](docs/PRIVACY_TRANSPARENCY_POLICY.md)

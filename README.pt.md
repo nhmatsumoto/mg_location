@@ -113,7 +113,10 @@ graph TD
 ---
 
 ## 📑 Documentação Detalhada
+- 📖 [Domínio & DDD](docs/DOMAIN_SPECIFICATION.md)
+- 📖 [Requisitos e Linguagem Ubíqua](file:///home/nhmatsumoto/.gemini/antigravity/brain/99e5ff8e-f2f6-4adf-be65-0d33e9aaa49f/requirements_and_ddd.md)
 - 📖 [Arquitetura Atual](docs/ARCHITECTURE_CURRENT.md)
+- 📖 [Regras de Domínio](docs/DOMAIN_RULES.md)
 - ⚖️ [Políticas de Transparência](docs/PRIVACY_TRANSPARENCY_POLICY.md)
 - 🧪 [Plano de Testes](docs/SECURITY_TEST_CHECKLIST.md)
 

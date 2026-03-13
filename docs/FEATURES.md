@@ -1,11 +1,6 @@
-# Funcionalidades
-
-- Simulação rápida por coordenadas.
-- Simulação de deslizamento em tempo real via stream SSE (`/api/location/flow-simulation/stream`).
-- Visualização 3D de deslizamento com topografia real (Open-Meteo/OpenTopoData fallback).
-- Cadastro de desaparecidos no mapa.
-- Painel de notificações operacionais.
-- Caixa de ferramentas (atalhos de APIs).
-- Caixa de informações relevantes do local (contexto de terreno).
-- Data Hub de integrações (`/api/weather`, `/api/alerts`, `/api/transparency`, `/api/satellite`).
-- Autenticação por token para operadores (`/api/auth/*`).
+- **Mapa Tático 2D**: Dashboard exclusivo para administradores com HUD de ferramentas de desastres e busca integrada.
+- **Busca de Cidades**: Integração com API de geocodificação para centralização rápida do mapa tático.
+- **Notificações Operacionais**: Sistema híbrido de notícias (News) e alertas críticos (Attention Alerts) processados via backend resiliente.
+- **Simulação de Fluxo**: Simulação de deslizamento em tempo real via stream SSE e visualização 3D topográfica.
+- **Gestão de Dados**: Data Hub consolidando previsões meteorológicas, alertas espaciais e transparência.
+- **Resiliência**: Arquitetura Offline-First com sincronização binária e persistência local via IndexedDB.

@@ -110,6 +110,14 @@ graph TD
 >
 > Este projeto é movido pela missão de **SALVAR VIDAS** e mitigar os impactos de desastres naturais e crises humanitárias. O uso desta plataforma para fins militares, atividades bélicas ou simulações de conflito não alinha-se com nossos valores fundamentais e propósito humanitário.
 
+## 📑 詳細ドキュメント
+- 📖 [ドメインとDDD](docs/DOMAIN_SPECIFICATION.md)
+- 📖 [要件とユビキタス言語](file:///home/nhmatsumoto/.gemini/antigravity/brain/99e5ff8e-f2f6-4adf-be65-0d33e9aaa49f/requirements_and_ddd.md)
+- 📖 [現在のアーキテクチャ](docs/ARCHITECTURE_CURRENT.md)
+- 📖 [ドメインルール](docs/DOMAIN_RULES.md)
+- ⚖️ [透明性ポリシー](docs/PRIVACY_TRANSPARENCY_POLICY.md)
+- 🧪 [テスト計画](docs/SECURITY_TEST_CHECKLIST.md)
+
 ---
 
 **SOS Location © 2026** - 生命を救うためのテクノロジー (Technology for Life).
