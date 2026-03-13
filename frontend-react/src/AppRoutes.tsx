@@ -41,15 +41,15 @@ function PrivateLayout() {
       >
         <Suspense fallback={<div style={{ padding: 16 }} className="text-slate-500 font-bold animate-pulse text-center">Iniciando painel de comando...</div>}>
           <Routes>
-            <Route path="sos" element={<ProtectedRoute requiredRole="admin"><SOSPage /></ProtectedRoute>} />
-            <Route path="settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            <Route path="splat-scenes/:id" element={<ProtectedRoute><SplatScenePage /></ProtectedRoute>} />
-             <Route path="splat-scenes" element={<ProtectedRoute><SplatScenePage /></ProtectedRoute>} />
-            <Route path="volunteer" element={<ProtectedRoute><VolunteerDashboardPage /></ProtectedRoute>} />
-            <Route path="logistics" element={<ProtectedRoute><LogisticsPage /></ProtectedRoute>} />
-            <Route path="risk-assessment" element={<ProtectedRoute><RiskAssessmentPage /></ProtectedRoute>} />
-            <Route path="support" element={<ProtectedRoute><SupportDashboardPage /></ProtectedRoute>} />
-            <Route path="*" element={<Navigate to="sos" replace />} />
+            <Route path="/app/sos" element={<ProtectedRoute requiredRole="admin"><SOSPage /></ProtectedRoute>} />
+            <Route path="/app/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/app/splat-scenes/:id" element={<ProtectedRoute><SplatScenePage /></ProtectedRoute>} />
+             <Route path="/app/splat-scenes" element={<ProtectedRoute><SplatScenePage /></ProtectedRoute>} />
+            <Route path="/app/volunteer" element={<ProtectedRoute><VolunteerDashboardPage /></ProtectedRoute>} />
+            <Route path="/app/logistics" element={<ProtectedRoute><LogisticsPage /></ProtectedRoute>} />
+            <Route path="/app/risk-assessment" element={<ProtectedRoute><RiskAssessmentPage /></ProtectedRoute>} />
+            <Route path="/app/support" element={<ProtectedRoute><SupportDashboardPage /></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to="/app/sos" replace />} />
           </Routes>
         </Suspense>
       </AppShell>

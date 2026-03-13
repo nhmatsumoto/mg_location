@@ -26,7 +26,7 @@ export const riskApi = {
   },
 
   async pipelineSync() {
-    const response = await apiClient.post('/api/risk/pipeline-sync');
+    const response = await apiClient.post('/risk/pipeline-sync');
     return response.data;
   }
 };

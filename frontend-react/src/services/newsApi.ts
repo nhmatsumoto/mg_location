@@ -19,7 +19,7 @@ export interface NewsNotification {
 export const newsApi = {
   getNews: async (country?: string, location?: string, timeWindow?: string) => {
     try {
-      const response = await apiClient.get(`/api/v1/news`, {
+      const response = await apiClient.get(`/v1/news`, {
         params: { country, location, timeWindow }
       });
       // apiClient already unwraps response.data.data, so response.data is the payload
@@ -32,7 +32,7 @@ export const newsApi = {
   
   getNewsById: async (id: string) => {
     try {
-      const response = await apiClient.get(`/api/v1/news/${id}`);
+      const response = await apiClient.get(`/v1/news/${id}`);
       return response.data as NewsNotification;
     } catch (error) {
       console.error(`Failed to fetch news with id ${id}:`, error);

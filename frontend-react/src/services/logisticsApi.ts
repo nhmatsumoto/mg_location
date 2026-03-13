@@ -18,7 +18,7 @@ export const logisticsApi = {
   },
 
   async create(payload: Partial<SupplyItem>) {
-    const response = await apiClient.post('/api/Logistics', payload);
+    const response = await apiClient.post('/Logistics', payload);
     return response.data;
   }
 };

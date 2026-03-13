@@ -19,7 +19,7 @@ export const incidentsApi = {
     if (payload.reporterName) form.append('reporterName', payload.reporterName);
     if (payload.reporterPhone) form.append('reporterPhone', payload.reporterPhone);
 
-    const response = await apiClient.post('/api/collapse-reports', form);
+    const response = await apiClient.post('/collapse-reports', form);
     return response.data;
   },
 };

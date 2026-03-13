@@ -12,7 +12,7 @@ export type DisasterFilters = {
 };
 
 export async function getEvents(filters: DisasterFilters) {
-  const { data } = await apiClient.get('/api/disasters/events', {
+  const { data } = await apiClient.get('/disasters/events', {
     params: {
       ...filters,
       types: filters.types?.join(','),
@@ -23,14 +23,14 @@ export async function getEvents(filters: DisasterFilters) {
 }
 
 export async function getByCountry(filters: DisasterFilters) {
-  const { data } = await apiClient.get('/api/disasters/stats/by-country', {
+  const { data } = await apiClient.get('/disasters/stats/by-country', {
     params: { ...filters, types: filters.types?.join(',') },
   });
   return data as { items: any[] };
 }
 
 export async function getTimeseries(filters: DisasterFilters & { bucket?: 'hour' | 'day' }) {
-  const { data } = await apiClient.get('/api/disasters/stats/timeseries', {
+  const { data } = await apiClient.get('/disasters/stats/timeseries', {
     params: { ...filters, types: filters.types?.join(',') },
   });
   return data as { items: any[] };
@@ -54,6 +54,6 @@ export type DisasterCreateInput = {
 };
 
 export async function createEvent(payload: DisasterCreateInput) {
-  const { data } = await apiClient.post('/api/disasters/events', payload);
+  const { data } = await apiClient.post('/disasters/events', payload);
   return data as { id: number; message: string };
 }

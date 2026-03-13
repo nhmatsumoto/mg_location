@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, Suspense, type ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { StatusStrip } from './StatusStrip';
@@ -28,20 +28,24 @@ export function AppShell({ children, theme, onToggleTheme, variant = 'default' }
 
   if (variant === 'tactical') {
     return (
-      <div className={`min-h-screen ${themeClass} overflow-hidden`}>
-        <Sidebar className="fixed inset-y-0 left-0 z-50 -translate-x-full transition-transform hover:translate-x-0 group" />
-        <main className="h-screen w-full relative">
-          {children}
-          <div className="absolute top-4 right-4 z-40">
-            <Topbar
-              theme={theme}
-              onToggleTheme={onToggleTheme}
-              notificationCount={notices.length}
-              onOpenNotifications={() => setOpenCenter(true)}
-              minimal
-            />
-          </div>
-        </main>
+      <div className={`min-h-screen ${themeClass}`}>
+        <div className="flex h-screen w-full overflow-hidden">
+          <Sidebar className="w-64 h-full shrink-0 border-r border-slate-700/50 bg-slate-900/90" />
+          <main className="flex-1 relative overflow-hidden">
+            <Suspense fallback={<div className="p-8 text-slate-500 font-bold animate-pulse text-center">Iniciando sistemas de comando...</div>}>
+              {children}
+            </Suspense>
+            <div className="absolute top-4 right-4 z-40">
+              <Topbar
+                theme={theme}
+                onToggleTheme={onToggleTheme}
+                notificationCount={notices.length}
+                onOpenNotifications={() => setOpenCenter(true)}
+                minimal
+              />
+            </div>
+          </main>
+        </div>
         <NotificationCenter open={openCenter} onClose={() => setOpenCenter(false)} />
         <ToastStack />
       </div>

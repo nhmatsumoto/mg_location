@@ -3,12 +3,12 @@ import type { VolunteerTask, VolunteerStats } from '../types/volunteer';
 
 export const volunteerApi = {
   getTasks: async (): Promise<VolunteerTask[]> => {
-    const response = await apiClient.get('/api/volunteer/tasks');
+    const response = await apiClient.get('/volunteer/tasks');
     return response.data;
   },
 
   getStats: async (): Promise<VolunteerStats> => {
-    const response = await apiClient.get('/api/volunteer/stats');
+    const response = await apiClient.get('/volunteer/stats');
     return response.data;
   },
 
@@ -23,6 +23,6 @@ export const volunteerApi = {
   },
 
   updateStatus: async (status: 'Active' | 'Offline'): Promise<void> => {
-    await apiClient.post('/api/volunteer/status', { status });
+    await apiClient.post('/volunteer/status', { status });
   }
 };
