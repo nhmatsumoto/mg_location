@@ -32,7 +32,7 @@ namespace SOSLocation.Domain.Missions
         [MaxLength(150)]
         public string FullName { get; set; } = string.Empty;
 
-        public int? GeolocationId { get; set; }
+        public Guid? GeolocationId { get; set; }
         public Geolocation? Geolocation { get; set; }
 
         [MaxLength(2)]

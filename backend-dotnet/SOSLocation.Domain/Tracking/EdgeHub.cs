@@ -21,7 +21,7 @@ namespace SOSLocation.Domain.Tracking
         [MaxLength(40)]
         public string Status { get; set; } = "online";
 
-        public int? IncidentId { get; set; }
+        public Guid? IncidentId { get; set; }
         public Incident? Incident { get; set; }
     }
 }

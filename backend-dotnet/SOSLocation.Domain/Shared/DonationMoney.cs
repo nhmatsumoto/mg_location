@@ -12,7 +12,7 @@ namespace SOSLocation.Domain.Shared
 
         public Guid? ExternalId { get; set; }
 
-        public int? CampaignId { get; set; }
+        public Guid? CampaignId { get; set; }
         public Campaign? Campaign { get; set; }
 
         public double Amount { get; set; }

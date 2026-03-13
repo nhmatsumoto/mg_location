@@ -10,6 +10,6 @@ namespace SOSLocation.Application.DTOs.Alerts
         public double Lat { get; set; }
         public double Lng { get; set; }
         public int RadiusMeters { get; set; }
-        public int? IncidentId { get; set; }
+        public Guid? IncidentId { get; set; }
     }
 }
