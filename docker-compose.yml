@@ -160,6 +160,23 @@ services:
     networks:
       - sos-location-network
 
+  risk-analysis:
+    build:
+      context: ./risk-analysis-unit
+      dockerfile: Dockerfile
+    container_name: sos-location-ml-risk-unit
+    restart: unless-stopped
+    environment:
+      - INTERNAL_API_URL=http://backend:8000
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8090:8000"
+    networks:
+      - sos-location-network
+
 volumes:
   postgres_data:
 

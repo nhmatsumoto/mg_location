@@ -20,7 +20,8 @@ export const newsApi = {
       const response = await apiClient.get(`/api/v1/news`, {
         params: { country, location }
       });
-      return response.data.data.items as NewsNotification[];
+      // apiClient already unwraps response.data.data, so response.data is the payload
+      return response.data.items as NewsNotification[];
     } catch (error) {
       console.error("Failed to fetch news:", error);
       return [];

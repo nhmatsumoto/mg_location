@@ -49,50 +49,58 @@ namespace SOSLocation.Infrastructure.Services.News
                 new NewsNotification
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Alerta de Chuvas no Sudeste",
-                    Content = "Previsão de fortes chuvas para o estado de Minas Gerais nas próximas 24 horas. População deve ficar atenta aos alertas da Defesa Civil.",
-                    Source = "G1 - Minas",
+                    Title = "Alerta de Inundação Gradual - Bacia do Rio Uruguai",
+                    Content = "Níveis do rio atingiram cota de alerta. Defesa Civil recomenda evacuação preventiva em áreas ribeirinhas.",
+                    Source = "Defesa Civil RS",
                     Country = "Brasil",
-                    Location = "Minas Gerais",
+                    Location = "Rio Grande do Sul",
+                    Latitude = -30.0346,
+                    Longitude = -51.2177,
                     PublishedAt = DateTime.UtcNow,
-                    Category = "Weather",
-                    ExternalUrl = "https://g1.globo.com/mg/"
+                    Category = "Flood",
+                    ExternalUrl = "https://www.defesacivil.rs.gov.br/"
                 },
                 new NewsNotification
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Rio de Janeiro em Estágio de Mobilização",
-                    Content = "Devido à aproximação de uma frente fria, a cidade do Rio de Janeiro entrou em estágio de mobilização.",
-                    Source = "COR-Rio",
+                    Title = "Earthquake Early Warning: Miyagi Prefecture",
+                    Content = "Magnitude 6.2 earthquake detected. Strong shaking expected in Sendai area. Stay away from windows.",
+                    Source = "JMA (Japan Meteorological Agency)",
+                    Country = "Japão",
+                    Location = "Miyagi",
+                    Latitude = 38.2682,
+                    Longitude = 140.8694,
+                    PublishedAt = DateTime.UtcNow.AddMinutes(-5),
+                    Category = "Earthquake",
+                    ExternalUrl = "https://www.jma.go.jp/jma/indexe.html"
+                },
+                new NewsNotification
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "Alerta de Baixa Umidade e Risco de Incêndios",
+                    Content = "Umidade relativa do ar abaixo de 20%. Risco extremo de incêndios florestais na região central.",
+                    Source = "INMET",
                     Country = "Brasil",
-                    Location = "Rio de Janeiro",
-                    PublishedAt = DateTime.UtcNow.AddMinutes(-45),
-                    Category = "Disaster",
-                    ExternalUrl = "https://cor.rio/"
-                },
-                new NewsNotification
-                {
-                    Id = Guid.NewGuid(),
-                    Title = "Flood Warning in Southern Spain",
-                    Content = "Heavy rains causing flash floods in Andalusia. Residents advised to move to higher ground.",
-                    Source = "El País",
-                    Country = "Spain",
-                    Location = "Andalusia",
+                    Location = "Goiás",
+                    Latitude = -16.6869,
+                    Longitude = -49.2648,
                     PublishedAt = DateTime.UtcNow.AddHours(-1),
-                    Category = "Disaster",
-                    ExternalUrl = "https://elpais.com/espana/"
+                    Category = "Wildfire",
+                    ExternalUrl = "https://portal.inmet.gov.br/"
                 },
                 new NewsNotification
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Wildfire Contained in Northern California",
-                    Content = "Firefighters successfully contained 80% of the wildfire near Redding. Evacuation orders lifted.",
-                    Source = "ABC News",
-                    Country = "USA",
-                    Location = "California",
+                    Title = "Tsunami Advisory: Ishikawa Prefecture",
+                    Content = "Tsunami waves of up to 1m expected following seismic activity. Vacate coastal areas immediately.",
+                    Source = "NHK World-Japan",
+                    Country = "Japão",
+                    Location = "Ishikawa",
+                    Latitude = 36.5613,
+                    Longitude = 136.6562,
                     PublishedAt = DateTime.UtcNow.AddHours(-2),
-                    Category = "Disaster",
-                    ExternalUrl = "https://abcnews.go.com/"
+                    Category = "Tsunami",
+                    ExternalUrl = "https://www3.nhk.or.jp/nhkworld/"
                 }
             };
 

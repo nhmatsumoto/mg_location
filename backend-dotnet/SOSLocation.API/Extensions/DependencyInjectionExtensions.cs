@@ -40,6 +40,7 @@ namespace SOSLocation.API.Extensions
             services.AddScoped<IGeolocationRepository, GeolocationRepository>();
             services.AddScoped<IVisitedLocationRepository, VisitedLocationRepository>();
             services.AddScoped<IFoundPeopleRepository, FoundPeopleRepository>();
+            services.AddScoped<INewsRepository, NewsRepository>();
 
             // GIS Services
             services.AddHttpClient<IGisService, GisService>(client =>
@@ -60,8 +61,10 @@ namespace SOSLocation.API.Extensions
             services.AddSingleton<IAlertsService>(sp => sp.GetRequiredService<AlertsBackgroundService>());
             services.AddHostedService(sp => sp.GetRequiredService<AlertsBackgroundService>());
 
-            // News Indexer
+            // News & Data Indexers
             services.AddHostedService<NewsIndexerService>();
+            services.AddHostedService<WeatherIndexerService>();
+            services.AddHostedService<AlertHistoryService>();
 
             return services;
         }
