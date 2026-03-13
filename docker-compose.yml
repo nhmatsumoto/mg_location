@@ -97,7 +97,10 @@ services:
       keycloak:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "true"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
       - "${BACKEND_PORT:-8001}:8001"
       - "8000:8000"
@@ -106,8 +109,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend-react
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./frontend-react/Dockerfile
       args:
         - VITE_API_BASE_URL=http://backend:8000
     container_name: sos-location-web-frontend
@@ -120,7 +123,7 @@ services:
       backend:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "ls /app/package.json || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
       interval: 20s
       timeout: 10s
       retries: 5
@@ -165,6 +168,11 @@ services:
         condition: service_healthy
     ports:
       - "8090:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - sos-location-network
 

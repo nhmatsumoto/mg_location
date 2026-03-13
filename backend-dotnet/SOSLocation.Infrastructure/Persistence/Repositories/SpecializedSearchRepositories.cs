@@ -20,11 +20,11 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
             _efContext = efContext;
         }
 
-        public async Task<IEnumerable<Geolocation>> GetAllAsync()
+        public async Task<IEnumerable<Geolocation>> GetAllAsync(CancellationToken ct = default)
         {
             var query = "SELECT * FROM \"Geolocations\"";
             using var connection = _dapperContext.CreateConnection();
-            return await connection.QueryAsync<Geolocation>(query);
+            return await connection.QueryAsync<Geolocation>(new CommandDefinition(query, cancellationToken: ct));
         }
 
         public IQueryable<Geolocation> GetQueryable()
@@ -32,10 +32,10 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
             return _efContext.Geolocations.AsQueryable();
         }
 
-        public async Task AddAsync(Geolocation geolocation)
+        public async Task AddAsync(Geolocation geolocation, CancellationToken ct = default)
         {
             _efContext.Geolocations.Add(geolocation);
-            await _efContext.SaveChangesAsync();
+            await _efContext.SaveChangesAsync(ct);
         }
     }
 
@@ -50,17 +50,17 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
             _efContext = efContext;
         }
 
-        public async Task<IEnumerable<VisitedLocation>> GetAllAsync()
+        public async Task<IEnumerable<VisitedLocation>> GetAllAsync(CancellationToken ct = default)
         {
             var query = "SELECT * FROM \"VisitedLocations\"";
             using var connection = _dapperContext.CreateConnection();
-            return await connection.QueryAsync<VisitedLocation>(query);
+            return await connection.QueryAsync<VisitedLocation>(new CommandDefinition(query, cancellationToken: ct));
         }
 
-        public async Task AddAsync(VisitedLocation location)
+        public async Task AddAsync(VisitedLocation location, CancellationToken ct = default)
         {
             _efContext.VisitedLocations.Add(location);
-            await _efContext.SaveChangesAsync();
+            await _efContext.SaveChangesAsync(ct);
         }
     }
 
@@ -75,17 +75,17 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
             _efContext = efContext;
         }
 
-        public async Task<IEnumerable<FoundPeople>> GetAllAsync()
+        public async Task<IEnumerable<FoundPeople>> GetAllAsync(CancellationToken ct = default)
         {
             var query = "SELECT * FROM \"FoundPeople\"";
             using var connection = _dapperContext.CreateConnection();
-            return await connection.QueryAsync<FoundPeople>(query);
+            return await connection.QueryAsync<FoundPeople>(new CommandDefinition(query, cancellationToken: ct));
         }
 
-        public async Task AddAsync(FoundPeople person)
+        public async Task AddAsync(FoundPeople person, CancellationToken ct = default)
         {
             _efContext.FoundPeople.Add(person);
-            await _efContext.SaveChangesAsync();
+            await _efContext.SaveChangesAsync(ct);
         }
     }
 }

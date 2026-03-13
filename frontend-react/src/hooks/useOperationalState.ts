@@ -74,7 +74,7 @@ export function useOperationalState() {
     return 'hotspots';
   }, [location.pathname]);
 
-  const [mapActionMode, setMapActionMode] = useState<'none' | 'incident' | 'risk' | 'support'>('none');
+  const [mapActionMode, setMapActionMode] = useState<'none' | 'incident' | 'risk' | 'support' | 'demarcation'>('none');
   const [mapQuickMenu, setMapQuickMenu] = useState<{
     visible: boolean;
     x: number;

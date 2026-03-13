@@ -77,7 +77,12 @@ class RiskEngine:
         try:
             response = requests.get(f"{self.api_base_url}/api/v1/news")
             if response.status_code == 200:
-                return response.json()
+                res = response.json()
+                # Handle Result<ListResponseDto<T>> structure
+                data = res.get('data') or res.get('Data')
+                if data and isinstance(data, dict):
+                    return data.get('items') or data.get('Items') or []
+                return []
             return []
         except Exception as e:
             logger.warning(f"Could not fetch internal alerts: {e}")

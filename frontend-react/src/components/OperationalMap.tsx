@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import type { 
   Hotspot, Catastrophe, SupportPoint, AttentionAlert, 
-  FlowSimulationResponse, SelectedPanel 
+  FlowSimulationResponse, SelectedPanel, MapDemarcation
 } from '../types';
 import { iconCritical, iconFlood, iconLandslide } from '../icons';
 import { MapFocusController } from './map/MapFocusController';
@@ -50,7 +50,7 @@ export const OperationalMap: React.FC<OperationalMapProps> = (props) => {
     supportPoints, setSupportPoints,    attentionAlerts, flowResult,
     flowPathLatLng, mapOverlayRef, setLastMapClick,
     setMapQuickMenu, mapActionMode, setMapActionMode,
-    demarcations, setDemarcations,
+    demarcations,
     setFlowForm, setRiskDraftPoint, setShowRiskModal, 
     setDemarcationDraftPoint, setShowDemarcationModal,
     setRiskForm, openPanel, sidebarTab
@@ -239,7 +239,7 @@ export const OperationalMap: React.FC<OperationalMapProps> = (props) => {
                 <h4 className="font-bold text-slate-900 text-sm mb-1">{dm.title}</h4>
                 <p className="text-xs text-slate-500 mb-2">{dm.description}</p>
                 <div className="flex flex-wrap gap-1">
-                  {dm.tags.map(tag => (
+                  {dm.tags.map((tag: string) => (
                     <span key={tag} className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">
                       #{tag}
                     </span>

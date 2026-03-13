@@ -36,7 +36,7 @@ export function OnboardingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
           {/* Public Path */}
           <button
-            onClick={() => navigate('/public/map')}
+            onClick={() => navigate('/map')}
             className="group relative bg-slate-800/50 border border-slate-700/50 p-10 rounded-3xl hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300 text-left overflow-hidden hover:shadow-[0_0_50px_-15px_rgba(59,130,246,0.3)] active:scale-[0.98]"
           >
             <div className="mb-6 p-4 rounded-2xl bg-slate-900/50 w-fit group-hover:scale-110 transition-transform text-blue-400">

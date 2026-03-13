@@ -32,7 +32,7 @@ export function LandingPage() {
         <div className="mt-10 flex flex-wrap justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 fill-mode-both">
           <Link 
             className="group relative overflow-hidden rounded-xl bg-cyan-600 px-8 py-3.5 font-bold text-white shadow-[0_0_20px_rgba(8,145,178,0.3)] transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(8,145,178,0.5)] active:scale-95" 
-            to="/public/map"
+            to="/map"
           >
             <span className="relative z-10">Explorar Mapa Público</span>
             <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full duration-1000 transition-transform" />

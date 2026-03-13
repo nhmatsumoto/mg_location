@@ -6,6 +6,11 @@ export function LoginPage() {
   const navigate = useNavigate();
 
   const handleLogin = () => {
+    // If we're at /login, we probably want to go to /app/sos by default after login
+    // unless another redirect was already set by PrivateLayout
+    if (!localStorage.getItem('sos_login_redirect')) {
+      localStorage.setItem('sos_login_redirect', '/app/sos');
+    }
     keycloak.login();
   };
 

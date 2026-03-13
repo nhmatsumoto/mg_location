@@ -17,12 +17,12 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<NewsNotification?> GetByIdAsync(Guid id)
+        public async Task<NewsNotification?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
-            return await _context.NewsNotifications.FindAsync(id);
+            return await _context.NewsNotifications.FindAsync(new object[] { id }, ct);
         }
 
-        public async Task<IEnumerable<NewsNotification>> GetAllAsync(string? country = null, string? location = null, string? timeWindow = null)
+        public async Task<IEnumerable<NewsNotification>> GetAllAsync(string? country = null, string? location = null, string? timeWindow = null, CancellationToken ct = default)
         {
             IQueryable<NewsNotification> query = _context.NewsNotifications;
 
@@ -49,25 +49,25 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
                 };
             }
 
-            return await query.OrderByDescending(n => n.PublishedAt).ToListAsync();
+            return await query.OrderByDescending(n => n.PublishedAt).ToListAsync(ct);
         }
 
-        public async Task<bool> ExistsAsync(string title, DateTime publishedAt)
+        public async Task<bool> ExistsAsync(string title, DateTime publishedAt, CancellationToken ct = default)
         {
-            return await _context.NewsNotifications.AnyAsync(n => n.Title == title && n.PublishedAt == publishedAt);
+            return await _context.NewsNotifications.AnyAsync(n => n.Title == title && n.PublishedAt == publishedAt, ct);
         }
 
-        public async Task AddAsync(NewsNotification news)
+        public async Task AddAsync(NewsNotification news, CancellationToken ct = default)
         {
-            await _context.NewsNotifications.AddAsync(news);
-            await _context.SaveChangesAsync();
+            await _context.NewsNotifications.AddAsync(news, ct);
+            await _context.SaveChangesAsync(ct);
         }
 
-        public async Task DeleteOldNewsAsync(DateTime olderThan)
+        public async Task DeleteOldNewsAsync(DateTime olderThan, CancellationToken ct = default)
         {
             var oldNews = _context.NewsNotifications.Where(n => n.PublishedAt < olderThan);
             _context.NewsNotifications.RemoveRange(oldNews);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(ct);
         }
     }
 }

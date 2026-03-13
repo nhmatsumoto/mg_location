@@ -5,18 +5,18 @@ import { keycloak } from './lib/keycloak';
 import { LoadingScreen } from './components/common/LoadingScreen';
 
 // Lazy loaded pages
-const PublicMapPage = lazy(() => import('./pages/PublicMapPage').then((m) => ({ default: m.PublicMapPage })));
-const PublicIncidentDashboardPage = lazy(() => import('./pages/PublicIncidentDashboardPage').then((m) => ({ default: m.PublicIncidentDashboardPage })));
-const SOSPage = lazy(() => import('./pages/SOSPage').then((m) => ({ default: m.SOSPage })));
-const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
-const SplatScenePage = lazy(() => import('./pages/SplatScenePage').then((m) => ({ default: m.SplatScenePage })));
-const VolunteerDashboardPage = lazy(() => import('./pages/VolunteerDashboardPage').then((m) => ({ default: m.VolunteerDashboardPage })));
+const PublicMapPage = lazy(() => import('./pages/PublicMapPage.tsx').then((m) => ({ default: m.PublicMapPage })));
+const PublicIncidentDashboardPage = lazy(() => import('./pages/PublicIncidentDashboardPage.tsx').then((m) => ({ default: m.PublicIncidentDashboardPage })));
+const SOSPage = lazy(() => import('./pages/SOSPage.tsx').then((m) => ({ default: m.SOSPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage.tsx').then((m) => ({ default: m.SettingsPage })));
+const SplatScenePage = lazy(() => import('./pages/SplatScenePage.tsx').then((m) => ({ default: m.SplatScenePage })));
+const VolunteerDashboardPage = lazy(() => import('./pages/VolunteerDashboardPage.tsx').then((m) => ({ default: m.VolunteerDashboardPage })));
 const LogisticsPage = lazy(() => import('./pages/LogisticsPage.tsx').then((m) => ({ default: m.LogisticsPage })));
 const RiskAssessmentPage = lazy(() => import('./pages/RiskAssessmentPage.tsx').then((m) => ({ default: m.RiskAssessmentPage })));
 const SupportDashboardPage = lazy(() => import('./pages/SupportDashboardPage.tsx').then((m) => ({ default: m.SupportDashboardPage })));
-const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
-const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage })));
-const ErrorPage = lazy(() => import('./pages/ErrorPage').then((m) => ({ default: m.ErrorPage })));
+const LoginPage = lazy(() => import('./pages/LoginPage.tsx').then((m) => ({ default: m.LoginPage })));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage.tsx').then((m) => ({ default: m.OnboardingPage })));
+const ErrorPage = lazy(() => import('./pages/ErrorPage.tsx').then((m) => ({ default: m.ErrorPage })));
 
 function PrivateLayout() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -28,6 +28,8 @@ function PrivateLayout() {
 
   // Redirection to login if not authenticated
   if (!keycloak.authenticated) {
+    // Save the intended path to return here after login
+    localStorage.setItem('sos_login_redirect', location.pathname);
     return <Navigate to="/login" replace />;
   }
 
@@ -40,13 +42,9 @@ function PrivateLayout() {
         onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
         variant={isSOS ? 'tactical' : 'default'}
       >
-      <Suspense fallback={<div style={{ padding: 16 }}>Carregando módulo…</div>}>
+      <Suspense fallback={<div style={{ padding: 16 }} className="text-slate-500 font-bold animate-pulse">Carregando módulo de comando…</div>}>
         <Routes>
           <Route path="/sos" element={<SOSPage />} />
-          <Route path="/war-room" element={<Navigate to="/app/sos" replace />} />
-          <Route path="/command-center" element={<Navigate to="/app/sos" replace />} />
-          <Route path="/global-disasters" element={<Navigate to="/app/sos" replace />} />
-          <Route path="/operations" element={<Navigate to="/app/sos" replace />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/splat-scenes/:id" element={<SplatScenePage />} />
           <Route path="/splat-scenes" element={<SplatScenePage />} />
@@ -65,11 +63,21 @@ function PrivateLayout() {
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Suspense fallback={<LoadingScreen />}><OnboardingPage /></Suspense>} />
-      <Route path="/public/map" element={<Suspense fallback={<LoadingScreen />}><PublicMapPage /></Suspense>} />
-      <Route path="/public/transparency" element={<Suspense fallback={<LoadingScreen />}><PublicIncidentDashboardPage /></Suspense>} />
+      <Route path="/" element={
+        keycloak.authenticated ? 
+        <Navigate to="/app/sos" replace /> : 
+        <Suspense fallback={<LoadingScreen />}><OnboardingPage /></Suspense>
+      } />
+      <Route path="/map" element={<Suspense fallback={<LoadingScreen />}><PublicMapPage /></Suspense>} />
+      <Route path="/transparency" element={<Suspense fallback={<LoadingScreen />}><PublicIncidentDashboardPage /></Suspense>} />
+      <Route path="/public/map" element={<Navigate to="/map" replace />} />
+      <Route path="/public/transparency" element={<Navigate to="/transparency" replace />} />
       <Route path="/error" element={<Suspense fallback={<LoadingScreen />}><ErrorPage /></Suspense>} />
-      <Route path="/login" element={<Suspense fallback={<LoadingScreen />}><LoginPage /></Suspense>} />
+      <Route path="/login" element={
+        keycloak.authenticated ? 
+        <Navigate to="/app/sos" replace /> : 
+        <Suspense fallback={<LoadingScreen />}><LoginPage /></Suspense>
+      } />
       <Route path="/app/*" element={<PrivateLayout />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

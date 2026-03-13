@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Flame, Newspaper, Building2, Users, 
+  Flame, Newspaper, Users, 
   AlertTriangle, Play, Activity, LayoutGrid, Brain,
   Camera, MapPin
 } from 'lucide-react';
@@ -65,7 +65,7 @@ export const MapToolsSidebar: React.FC<MapToolsSidebarProps> = (props) => {
   const {
     sidebarTab, displayedHotspots, loading, 
     filteredNewsUpdates, loadingNews, selectedNewsCity, setSelectedNewsCity,
-    missingPeople, attentionAlerts, supportPoints, 
+    missingPeople, attentionAlerts, 
     donationTasks, donationForm, setDonationForm, handleDonationSubmit,
     catastrophes, selectedCatastropheId, setSelectedCatastropheId,
     activeCatastrophe, catastropheEventForm, setCatastropheEventForm,
@@ -320,4 +320,3 @@ export const MapToolsSidebar: React.FC<MapToolsSidebarProps> = (props) => {
     </MapToolsPanel>
   );
 };
-```

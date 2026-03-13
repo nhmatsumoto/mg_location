@@ -36,20 +36,20 @@ namespace SOSLocation.Application.Features.Operations.Queries.GetSnapshot
 
         public async Task<OperationsSnapshotDto> Handle(GetOperationsSnapshotQuery request, CancellationToken cancellationToken)
         {
-            var totalIncidents = await _incidentRepo.GetCountAsync();
-            var totalAlerts = await _alertRepo.GetCountAsync();
-            var criticalAlerts = await _alertRepo.GetCountAsync("Critical");
+            var totalIncidents = await _incidentRepo.GetCountAsync(cancellationToken);
+            var totalAlerts = await _alertRepo.GetCountAsync(null, cancellationToken);
+            var criticalAlerts = await _alertRepo.GetCountAsync("Critical", cancellationToken);
             
             var rescueStats = new 
             {
-                Ready = await _rescueRepo.GetCountByStatusAsync("pronto", "em_deslocamento"),
-                Active = await _rescueRepo.GetCountByStatusAsync("em_operacao")
+                Ready = await _rescueRepo.GetCountByStatusAsync(cancellationToken, "pronto", "em_deslocamento"),
+                Active = await _rescueRepo.GetCountByStatusAsync(cancellationToken, "em_operacao")
             };
 
             var logisticsStats = new
             {
-                Pending = await _supplyRepo.GetCountByStatusAsync("planejado"),
-                InProgress = await _supplyRepo.GetCountByStatusAsync("em_transito")
+                Pending = await _supplyRepo.GetCountByStatusAsync("planejado", cancellationToken),
+                InProgress = await _supplyRepo.GetCountByStatusAsync("em_transito", cancellationToken)
             };
 
             return new OperationsSnapshotDto
