@@ -55,6 +55,7 @@ namespace SOSLocation.Infrastructure.Persistence
         public DbSet<CollapseReport> CollapseReports { get; set; } = null!;
         public DbSet<MapAnnotation> MapAnnotations { get; set; } = null!;
         public DbSet<NewsNotification> NewsNotifications { get; set; } = null!;
+        public DbSet<SOSLocation.Domain.Entities.DataSource> DataSources { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

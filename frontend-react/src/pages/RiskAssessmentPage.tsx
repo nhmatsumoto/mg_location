@@ -137,14 +137,11 @@ export function RiskAssessmentPage() {
                 <ShieldAlert size={48} className="text-slate-600" />
               </div>
               <div>
-                <h4 className="text-lg font-bold text-slate-100">Pronto para Visualização 3D</h4>
+                <h4 className="text-lg font-bold text-slate-100">Análise de Impacto Concluída</h4>
                 <p className="text-sm text-slate-400 max-w-xs">
-                  Estes dados podem ser sobrepostos no motor <span className="text-cyan-400">SOS-3D</span> para visualização tática de inundação e deslizamento.
+                  A matriz de risco foi gerada com base nos parâmetros geográficos atuais.
                 </p>
               </div>
-              <button className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-6 py-2 text-sm font-bold text-cyan-400 hover:bg-cyan-500/20">
-                Ver no Mapa Tático
-              </button>
             </div>
           </div>
         </>

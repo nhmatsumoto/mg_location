@@ -100,4 +100,18 @@ namespace SOSLocation.Domain.Interfaces
         Task<IEnumerable<FoundPeople>> GetAllAsync(CancellationToken ct = default);
         Task AddAsync(FoundPeople person, CancellationToken ct = default);
     }
+
+    public interface IDataSourceRepository
+    {
+        Task<IEnumerable<SOSLocation.Domain.Entities.DataSource>> GetAllActiveAsync(CancellationToken ct = default);
+        Task<SOSLocation.Domain.Entities.DataSource?> GetByIdAsync(Guid id, CancellationToken ct = default);
+        Task AddAsync(SOSLocation.Domain.Entities.DataSource dataSource, CancellationToken ct = default);
+        Task UpdateAsync(SOSLocation.Domain.Entities.DataSource dataSource, CancellationToken ct = default);
+    }
+
+    public interface INotificationService
+    {
+        Task BroadcastAlertAsync(object alert, CancellationToken ct = default);
+        Task BroadcastRiskUpdateAsync(object risk, CancellationToken ct = default);
+    }
 }

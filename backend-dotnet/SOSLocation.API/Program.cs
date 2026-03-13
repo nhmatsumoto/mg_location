@@ -3,7 +3,9 @@ using Serilog;
 using SOSLocation.API.Extensions;
 using SOSLocation.API.Middleware;
 using SOSLocation.API.Filters;
+using SOSLocation.Domain.Interfaces;
 using SOSLocation.Infrastructure.Persistence;
+using SOSLocation.API.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authorization;
@@ -35,6 +37,7 @@ builder.Services.AddControllers(options =>
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
 
 builder.Services.AddOutputCache(options =>
 {
@@ -46,6 +49,7 @@ builder.Services.AddOutputCache(options =>
 // Clean Architecture DI Extensions
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<INotificationService, SOSLocation.API.Services.NotificationService>();
 
 builder.Services.AddCors(options =>
 {
@@ -89,6 +93,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
             };
         }
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/notifications"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -119,5 +137,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();

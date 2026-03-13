@@ -10,7 +10,6 @@ const PublicMapPage = lazy(() => import('./pages/PublicMapPage.tsx').then((m) =>
 const PublicIncidentDashboardPage = lazy(() => import('./pages/PublicIncidentDashboardPage.tsx').then((m) => ({ default: m.PublicIncidentDashboardPage })));
 const SOSPage = lazy(() => import('./pages/SOSPage.tsx').then((m) => ({ default: m.SOSPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage.tsx').then((m) => ({ default: m.SettingsPage })));
-const SplatScenePage = lazy(() => import('./pages/SplatScenePage.tsx').then((m) => ({ default: m.SplatScenePage })));
 const VolunteerDashboardPage = lazy(() => import('./pages/VolunteerDashboardPage.tsx').then((m) => ({ default: m.VolunteerDashboardPage })));
 const LogisticsPage = lazy(() => import('./pages/LogisticsPage.tsx').then((m) => ({ default: m.LogisticsPage })));
 const RiskAssessmentPage = lazy(() => import('./pages/RiskAssessmentPage.tsx').then((m) => ({ default: m.RiskAssessmentPage })));
@@ -18,6 +17,7 @@ const SupportDashboardPage = lazy(() => import('./pages/SupportDashboardPage.tsx
 const LoginPage = lazy(() => import('./pages/LoginPage.tsx').then((m) => ({ default: m.LoginPage })));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage.tsx').then((m) => ({ default: m.OnboardingPage })));
 const ErrorPage = lazy(() => import('./pages/ErrorPage.tsx').then((m) => ({ default: m.ErrorPage })));
+const DataSourceList = lazy(() => import('./pages/admin/DataSourceList.tsx').then((m) => ({ default: m.DataSourceList })));
 
 /**
  * PrivateLayout wraps protected routes with the AppShell.
@@ -43,12 +43,11 @@ function PrivateLayout() {
           <Routes>
             <Route path="/app/sos" element={<ProtectedRoute requiredRole="admin"><SOSPage /></ProtectedRoute>} />
             <Route path="/app/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            <Route path="/app/splat-scenes/:id" element={<ProtectedRoute><SplatScenePage /></ProtectedRoute>} />
-             <Route path="/app/splat-scenes" element={<ProtectedRoute><SplatScenePage /></ProtectedRoute>} />
             <Route path="/app/volunteer" element={<ProtectedRoute><VolunteerDashboardPage /></ProtectedRoute>} />
             <Route path="/app/logistics" element={<ProtectedRoute><LogisticsPage /></ProtectedRoute>} />
             <Route path="/app/risk-assessment" element={<ProtectedRoute><RiskAssessmentPage /></ProtectedRoute>} />
             <Route path="/app/support" element={<ProtectedRoute><SupportDashboardPage /></ProtectedRoute>} />
+            <Route path="/app/admin/sources" element={<ProtectedRoute requiredRole="admin"><DataSourceList /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/app/sos" replace />} />
           </Routes>
         </Suspense>

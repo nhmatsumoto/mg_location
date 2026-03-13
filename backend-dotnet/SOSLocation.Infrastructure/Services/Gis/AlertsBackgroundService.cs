@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using SOSLocation.Domain.Common;
 using SOSLocation.Domain.Incidents;
 using SOSLocation.Domain.Interfaces;
+using SOSLocation.Domain.Interfaces;
+using SOSLocation.Domain.News;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,15 +18,18 @@ namespace SOSLocation.Infrastructure.Services.Gis
     {
         private readonly ILogger<AlertsBackgroundService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly INotificationService _notificationService;
         private readonly List<ExternalAlert> _activeAlerts = new();
         private const int PollIntervalMinutes = 30;
 
         public AlertsBackgroundService(
             ILogger<AlertsBackgroundService> logger,
-            IServiceScopeFactory scopeFactory)
+            IServiceScopeFactory scopeFactory,
+            INotificationService notificationService)
         {
             _logger = logger;
             _scopeFactory = scopeFactory;
+            _notificationService = notificationService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -109,7 +114,7 @@ namespace SOSLocation.Infrastructure.Services.Gis
                 {
                     if (!existingIds.Contains(extAlert.Id))
                     {
-                        await repository.AddAsync(new AttentionAlert
+                        var alertEntity = new AttentionAlert
                         {
                             ExternalId = extAlert.Id,
                             Title = extAlert.Title,
@@ -118,6 +123,17 @@ namespace SOSLocation.Infrastructure.Services.Gis
                             Lat = extAlert.Lat ?? 0,
                             Lng = extAlert.Lon ?? 0,
                             CreatedAt = DateTime.UtcNow
+                        };
+
+                        await repository.AddAsync(alertEntity);
+                        
+                        // BROADCAST
+                        await _notificationService.BroadcastAlertAsync(new {
+                            alertEntity.Id,
+                            alertEntity.Title,
+                            alertEntity.Message,
+                            alertEntity.Severity,
+                            alertEntity.CreatedAt
                         });
                     }
                 }

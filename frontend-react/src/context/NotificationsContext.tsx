@@ -1,6 +1,8 @@
 import { createContext, useContext, useMemo, useState, useEffect, type ReactNode } from 'react';
 import { generateUuid } from '../lib/uuid';
 import { setApiNotifier } from '../services/apiClient';
+import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
+import { useAuthStore } from '../store/authStore';
 
 export type NoticeType = 'info' | 'success' | 'error' | 'warning';
 
@@ -40,6 +42,40 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     setApiNotifier((title, message) => {
       pushNotice({ title, message, type: 'error' });
     });
+
+    // SignalR Connection
+    const token = useAuthStore.getState().token;
+    if (!token) return;
+
+    const connection = new HubConnectionBuilder()
+      .withUrl(`${window.location.origin}/api/hubs/notifications`, {
+        accessTokenFactory: () => token
+      })
+      .withAutomaticReconnect()
+      .configureLogging(LogLevel.Information)
+      .build();
+
+    connection.on('ReceiveAlert', (alert: any) => {
+      pushNotice({
+        title: alert.title,
+        message: alert.message,
+        type: alert.severity === 'critical' || alert.severity === 'extreme' ? 'error' : 'warning'
+      });
+    });
+
+    connection.on('UpdateRisk', (risk: any) => {
+      pushNotice({
+        title: `Risco Atualizado: ${risk.location}`,
+        message: `Novo nível de risco: ${risk.level} (${risk.score}%)`,
+        type: risk.level === 'Critical' ? 'error' : 'info'
+      });
+    });
+
+    connection.start().catch((err: any) => console.error('SignalR Error: ', err));
+
+    return () => {
+      connection.stop();
+    };
   }, []);
 
   const value = useMemo(() => ({ notices, pushNotice, removeNotice }), [notices]);

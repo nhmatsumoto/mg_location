@@ -117,7 +117,9 @@ apiClient.interceptors.request.use((config) => {
   if (config.headers?.['Content-Type'] === 'application/x-msgpack' && config.data) {
     config.data = encode(config.data);
   }
-  if (config.headers?.['Accept']?.includes('application/x-msgpack')) {
+  if (config.headers?.['Accept'] && 
+      typeof config.headers['Accept'] === 'string' && 
+      config.headers['Accept'].includes('application/x-msgpack')) {
     config.responseType = 'arraybuffer';
   }
 

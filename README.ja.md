@@ -95,7 +95,6 @@ graph TD
 - `backend-dotnet/`: ASP.NET Core 10 Web API.
 - `frontend-react/`: React 19 + Vite オペレーション・ダッシュボード.
 - `agents/`: 自動調整のためのAIエージェント.
-- `sos-3d-engine/`: 没入型可視化エンジン (**ステータス：研究中/一時停止**).
 
 ---
 

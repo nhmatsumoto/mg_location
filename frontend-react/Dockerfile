@@ -1,11 +1,6 @@
 # Etapa 1: Build da aplicação React/Vite com Bun
 FROM oven/bun:1.2.14-alpine AS builder
 
-# Instalar dependências do motor 3D primeiro
-WORKDIR /sos-3d-engine
-COPY sos-3d-engine/package.json sos-3d-engine/package-lock.json* ./
-RUN bun install
-
 # Instalar dependências do frontend
 WORKDIR /app
 COPY frontend-react/package.json frontend-react/bun.lock* ./
@@ -14,7 +9,6 @@ RUN --mount=type=cache,target=/root/.bun/install/cache \
 
 # Copiar códigos fonte
 COPY frontend-react/ .
-COPY sos-3d-engine/ /sos-3d-engine/
 
 # Resolver link simbólico quebrado para docs (se existir)
 RUN rm -rf public/docs && mkdir -p public/docs

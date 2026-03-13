@@ -5,7 +5,6 @@ import { Modal } from '../components/ui/Modal';
 import { DraggablePanel } from '../components/map/DraggablePanel';
 import { QuickActions } from '../components/ui/QuickActions';
 
-import { useNavigate } from 'react-router-dom';
 import { LoadingOverlay } from '../components/ui/LoadingOverlay';
 import { MapInteractions, MapListener, type ToolMode } from '../components/map/MapInteractions';
 import { MemoizedEventMarker } from '../components/map/EventMarker';
@@ -13,8 +12,7 @@ import { LiveOpsPanel } from '../components/map/LiveOpsPanel';
 import { CursorCoordinates } from '../components/map/CursorCoordinates';
 import { MapContextMenu } from '../components/map/MapContextMenu';
 import {
-  Crosshair,
-  Box
+  Crosshair
 } from 'lucide-react';
 
 import { useSOSPageData } from '../hooks/useSOSPageData';
@@ -22,7 +20,6 @@ import { SOSHeaderHUD } from '../components/ui/SOSHeaderHUD';
 import { AlertSidebar } from '../components/ui/AlertSidebar';
 
 export function SOSPage() {
-  const navigate = useNavigate();
   const {
     events, domainEvents, alerts, mapAnnotations, opsSnapshot,
     country, setCountry, initialLoading, savingOps,
@@ -162,14 +159,6 @@ export function SOSPage() {
             <div className="flex justify-between items-center text-[10px]">
               <span className="text-slate-500 uppercase font-bold">Severidade</span>
               <span className="text-cyan-400 font-black">LVL_{(selectedEvent as any).severity || 1}</span>
-            </div>
-            <div className="pt-2">
-              <button
-                onClick={() => navigate(`/app/splat-scenes/demo-${selectedEvent.id}`)}
-                className="w-full flex items-center justify-center gap-2 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all shadow-lg"
-              >
-                <Box size={14} /> Ver Reconstrução 3D
-              </button>
             </div>
           </div>
         </DraggablePanel>
