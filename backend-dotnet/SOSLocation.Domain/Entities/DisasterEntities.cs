@@ -14,6 +14,9 @@ namespace SOSLocation.Domain.Entities
 
         [MaxLength(60)]
         public string EventType { get; set; } = "Other";
+        
+        public Guid? DisasterTypeId { get; set; }
+        public DisasterType? DisasterType { get; set; }
 
         public int Severity { get; set; } = 1;
 
@@ -36,5 +39,22 @@ namespace SOSLocation.Domain.Entities
         public string CountryName { get; set; } = string.Empty;
 
         public string SourceUrl { get; set; } = string.Empty;
+    }
+    public class DisasterType : BaseEntity
+    {
+        [MaxLength(50)]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(20)]
+        public string Code { get; set; } = string.Empty;
+
+        [MaxLength(500)]
+        public string Description { get; set; } = string.Empty;
+
+        [MaxLength(50)]
+        public string Icon { get; set; } = string.Empty;
+
+        [MaxLength(7)]
+        public string Color { get; set; } = "#FF0000";
     }
 }

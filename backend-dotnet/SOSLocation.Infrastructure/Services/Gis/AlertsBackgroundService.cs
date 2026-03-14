@@ -24,12 +24,10 @@ namespace SOSLocation.Infrastructure.Services.Gis
 
         public AlertsBackgroundService(
             ILogger<AlertsBackgroundService> logger,
-            IServiceScopeFactory scopeFactory,
-            INotificationService notificationService)
+            IServiceScopeFactory scopeFactory)
         {
             _logger = logger;
             _scopeFactory = scopeFactory;
-            _notificationService = notificationService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -128,7 +126,8 @@ namespace SOSLocation.Infrastructure.Services.Gis
                         await repository.AddAsync(alertEntity);
                         
                         // BROADCAST
-                        await _notificationService.BroadcastAlertAsync(new {
+                        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+                        await notificationService.BroadcastAlertAsync(new {
                             alertEntity.Id,
                             alertEntity.Title,
                             alertEntity.Message,

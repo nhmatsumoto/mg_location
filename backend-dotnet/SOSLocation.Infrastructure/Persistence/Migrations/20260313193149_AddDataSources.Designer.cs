@@ -721,7 +721,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.ToTable("NewsNotifications");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Shared.Campaign", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.Campaign", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -766,7 +766,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.ToTable("Campaigns");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Shared.DonationMoney", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.DonationMoney", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -809,7 +809,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.ToTable("Donations");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Shared.Expense", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.Expense", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -847,7 +847,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.ToTable("Expenses");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Shared.ScenarioBundle", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.ScenarioBundle", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -893,7 +893,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.ToTable("ScenarioBundles");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Shared.SimulationArea", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.SimulationArea", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -931,7 +931,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.ToTable("SimulationAreas");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Shared.SimulationRun", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.SimulationRun", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -975,7 +975,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.ToTable("SimulationRuns");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Tracking.CollapseReport", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.CollapseReport", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1048,7 +1048,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.ToTable("CollapseReports");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Tracking.EdgeHub", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.EdgeHub", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1093,7 +1093,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.ToTable("Hubs");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Tracking.MapAnnotation", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.MapAnnotation", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1151,7 +1151,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.ToTable("MapAnnotations");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Tracking.PublicSnapshot", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.PublicSnapshot", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1253,7 +1253,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.Navigation("Geolocation");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Shared.Campaign", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.Campaign", b =>
                 {
                     b.HasOne("SOSLocation.Domain.Incidents.Incident", "Incident")
                         .WithMany()
@@ -1264,9 +1264,9 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.Navigation("Incident");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Shared.DonationMoney", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.DonationMoney", b =>
                 {
-                    b.HasOne("SOSLocation.Domain.Shared.Campaign", "Campaign")
+                    b.HasOne("SOSLocation.Domain.Entities.Campaign", "Campaign")
                         .WithMany()
                         .HasForeignKey("CampaignId");
 
@@ -1281,7 +1281,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.Navigation("Incident");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Shared.Expense", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.Expense", b =>
                 {
                     b.HasOne("SOSLocation.Domain.Incidents.Incident", "Incident")
                         .WithMany()
@@ -1292,9 +1292,9 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.Navigation("Incident");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Shared.ScenarioBundle", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.ScenarioBundle", b =>
                 {
-                    b.HasOne("SOSLocation.Domain.Shared.SimulationArea", "Area")
+                    b.HasOne("SOSLocation.Domain.Entities.SimulationArea", "Area")
                         .WithMany()
                         .HasForeignKey("AreaId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1303,9 +1303,9 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.Navigation("Area");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Shared.SimulationRun", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.SimulationRun", b =>
                 {
-                    b.HasOne("SOSLocation.Domain.Shared.ScenarioBundle", "Scenario")
+                    b.HasOne("SOSLocation.Domain.Entities.ScenarioBundle", "Scenario")
                         .WithMany()
                         .HasForeignKey("ScenarioId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1314,7 +1314,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.Navigation("Scenario");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Tracking.EdgeHub", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.EdgeHub", b =>
                 {
                     b.HasOne("SOSLocation.Domain.Incidents.Incident", "Incident")
                         .WithMany()
@@ -1323,7 +1323,7 @@ namespace SOSLocation.Infrastructure.Persistence.Migrations
                     b.Navigation("Incident");
                 });
 
-            modelBuilder.Entity("SOSLocation.Domain.Tracking.PublicSnapshot", b =>
+            modelBuilder.Entity("SOSLocation.Domain.Entities.PublicSnapshot", b =>
                 {
                     b.HasOne("SOSLocation.Domain.Incidents.Incident", "Incident")
                         .WithMany()

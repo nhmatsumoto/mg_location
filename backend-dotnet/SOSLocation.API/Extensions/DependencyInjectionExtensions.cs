@@ -42,6 +42,7 @@ namespace SOSLocation.API.Extensions
             services.AddScoped<IFoundPeopleRepository, FoundPeopleRepository>();
             services.AddScoped<INewsRepository, NewsRepository>();
             services.AddScoped<IMapDemarcationRepository, MapDemarcationRepository>();
+            services.AddScoped<IGamificationRepository, GamificationRepository>();
             services.AddScoped<IDataSourceRepository, DataSourceRepository>();
 
             // GIS Services

@@ -44,8 +44,8 @@ export const AlertSidebar: React.FC<AlertSidebarProps> = ({ alerts, onAlertClick
     };
 
     return (
-        <div className="absolute top-[73px] left-0 bottom-0 w-[320px] bg-slate-950 border-r border-white/10 z-40 flex flex-col animate-in slide-in-from-left duration-500 shadow-2xl">
-            <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-slate-900/50">
+        <div className="absolute top-28 left-6 bottom-6 w-[320px] glass-panel z-40 flex flex-col rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden animate-panel">
+            <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/2">
                 <div className="flex items-center gap-2">
                     <Bell size={16} className="text-cyan-400" />
                     <h2 className="text-[11px] font-black text-white uppercase tracking-[0.2em]">Live Alerts</h2>

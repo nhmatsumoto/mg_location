@@ -117,6 +117,7 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<SOSLocationDbContext>();
     context.Database.Migrate();
+    SOSLocationDbSeeder.Seed(context);
 }
 
 
@@ -137,6 +138,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<NotificationHub>("/api/hubs/notifications");
 
 app.Run();

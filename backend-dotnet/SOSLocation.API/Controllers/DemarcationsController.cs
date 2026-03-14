@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/map-annotations")]
     [AllowAnonymous] // In a real app, this would be [Authorize(Roles = "Admin")]
     public class DemarcationsController : ControllerBase
     {

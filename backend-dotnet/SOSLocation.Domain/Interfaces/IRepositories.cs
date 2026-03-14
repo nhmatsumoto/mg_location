@@ -1,7 +1,6 @@
 using SOSLocation.Domain.Incidents;
-using SOSLocation.Domain.Missions;
-using SOSLocation.Domain.Tracking;
-using SOSLocation.Domain.Shared;
+using SOSLocation.Domain.Common;
+using SOSLocation.Domain.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
@@ -97,8 +96,8 @@ namespace SOSLocation.Domain.Interfaces
 
     public interface IFoundPeopleRepository
     {
-        Task<IEnumerable<FoundPeople>> GetAllAsync(CancellationToken ct = default);
-        Task AddAsync(FoundPeople person, CancellationToken ct = default);
+        Task<IEnumerable<SOSLocation.Domain.Entities.FoundPeople>> GetAllAsync(CancellationToken ct = default);
+        Task AddAsync(SOSLocation.Domain.Entities.FoundPeople person, CancellationToken ct = default);
     }
 
     public interface IDataSourceRepository
@@ -107,6 +106,15 @@ namespace SOSLocation.Domain.Interfaces
         Task<SOSLocation.Domain.Entities.DataSource?> GetByIdAsync(Guid id, CancellationToken ct = default);
         Task AddAsync(SOSLocation.Domain.Entities.DataSource dataSource, CancellationToken ct = default);
         Task UpdateAsync(SOSLocation.Domain.Entities.DataSource dataSource, CancellationToken ct = default);
+    }
+
+    public interface IGamificationRepository
+    {
+        Task<SOSLocation.Domain.Entities.UserStats?> GetStatsByUserIdAsync(string keycloakUserId, CancellationToken ct = default);
+        Task UpdateStatsAsync(SOSLocation.Domain.Entities.UserStats stats, CancellationToken ct = default);
+        Task<IEnumerable<SOSLocation.Domain.Entities.Badge>> GetAllBadgesAsync(CancellationToken ct = default);
+        Task<IEnumerable<SOSLocation.Domain.Entities.UserBadge>> GetUserBadgesAsync(string keycloakUserId, CancellationToken ct = default);
+        Task AddUserBadgeAsync(SOSLocation.Domain.Entities.UserBadge userBadge, CancellationToken ct = default);
     }
 
     public interface INotificationService

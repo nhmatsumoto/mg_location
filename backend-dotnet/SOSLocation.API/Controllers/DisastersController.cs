@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SOSLocation.Domain.Incidents;
+using SOSLocation.Domain.Entities;
 using SOSLocation.Domain.Common;
 using SOSLocation.Application.DTOs.Common;
 using SOSLocation.Application.DTOs.Disasters;

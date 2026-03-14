@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using SOSLocation.Domain.Shared;
+using SOSLocation.Domain.Common;
+using SOSLocation.Domain.Entities;
 using SOSLocation.Domain.Incidents;
-using SOSLocation.Domain.Missions;
 using SOSLocation.Domain.News;
-using SOSLocation.Domain.Tracking;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,7 +54,11 @@ namespace SOSLocation.Infrastructure.Persistence
         public DbSet<CollapseReport> CollapseReports { get; set; } = null!;
         public DbSet<MapAnnotation> MapAnnotations { get; set; } = null!;
         public DbSet<NewsNotification> NewsNotifications { get; set; } = null!;
-        public DbSet<SOSLocation.Domain.Entities.DataSource> DataSources { get; set; } = null!;
+        public DbSet<DataSource> DataSources { get; set; } = null!;
+        public DbSet<UserStats> UserStats { get; set; } = null!;
+        public DbSet<Badge> Badges { get; set; } = null!;
+        public DbSet<UserBadge> UserBadges { get; set; } = null!;
+        public DbSet<DisasterType> DisasterTypes { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -66,6 +69,7 @@ namespace SOSLocation.Infrastructure.Persistence
             modelBuilder.Entity<MapAnnotation>().HasIndex(m => m.ExternalId).IsUnique();
             modelBuilder.Entity<CollapseReport>().HasIndex(c => c.ExternalId).IsUnique();
             modelBuilder.Entity<DisasterEvent>().HasIndex(d => new { d.Provider, d.ProviderEventId }).IsUnique();
+            modelBuilder.Entity<DisasterType>().HasIndex(d => d.Code).IsUnique();
         }
 
         public override int SaveChanges()

@@ -1,4 +1,4 @@
-using SOSLocation.Domain.Shared;
+using SOSLocation.Domain.Common;
 using System.ComponentModel.DataAnnotations;
 
 namespace SOSLocation.Domain.Entities

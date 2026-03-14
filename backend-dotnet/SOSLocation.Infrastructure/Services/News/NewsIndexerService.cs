@@ -23,12 +23,10 @@ namespace SOSLocation.Infrastructure.Services.News
 
         public NewsIndexerService(
             ILogger<NewsIndexerService> logger, 
-            IServiceScopeFactory scopeFactory,
-            INotificationService notificationService)
+            IServiceScopeFactory scopeFactory)
         {
             _logger = logger;
             _scopeFactory = scopeFactory;
-            _notificationService = notificationService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -73,7 +71,8 @@ namespace SOSLocation.Infrastructure.Services.News
                             await newsRepo.AddAsync(item);
                             
                             // Broadcast
-                            await _notificationService.BroadcastAlertAsync(new {
+                            var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+                            await notificationService.BroadcastAlertAsync(new {
                                 item.Id,
                                 item.Title,
                                 Message = item.Content,

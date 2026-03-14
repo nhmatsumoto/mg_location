@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using SOSLocation.Domain.Tracking;
+using SOSLocation.Domain.Entities;
 using SOSLocation.Domain.Interfaces;
 using System.Threading.Tasks;
 

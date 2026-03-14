@@ -1,5 +1,5 @@
 using MediatR;
-using SOSLocation.Domain.Missions;
+using SOSLocation.Domain.Entities;
 using SOSLocation.Domain.Interfaces;
 using System.Threading;
 using System.Threading.Tasks;

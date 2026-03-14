@@ -1,5 +1,5 @@
 using Dapper;
-using SOSLocation.Domain.Tracking;
+using SOSLocation.Domain.Entities;
 using SOSLocation.Domain.Interfaces;
 using SOSLocation.Infrastructure.Persistence.Dapper;
 using System.Collections.Generic;

@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.OutputCaching;
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/operations")]
     public class OperationsController : ControllerBase
     {
         private readonly IMediator _mediator;

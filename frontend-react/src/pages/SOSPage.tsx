@@ -18,6 +18,8 @@ import {
 import { useSOSPageData } from '../hooks/useSOSPageData';
 import { SOSHeaderHUD } from '../components/ui/SOSHeaderHUD';
 import { AlertSidebar } from '../components/ui/AlertSidebar';
+import { MissionsPanel } from '../components/gamification/MissionsPanel';
+import { GamificationHud } from '../components/gamification/GamificationHud';
 
 export function SOSPage() {
   const {
@@ -92,10 +94,11 @@ export function SOSPage() {
   };
 
   return (
-    <div className="h-screen w-screen relative overflow-hidden bg-slate-950">
+    <div className="h-screen w-screen relative overflow-hidden bg-[#020617] antialiased font-sans">
       {initialLoading && <LoadingOverlay message="Inicializando Terminal SOS..." />}
       {savingOps && <LoadingOverlay message="Registrando Dados de Campo..." />}
 
+      {/* Floating Header */}
       <SOSHeaderHUD
         country={country}
         setCountry={setCountry}
@@ -133,6 +136,18 @@ export function SOSPage() {
           }
         }}
       />
+
+      {/* Experimental Missions HUD Section (Right Sidebar) */}
+      <aside className="absolute top-28 right-6 bottom-6 z-40 hidden xl:flex flex-col gap-6">
+         <GamificationHud 
+           xp={3420} 
+           level={42} 
+           rank="Sentinel III" 
+           nextLevelXp={5000} 
+           className="w-[320px] shadow-2xl" 
+         />
+         <MissionsPanel />
+      </aside>
 
       {/* Bottom Center: Quick Action Bar */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-40">

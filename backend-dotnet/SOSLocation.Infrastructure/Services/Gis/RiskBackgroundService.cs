@@ -15,17 +15,17 @@ namespace SOSLocation.Infrastructure.Services.Gis
     public class RiskBackgroundService : BackgroundService
     {
         private readonly ILogger<RiskBackgroundService> _logger;
-        private readonly INotificationService _notificationService;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly IHttpClientFactory _httpClientFactory;
         private const int PollIntervalMinutes = 5;
 
         public RiskBackgroundService(
             ILogger<RiskBackgroundService> logger,
-            INotificationService notificationService,
+            IServiceScopeFactory scopeFactory,
             IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
-            _notificationService = notificationService;
+            _scopeFactory = scopeFactory;
             _httpClientFactory = httpClientFactory;
         }
 
@@ -54,9 +54,12 @@ namespace SOSLocation.Infrastructure.Services.Gis
                     var scores = await response.Content.ReadFromJsonAsync<List<RiskScoreDto>>();
                     if (scores != null)
                     {
+                        using var scope = _scopeFactory.CreateScope();
+                        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
                         foreach (var risk in scores)
                         {
-                            await _notificationService.BroadcastRiskUpdateAsync(new
+                            await notificationService.BroadcastRiskUpdateAsync(new
                             {
                                 risk.Location,
                                 risk.Country,

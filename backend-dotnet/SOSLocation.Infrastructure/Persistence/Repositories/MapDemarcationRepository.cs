@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SOSLocation.Domain.Interfaces;
 using SOSLocation.Domain.Operations;
-using SOSLocation.Domain.Tracking;
+using SOSLocation.Domain.Entities;
 using SOSLocation.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;

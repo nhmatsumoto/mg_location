@@ -1,4 +1,4 @@
-using SOSLocation.Domain.Shared;
+using SOSLocation.Domain.Common;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SOSLocation.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c6d9f6cd5109dbfe52fc8315fb12f1c96b8335aa")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+05502ac4760a0f6bb85db6d57e831f857e61799e")]
 [assembly: System.Reflection.AssemblyProductAttribute("SOSLocation.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SOSLocation.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
