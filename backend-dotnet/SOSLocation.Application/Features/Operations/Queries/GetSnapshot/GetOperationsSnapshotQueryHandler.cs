@@ -3,8 +3,6 @@ using SOSLocation.Application.DTOs.Incidents;
 using SOSLocation.Domain.Interfaces;
 using SOSLocation.Domain.Incidents;
 using SOSLocation.Domain.Entities;
-using SOSLocation.Domain.Entities;
-using SOSLocation.Domain.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;

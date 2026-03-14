@@ -1162,7 +1162,7 @@
             },
             "Microsoft.Extensions.Http": {
               "target": "Package",
-              "version": "[10.0.0-preview.1.25080.5, )"
+              "version": "[10.0.0, )"
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",

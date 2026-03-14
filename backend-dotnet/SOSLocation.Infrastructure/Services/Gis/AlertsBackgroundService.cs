@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using SOSLocation.Domain.Common;
 using SOSLocation.Domain.Incidents;
 using SOSLocation.Domain.Interfaces;
-using SOSLocation.Domain.Interfaces;
 using SOSLocation.Domain.News;
 using System;
 using System.Collections.Generic;
@@ -18,7 +17,6 @@ namespace SOSLocation.Infrastructure.Services.Gis
     {
         private readonly ILogger<AlertsBackgroundService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly INotificationService _notificationService;
         private readonly List<ExternalAlert> _activeAlerts = new();
         private const int PollIntervalMinutes = 30;
 

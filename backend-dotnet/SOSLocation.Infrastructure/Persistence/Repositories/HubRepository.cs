@@ -14,7 +14,7 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
         private readonly DapperContext _dapperContext;
         private readonly SOSLocationDbContext _efContext;
 
-        private const string HubColumns = "\"Id\", \"Name\", \"Location\", \"Status\", \"CreatedAt\", \"UpdatedAt\"";
+        private const string HubColumns = "\"Id\", \"HubId\", \"Name\", \"LocalIp\", \"LastSeenAt\", \"Status\", \"IncidentId\", \"CreatedAt\", \"UpdatedAt\"";
 
         public HubRepository(DapperContext dapperContext, SOSLocationDbContext efContext)
         {

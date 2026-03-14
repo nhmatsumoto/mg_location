@@ -15,7 +15,7 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
         private readonly DapperContext _dapperContext;
         private readonly SOSLocationDbContext _efContext;
 
-        private const string IncidentColumns = "\"Id\", \"Title\", \"Description\", \"Location\", \"Severity\", \"Status\", \"CreatedAt\", \"UpdatedAt\"";
+        private const string IncidentColumns = "\"Id\", \"Name\", \"Type\", \"Country\", \"Region\", \"Status\", \"StartsAt\", \"EndsAt\", \"CreatedAt\", \"UpdatedAt\"";
 
         public IncidentRepository(DapperContext dapperContext, SOSLocationDbContext efContext)
         {

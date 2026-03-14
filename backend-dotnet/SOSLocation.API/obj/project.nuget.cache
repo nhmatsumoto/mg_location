@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "qr3WUKR73LY=",
+  "dgSpecHash": "2JGEZf+/YLc=",
   "success": true,
   "projectFilePath": "/home/nhmatsumoto/sos_location/backend-dotnet/SOSLocation.API/SOSLocation.API.csproj",
   "expectedPackageFiles": [
@@ -46,7 +46,7 @@
     "/home/nhmatsumoto/.nuget/packages/microsoft.extensions.filesystemglobbing/10.0.0/microsoft.extensions.filesystemglobbing.10.0.0.nupkg.sha512",
     "/home/nhmatsumoto/.nuget/packages/microsoft.extensions.hosting/10.0.0/microsoft.extensions.hosting.10.0.0.nupkg.sha512",
     "/home/nhmatsumoto/.nuget/packages/microsoft.extensions.hosting.abstractions/10.0.0/microsoft.extensions.hosting.abstractions.10.0.0.nupkg.sha512",
-    "/home/nhmatsumoto/.nuget/packages/microsoft.extensions.http/10.0.0-preview.1.25080.5/microsoft.extensions.http.10.0.0-preview.1.25080.5.nupkg.sha512",
+    "/home/nhmatsumoto/.nuget/packages/microsoft.extensions.http/10.0.0/microsoft.extensions.http.10.0.0.nupkg.sha512",
     "/home/nhmatsumoto/.nuget/packages/microsoft.extensions.logging/10.0.3/microsoft.extensions.logging.10.0.3.nupkg.sha512",
     "/home/nhmatsumoto/.nuget/packages/microsoft.extensions.logging.abstractions/10.0.3/microsoft.extensions.logging.abstractions.10.0.3.nupkg.sha512",
     "/home/nhmatsumoto/.nuget/packages/microsoft.extensions.logging.configuration/10.0.0/microsoft.extensions.logging.configuration.10.0.0.nupkg.sha512",

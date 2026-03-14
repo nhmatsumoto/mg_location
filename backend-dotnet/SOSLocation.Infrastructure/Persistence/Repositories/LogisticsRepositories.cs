@@ -14,7 +14,7 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
         private readonly DapperContext _dapperContext;
         private readonly SOSLocationDbContext _efContext;
 
-        private const string GroupColumns = "\"Id\", \"Name\", \"Status\", \"ContactInfo\", \"CreatedAt\", \"UpdatedAt\"";
+        private const string GroupColumns = "\"Id\", \"ExternalId\", \"Name\", \"Members\", \"Specialty\", \"Status\", \"Lat\", \"Lng\", \"CreatedAt\", \"UpdatedAt\"";
 
         public RescueGroupRepository(DapperContext dapperContext, SOSLocationDbContext efContext)
         {
@@ -50,7 +50,7 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
         private readonly DapperContext _dapperContext;
         private readonly SOSLocationDbContext _efContext;
 
-        private const string SupplyColumns = "\"Id\", \"ItemName\", \"Quantity\", \"Status\", \"Location\", \"CreatedAt\", \"UpdatedAt\"";
+        private const string SupplyColumns = "\"Id\", \"ExternalId\", \"Item\", \"Quantity\", \"Unit\", \"Origin\", \"Destination\", \"Status\", \"Priority\", \"CreatedAt\", \"UpdatedAt\"";
 
         public SupplyLogisticsRepository(DapperContext dapperContext, SOSLocationDbContext efContext)
         {

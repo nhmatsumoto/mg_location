@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SOSLocation.Infrastructure.Persistence;
 using SOSLocation.Domain.Entities;
-using SOSLocation.Domain.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

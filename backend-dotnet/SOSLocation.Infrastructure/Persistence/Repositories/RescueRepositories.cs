@@ -15,7 +15,7 @@ namespace SOSLocation.Infrastructure.Persistence.Repositories
         private readonly DapperContext _dapperContext;
         private readonly SOSLocationDbContext _efContext;
 
-        private const string SearchAreaColumns = "\"Id\", \"IncidentId\", \"Title\", \"Description\", \"PolyJson\", \"Status\", \"CreatedAt\", \"UpdatedAt\"";
+        private const string SearchAreaColumns = "\"Id\", \"IncidentId\", \"Name\", \"GeometryJson\", \"Status\", \"CreatedAt\", \"UpdatedAt\"";
 
         public SearchAreaRepository(DapperContext dapperContext, SOSLocationDbContext efContext)
         {

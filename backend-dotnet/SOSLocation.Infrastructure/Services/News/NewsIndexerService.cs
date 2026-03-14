@@ -3,8 +3,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SOSLocation.Domain.Interfaces;
 using SOSLocation.Domain.News;
-using SOSLocation.Domain.Interfaces;
-using SOSLocation.Domain.News;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +16,6 @@ namespace SOSLocation.Infrastructure.Services.News
     {
         private readonly ILogger<NewsIndexerService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly INotificationService _notificationService;
         private const int IndexIntervalMinutes = 15;
 
         public NewsIndexerService(
