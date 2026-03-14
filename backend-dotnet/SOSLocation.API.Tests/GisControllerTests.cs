@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SOSLocation.API.Controllers;
 using SOSLocation.Domain.Interfaces;
+using SOSLocation.Domain.Common;
 using Xunit;
 
 namespace SOSLocation.API.Tests
@@ -40,7 +41,7 @@ namespace SOSLocation.API.Tests
         public void GetActiveAlerts_ReturnsOkWithAlerts()
         {
             // Arrange
-            var mockAlerts = new List<object> { new { id = "1", title = "Test Alert" } };
+            var mockAlerts = new List<ExternalAlert> { new ExternalAlert { Id = "1", Title = "Test Alert" } };
             _alertsServiceMock.Setup(s => s.GetActiveAlerts()).Returns(mockAlerts);
 
             // Act
