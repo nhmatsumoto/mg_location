@@ -18,6 +18,16 @@ const LoginPage = lazy(() => import('./pages/LoginPage.tsx').then((m) => ({ defa
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage.tsx').then((m) => ({ default: m.OnboardingPage })));
 const ErrorPage = lazy(() => import('./pages/ErrorPage.tsx').then((m) => ({ default: m.ErrorPage })));
 const DataSourceList = lazy(() => import('./pages/admin/DataSourceList.tsx').then((m) => ({ default: m.DataSourceList })));
+const HotspotsPage = lazy(() => import('./pages/HotspotsPage.tsx').then((m) => ({ default: m.HotspotsPage })));
+const ReportsPage = lazy(() => import('./pages/ReportsPage.tsx').then((m) => ({ default: m.ReportsPage })));
+const SearchedAreasPage = lazy(() => import('./pages/SearchedAreasPage.tsx').then((m) => ({ default: m.SearchedAreasPage })));
+const RescueSupportPage = lazy(() => import('./pages/RescueSupportPage.tsx').then((m) => ({ default: m.RescueSupportPage })));
+const IncidentsPage = lazy(() => import('./pages/IncidentsPage.tsx').then((m) => ({ default: m.IncidentsPage })));
+const SimulationsPage = lazy(() => import('./pages/SimulationsPage.tsx').then((m) => ({ default: m.SimulationsPage })));
+const DataHubPage = lazy(() => import('./pages/DataHubPage.tsx').then((m) => ({ default: m.DataHubPage })));
+const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage.tsx').then((m) => ({ default: m.IntegrationsPage })));
+const MissingPersonsPage = lazy(() => import('./pages/MissingPersonsPage.tsx').then((m) => ({ default: m.MissingPersonsPage })));
+const GlobalDisastersPage = lazy(() => import('./pages/GlobalDisastersPage.tsx').then((m) => ({ default: m.GlobalDisastersPage })));
 
 /**
  * PrivateLayout wraps protected routes with the AppShell.
@@ -48,6 +58,16 @@ function PrivateLayout() {
             <Route path="/app/risk-assessment" element={<ProtectedRoute><RiskAssessmentPage /></ProtectedRoute>} />
             <Route path="/app/support" element={<ProtectedRoute><SupportDashboardPage /></ProtectedRoute>} />
             <Route path="/app/admin/sources" element={<ProtectedRoute requiredRole="admin"><DataSourceList /></ProtectedRoute>} />
+            <Route path="/app/hotspots" element={<ProtectedRoute><HotspotsPage /></ProtectedRoute>} />
+            <Route path="/app/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+            <Route path="/app/searched-areas" element={<ProtectedRoute><SearchedAreasPage /></ProtectedRoute>} />
+            <Route path="/app/rescue-support" element={<ProtectedRoute><RescueSupportPage /></ProtectedRoute>} />
+            <Route path="/app/incidents" element={<ProtectedRoute><IncidentsPage /></ProtectedRoute>} />
+            <Route path="/app/simulations" element={<ProtectedRoute><SimulationsPage /></ProtectedRoute>} />
+            <Route path="/app/data-hub" element={<ProtectedRoute><DataHubPage /></ProtectedRoute>} />
+            <Route path="/app/integrations" element={<ProtectedRoute><IntegrationsPage /></ProtectedRoute>} />
+            <Route path="/app/missing-persons" element={<ProtectedRoute><MissingPersonsPage /></ProtectedRoute>} />
+            <Route path="/app/global-disasters" element={<ProtectedRoute><GlobalDisastersPage /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/app/sos" replace />} />
           </Routes>
         </Suspense>

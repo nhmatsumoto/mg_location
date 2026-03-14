@@ -126,7 +126,7 @@ export const operationsApi = {
     }
   },
   async createSupportPoint(payload: { name: string; type: string; lat: number; lng: number; capacity?: number; status?: string }) {
-    const response = await apiClient.post('/support-points', payload);
+    const response = await apiClient.post('/api/support-points', payload);
     return response.data;
   },
   async updateSupportPoint(id: string, payload: { name: string; type: string; lat: number; lng: number; capacity?: number; status?: string }) {
@@ -147,7 +147,7 @@ export const operationsApi = {
     }
   },
   async createRiskArea(payload: { name: string; severity: string; lat: number; lng: number; radiusMeters?: number; notes?: string; status?: string }) {
-    const response = await apiClient.post('/risk-areas', payload);
+    const response = await apiClient.post('/api/risk-areas', payload);
     return response.data;
   },
   async updateRiskArea(id: string, payload: { name: string; severity: string; lat: number; lng: number; radiusMeters?: number; notes?: string; status?: string }) {
@@ -183,7 +183,7 @@ export const operationsApi = {
     city?: string;
     metadata?: Record<string, unknown>;
   }) {
-    const response = await apiClient.post('/map-annotations', payload);
+    const response = await apiClient.post('/api/map-annotations', payload);
     return response.data;
   },
 
@@ -196,7 +196,7 @@ export const operationsApi = {
     }
   },
   async createRescueGroup(payload: { name: string; members: number; specialty: string; status: string; lat?: number; lng?: number }) {
-    const response = await apiClient.post('/rescue-groups', payload);
+    const response = await apiClient.post('/api/rescue-groups', payload);
     return response.data;
   },
   async updateRescueGroup(id: string, payload: { name: string; members: number; specialty: string; status: string; lat?: number; lng?: number }) {
@@ -217,7 +217,7 @@ export const operationsApi = {
     }
   },
   async createSupply(payload: { item: string; quantity: number; unit?: string; origin?: string; destination?: string; status?: string; priority?: string }) {
-    const response = await apiClient.post('/supply-logistics', payload);
+    const response = await apiClient.post('/api/supply-logistics', payload);
     return response.data;
   },
   async updateSupply(id: string, payload: { item: string; quantity: number; unit?: string; origin?: string; destination?: string; status?: string; priority?: string }) {

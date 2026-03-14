@@ -49,6 +49,17 @@ builder.Services.AddOutputCache(options =>
 // Clean Architecture DI Extensions
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("PublicApi", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 100;
+        opt.QueueLimit = 20;
+    });
+});
+
 builder.Services.AddScoped<INotificationService, SOSLocation.API.Services.NotificationService>();
 
 builder.Services.AddCors(options =>
@@ -127,11 +138,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseHsts();
+}
 
+app.UseHttpsRedirection();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseCors("SOSPolicy");
-
+app.UseRateLimiter();
 app.UseOutputCache();
 
 app.UseAuthentication();
