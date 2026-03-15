@@ -6,6 +6,7 @@ export function LoginPage() {
   const navigate = useNavigate();
 
   const handleLogin = () => {
+    localStorage.setItem('sos_onboarding_visited', 'true');
     // If we're at /login, we probably want to go to /app/sos by default after login
     // unless another redirect was already set by PrivateLayout
     if (!localStorage.getItem('sos_login_redirect')) {

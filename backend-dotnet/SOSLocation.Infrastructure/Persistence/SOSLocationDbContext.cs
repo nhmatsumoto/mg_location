@@ -59,6 +59,8 @@ namespace SOSLocation.Infrastructure.Persistence
         public DbSet<Badge> Badges { get; set; } = null!;
         public DbSet<UserBadge> UserBadges { get; set; } = null!;
         public DbSet<DisasterType> DisasterTypes { get; set; } = null!;
+        public DbSet<MeteorologicalData> MeteorologicalData { get; set; } = null!;
+        public DbSet<RiskAnalysis> RiskAnalysis { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

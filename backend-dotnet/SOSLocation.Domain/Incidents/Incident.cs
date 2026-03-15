@@ -21,6 +21,9 @@ namespace SOSLocation.Domain.Incidents
         [MaxLength(120)]
         public string Region { get; set; } = string.Empty;
 
+        public double Lat { get; set; }
+        public double Lon { get; set; }
+
         public DateTime StartsAt { get; set; }
         public DateTime? EndsAt { get; set; }
 

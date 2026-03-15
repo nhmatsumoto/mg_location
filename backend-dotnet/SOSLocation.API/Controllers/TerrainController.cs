@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
-    [Route("api/terrain")]
+    [Route("api/v1/terrain")]
+    [Authorize]
     public class TerrainController : ControllerBase
     {
         private readonly IHttpClientFactory _httpClientFactory;

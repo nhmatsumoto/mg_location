@@ -17,6 +17,7 @@ namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/v1")]
+    [Authorize]
     public class GisController : ControllerBase
     {
         private readonly IGisService _gisService;

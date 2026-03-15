@@ -33,7 +33,7 @@ namespace SOSLocation.API.Tests
             var result = await _controller.GetDigitalElevationModel(req);
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
             _gisServiceMock.Verify(s => s.FetchElevationGridAsync(req.MinLat, req.MinLon, req.MaxLat, req.MaxLon, req.Resolution), Times.Once);
         }
 
@@ -48,7 +48,7 @@ namespace SOSLocation.API.Tests
             var result = _controller.GetActiveAlerts();
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
             _alertsServiceMock.Verify(s => s.GetActiveAlerts(), Times.Once);
         }
     }

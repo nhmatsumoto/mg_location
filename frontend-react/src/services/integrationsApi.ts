@@ -60,45 +60,45 @@ export interface SatelliteLayerDto {
 
 export const integrationsApi = {
   async getWeatherForecast(lat: number, lon: number, days = 3) {
-    const response = await apiClient.get<WeatherForecastDto>('/api/integrations/weather/forecast', { params: { lat, lon, days } });
+    const response = await apiClient.get<WeatherForecastDto>('/integrations/weather/forecast', { params: { lat, lon, days } });
     return response.data;
   },
   async getAlerts(bbox?: string, since?: string) {
-    const response = await apiClient.get<{ items: AlertDto[]; cacheHit?: boolean }>('/api/integrations/alerts', { params: { bbox, since } });
+    const response = await apiClient.get<{ items: AlertDto[]; cacheHit?: boolean }>('/integrations/alerts', { params: { bbox, since } });
     return response.data;
   },
   async getTransparencyTransfers(start?: string, end?: string, uf?: string, municipio?: string) {
-    const response = await apiClient.get<{ items: TransferRecordDto[]; totals?: Record<string, unknown>; cacheHit?: boolean }>('/api/integrations/transparency/transfers', {
+    const response = await apiClient.get<{ items: TransferRecordDto[]; totals?: Record<string, unknown>; cacheHit?: boolean }>('/integrations/transparency/transfers', {
       params: { start, end, uf, municipio },
     });
     return response.data;
   },
   async getTransparencySummary(start?: string, end?: string) {
-    const response = await apiClient.get<{ source: string; summary: Record<string, unknown>; cacheHit?: boolean }>('/api/integrations/transparency/summary', {
+    const response = await apiClient.get<{ source: string; summary: Record<string, unknown>; cacheHit?: boolean }>('/integrations/transparency/summary', {
       params: { start, end },
     });
     return response.data;
   },
   async getSatelliteLayers() {
-    const response = await apiClient.get<{ items: SatelliteLayerDto[]; cacheHit?: boolean }>('/api/integrations/satellite/layers');
+    const response = await apiClient.get<{ items: SatelliteLayerDto[]; cacheHit?: boolean }>('/integrations/satellite/layers');
     return response.data;
   },
   async getLandsatCatalog() {
-    const response = await apiClient.get<{ source: string; missionUrl: string; stacApi: string; collections: LandsatCollectionDto[]; cacheHit?: boolean }>('/api/integrations/satellite/landsat/catalog');
+    const response = await apiClient.get<{ source: string; missionUrl: string; stacApi: string; collections: LandsatCollectionDto[]; cacheHit?: boolean }>('/integrations/satellite/landsat/catalog');
     return response.data;
   },
   async getIbgeMunicipios(uf?: string, nome?: string, limit = 20) {
-    const response = await apiClient.get<{ source: string; items: IbgeMunicipioDto[]; cacheHit?: boolean }>('/api/integrations/ibge/municipios', {
+    const response = await apiClient.get<{ source: string; items: IbgeMunicipioDto[]; cacheHit?: boolean }>('/integrations/ibge/municipios', {
       params: { uf, nome, limit },
     });
     return response.data;
   },
   async getDisasterIntelligence(params: { city?: string; state?: string; lat?: number; lon?: number; bbox?: string; since?: string }) {
-    const response = await apiClient.get<any>('/api/alerts/intelligence', { params, __skipGlobalNotify: true } as any);
+    const response = await apiClient.get<any>('/alerts/intelligence', { params, __skipGlobalNotify: true } as any);
     return response.data;
   },
   async getGeeAnalysis(bbox: string, analysisType: 'ndvi' | 'moisture' | 'thermal' = 'ndvi') {
-    const response = await apiClient.get<any>('/api/integrations/satellite/gee/analysis', { params: { bbox, analysisType } });
+    const response = await apiClient.get<any>('/integrations/satellite/gee/analysis', { params: { bbox, analysisType } });
     return response.data;
   },
 };

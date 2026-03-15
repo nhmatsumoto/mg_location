@@ -1,8 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SOSLocation.Domain.Entities;
+using SOSLocation.Infrastructure.Persistence;
 using SOSLocation.Domain.Interfaces;
-using SOSLocation.Domain.News;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -14,12 +15,14 @@ namespace SOSLocation.Infrastructure.Services.News
     {
         private readonly ILogger<WeatherIndexerService> _logger;
         private readonly IServiceProvider _serviceProvider;
+        private readonly INotificationService _notificationService;
         private const int IndexIntervalMinutes = 20;
 
-        public WeatherIndexerService(ILogger<WeatherIndexerService> logger, IServiceProvider serviceProvider)
+        public WeatherIndexerService(ILogger<WeatherIndexerService> logger, IServiceProvider serviceProvider, INotificationService notificationService)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
+            _notificationService = notificationService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -37,62 +40,62 @@ namespace SOSLocation.Infrastructure.Services.News
 
         private async Task IndexWeatherAsync()
         {
-            _logger.LogInformation("Indexing weather alerts from climatic agencies...");
+            _logger.LogInformation("Indexing weather data from climatic agencies...");
 
             using var scope = _serviceProvider.CreateScope();
-            var repository = scope.ServiceProvider.GetRequiredService<INewsRepository>();
+            var context = scope.ServiceProvider.GetRequiredService<SOSLocationDbContext>();
 
-            var weatherItems = new List<NewsNotification>
+            // Simulate capturing real meteorological data
+            var weatherRecords = new List<MeteorologicalData>
             {
-                new NewsNotification
+                new MeteorologicalData
                 {
-                    Id = Guid.NewGuid(),
-                    Title = "Heavy Rain Warning: Tokyo Metropolitan Area",
-                    Content = "Sudden localized heavy rain expected. Risk of flash floods in urban areas and rising river levels.",
-                    Source = "JMA",
-                    Country = "Japão",
-                    Location = "Tokyo",
+                    LocationName = "Tokyo",
                     Latitude = 35.6895,
                     Longitude = 139.6917,
-                    PublishedAt = DateTime.UtcNow,
-                    Category = "Storm",
-                    ExternalUrl = "https://www.jma.go.jp/jma/indexe.html",
-                    ClimateInfo = "Precipitação: 45mm/h | Vento: 60km/h",
-                    RiskScore = 72.5
+                    Temperature = 18.5,
+                    Humidity = 65,
+                    WindSpeed = 12.0,
+                    Condition = "Rainy",
+                    CapturedAt = DateTime.UtcNow,
+                    rawDataJson = "{\"precip\": \"45mm/h\", \"source\": \"JMA API\"}"
                 },
-                new NewsNotification
+                new MeteorologicalData
                 {
-                    Id = Guid.NewGuid(),
-                    Title = "Alerta de Onda de Calor - Interior de São Paulo",
-                    Content = "Temperaturas 5°C acima da média por mais de 5 dias consecutivos. Hidrate-se e evite exposição ao sol.",
-                    Source = "INMET",
-                    Country = "Brasil",
-                    Location = "São Paulo",
+                    LocationName = "São Paulo",
                     Latitude = -23.5505,
                     Longitude = -46.6333,
-                    PublishedAt = DateTime.UtcNow.AddHours(-1),
-                    Category = "Weather",
-                    ExternalUrl = "https://portal.inmet.gov.br/",
-                    RiskScore = 45.0
+                    Temperature = 32.0,
+                    Humidity = 30,
+                    WindSpeed = 5.5,
+                    Condition = "Sunny",
+                    CapturedAt = DateTime.UtcNow.AddHours(-1),
+                    rawDataJson = "{\"heatwave\": true, \"source\": \"INMET API\"}"
                 }
             };
 
-            foreach (var item in weatherItems)
+            try
             {
-                try
+                context.MeteorologicalData.AddRange(weatherRecords);
+                await context.SaveChangesAsync();
+                _logger.LogInformation("Successfully indexed {count} meteorological data points.", weatherRecords.Count);
+
+                // BROADCAST
+                foreach (var weather in weatherRecords)
                 {
-                    if (!await repository.ExistsAsync(item.Title, item.PublishedAt))
-                    {
-                        await repository.AddAsync(item);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to persist weather item: {title}", item.Title);
+                    await _notificationService.BroadcastAlertAsync(new {
+                        Type = "METEOROLOGICAL",
+                        weather.LocationName,
+                        weather.Temperature,
+                        weather.Condition,
+                        weather.CapturedAt
+                    });
                 }
             }
-
-            _logger.LogInformation("Successfully indexed {count} weather alerts.", weatherItems.Count);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist meteorological data.");
+            }
         }
     }
 }

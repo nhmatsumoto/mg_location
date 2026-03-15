@@ -7,11 +7,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/searched-areas")]
+    [Authorize]
     public class SearchedAreasController : ControllerBase
     {
         private readonly SOSLocationDbContext _context;

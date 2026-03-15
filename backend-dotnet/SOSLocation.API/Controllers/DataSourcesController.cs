@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace SOSLocation.API.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("api/v1/data-sources")]
+    [Authorize]
     public class DataSourcesController : ControllerBase
     {
         private readonly IDataSourceRepository _repository;

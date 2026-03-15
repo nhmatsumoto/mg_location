@@ -73,6 +73,9 @@ namespace SOSLocation.API.Extensions
             services.AddHostedService<WeatherIndexerService>();
             services.AddHostedService<AlertHistoryService>();
 
+            // Broadcast & Notifications
+            services.AddScoped<INotificationService, SOSLocation.API.Services.NotificationService>();
+
             return services;
         }
 

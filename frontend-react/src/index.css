@@ -1,22 +1,43 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+@layer base {
+  :root {
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-display: 'Outfit', system-ui, sans-serif;
+    
+    /* Premium HSL Color System */
+    --primary: 199 89% 48%; /* Cyan 500 */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 226 71% 40%; /* Blue 700 */
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 262 83% 58%; /* Violet 500 */
+    --accent-foreground: 0 0% 100%;
+    
+    --background: 222 47% 4%; /* Deep Navy */
+    --foreground: 210 40% 98%;
+    
+    --card: 222 47% 6%;
+    --card-foreground: 210 40% 98%;
+    
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 199 89% 48%;
+    
+    --radius: 0.75rem;
+  }
+}
+
 :root {
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    Helvetica Neue,
-    Arial,
-    sans-serif;
   color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html,
@@ -24,12 +45,13 @@ body,
 #root {
   height: 100%;
   width: 100%;
-  margin: 0;
-  padding: 0;
-  background-color: #020617;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
 }
 
 .leaflet-container {
@@ -130,6 +152,28 @@ body,
   box-shadow: 0 0 15px rgba(6, 182, 212, 0.1);
 }
 
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+.animate-glitch {
+  animation: glitch 0.3s cubic-bezier(.25,.46,.45,.94) both infinite;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.animate-scanline {
+  animation: scanline 4s linear infinite;
+}
+
 .alert-marker {
   position: relative;
   display: flex;
@@ -156,68 +200,97 @@ body,
   border-top-color: rgba(6, 182, 212, 0.3);
 }
 
-/* Glassmorphism Design System */
+/* Mesh Gradient Backgrounds */
+.bg-mesh {
+  background-color: hsl(var(--background));
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(var(--primary), 0.15) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(var(--accent), 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(var(--secondary), 0.15) 0px, transparent 50%);
+}
+
+.bg-mesh-animate {
+  background-size: 200% 200%;
+  animation: mesh-flow 15s ease infinite;
+}
+
+@keyframes mesh-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Glassmorphism Design System 2.0 */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  background: hsla(222, 47%, 6%, 0.7);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid hsla(0, 0%, 100%, 0.08);
+  box-shadow: 
+    0 4px 24px -1px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px hsla(0, 0%, 100%, 0.05);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: hsla(0, 0%, 100%, 0.02);
+  backdrop-filter: blur(12px);
+  border: 1px solid hsla(0, 0%, 100%, 0.05);
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+  background: hsla(0, 0%, 100%, 0.06);
+  border-color: hsla(var(--primary), 0.3);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 40px -12px hsla(var(--primary), 0.3);
 }
 
-/* Gamification Elements */
-@keyframes xp-gain {
-  0% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.1); filter: brightness(1.5); }
-  100% { transform: scale(1); filter: brightness(1); }
+/* Sophisticated Micro-animations */
+@keyframes entrance-stagger {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.animate-xp {
-  animation: xp-gain 0.5s ease-out;
+.animate-stagger-1 { animation: entrance-stagger 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+.animate-stagger-2 { animation: entrance-stagger 0.4s cubic-bezier(0.23, 1, 0.32, 1) 0.1s forwards; opacity: 0; }
+.animate-stagger-3 { animation: entrance-stagger 0.4s cubic-bezier(0.23, 1, 0.32, 1) 0.2s forwards; opacity: 0; }
+
+@keyframes glow-pulse {
+  0% { box-shadow: 0 0 0 0 hsla(var(--primary), 0.4); }
+  70% { box-shadow: 0 0 0 10px hsla(var(--primary), 0); }
+  100% { box-shadow: 0 0 0 0 hsla(var(--primary), 0); }
 }
 
-.progress-bar-glow {
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5), 0 0 20px rgba(34, 197, 94, 0.2);
+.animate-glow {
+  animation: glow-pulse 2s infinite;
+}
+
+/* Tactical UI utilities */
+.tactical-border {
+  border: 1px solid hsla(var(--primary), 0.2);
+  box-shadow: 0 0 20px hsla(var(--primary), 0.05);
 }
 
 .rank-text {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  background: linear-gradient(135deg, hsl(45, 93%, 47%), hsl(35, 92%, 50%));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  font-family: var(--font-display);
   font-weight: 900;
 }
 
-.level-badge {
-  background: radial-gradient(circle at center, #3b82f6, #1d4ed8);
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
-}
-
-/* Responsive Overrides */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: hsla(0, 0%, 100%, 0.1);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: hsla(var(--primary), 0.4);
 }
 

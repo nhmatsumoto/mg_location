@@ -69,13 +69,27 @@ namespace SOSLocation.Infrastructure.Services.News
                             
                             // Broadcast
                             var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-                            await notificationService.BroadcastAlertAsync(new {
-                                item.Id,
-                                item.Title,
-                                Message = item.Content,
-                                Severity = item.RiskScore > 80 ? "critical" : "info",
-                                CreatedAt = item.PublishedAt
-                            });
+                            if (item.Category == "Weather")
+                            {
+                                await notificationService.BroadcastWeatherUpdateAsync(new {
+                                    item.Id,
+                                    item.Title,
+                                    Message = item.Content,
+                                    item.Location,
+                                    item.Country,
+                                    CreatedAt = item.PublishedAt
+                                }, item.Location, item.Country);
+                            }
+                            else
+                            {
+                                await notificationService.BroadcastAlertAsync(new {
+                                    item.Id,
+                                    item.Title,
+                                    Message = item.Content,
+                                    Severity = item.RiskScore > 80 ? "critical" : "info",
+                                    CreatedAt = item.PublishedAt
+                                });
+                            }
                         }
                     }
 

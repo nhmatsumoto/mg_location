@@ -130,6 +130,8 @@ namespace SOSLocation.Infrastructure.Services.Gis
                             alertEntity.Title,
                             alertEntity.Message,
                             alertEntity.Severity,
+                            alertEntity.Lat,
+                            alertEntity.Lng,
                             alertEntity.CreatedAt
                         });
                     }

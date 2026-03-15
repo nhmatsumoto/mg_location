@@ -27,10 +27,6 @@ builder.Host.UseSerilog();
 // Add services to the container.
 builder.Services.AddControllers(options =>
 {
-    var policy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .Build();
-    options.Filters.Add(new AuthorizeFilter(policy));
     options.Filters.Add<ResultActionFilter>();
 }).AddJsonOptions(options =>
 {
@@ -61,7 +57,7 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-builder.Services.AddScoped<INotificationService, SOSLocation.API.Services.NotificationService>();
+// builder.Services.AddScoped<INotificationService, SOSLocation.API.Services.NotificationService>(); (Now in Infrastructure)
 
 builder.Services.AddCors(options =>
 {
@@ -75,8 +71,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContext<SOSLocationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+// builder.Services.AddDbContext (Now handled in Infrastructure extension)
 
 // JWT Authentication Configuration
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

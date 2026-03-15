@@ -10,6 +10,7 @@ namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/operations")]
+    [Authorize]
     public class OperationsController : ControllerBase
     {
         private readonly IMediator _mediator;

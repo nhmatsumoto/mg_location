@@ -3,10 +3,13 @@ using SOSLocation.Domain.Entities;
 using SOSLocation.Domain.Interfaces;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/hubs")]
+    [Authorize]
     public class HubsController : ControllerBase
     {
         private readonly IHubRepository _repository;

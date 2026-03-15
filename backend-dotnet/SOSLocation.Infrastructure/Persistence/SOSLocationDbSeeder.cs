@@ -1,6 +1,11 @@
 using SOSLocation.Domain.Entities;
+using SOSLocation.Domain.Incidents;
+using SOSLocation.Domain.News;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 
 namespace SOSLocation.Infrastructure.Persistence
 {
@@ -8,19 +13,70 @@ namespace SOSLocation.Infrastructure.Persistence
     {
         public static void Seed(SOSLocationDbContext context)
         {
-            if (!context.DisasterTypes.Any())
+            try
             {
-                context.DisasterTypes.AddRange(new List<DisasterType>
+                var seedPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Persistence", "SEED.json");
+                if (!File.Exists(seedPath))
                 {
-                    new DisasterType { Name = "Flood", Code = "FLOOD", Description = "Flooding events", Icon = "flood", Color = "#0000FF" },
-                    new DisasterType { Name = "Earthquake", Code = "EARTHQUAKE", Description = "Seismic events", Icon = "landscape", Color = "#8B4513" },
-                    new DisasterType { Name = "Landslide", Code = "LANDSLIDE", Description = "Landslide and slope failure", Icon = "terrain", Color = "#654321" },
-                    new DisasterType { Name = "Storm", Code = "STORM", Description = "Severe weather and storms", Icon = "thunderstorm", Color = "#808080" },
-                    new DisasterType { Name = "Wildfire", Code = "FIRE", Description = "Fire and smoke events", Icon = "local_fire_department", Color = "#FF4500" },
-                    new DisasterType { Name = "Other", Code = "OTHER", Description = "General disaster events", Icon = "warning", Color = "#FFD700" }
-                });
-                context.SaveChanges();
+                    // Fallback to project source path if base directory doesn't have it (for dev)
+                    seedPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "SOSLocation.Infrastructure", "Persistence", "SEED.json");
+                }
+
+                if (!File.Exists(seedPath)) return;
+
+                var json = File.ReadAllText(seedPath);
+                var seedData = JsonSerializer.Deserialize<SeedData>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (seedData == null) return;
+
+                // Seed DisasterTypes
+                if (!context.DisasterTypes.Any() && seedData.DisasterTypes != null)
+                {
+                    context.DisasterTypes.AddRange(seedData.DisasterTypes);
+                    context.SaveChanges();
+                }
+
+                // Seed Incidents
+                if (!context.Incidents.Any() && seedData.Incidents != null)
+                {
+                    context.Incidents.AddRange(seedData.Incidents);
+                    context.SaveChanges();
+                }
+
+                // Seed News
+                if (!context.NewsNotifications.Any() && seedData.News != null)
+                {
+                    context.NewsNotifications.AddRange(seedData.News);
+                    context.SaveChanges();
+                }
+
+                // Seed Weather
+                if (!context.MeteorologicalData.Any() && seedData.Weather != null)
+                {
+                    context.MeteorologicalData.AddRange(seedData.Weather);
+                    context.SaveChanges();
+                }
+
+                // Seed RiskAnalysis
+                if (!context.RiskAnalysis.Any() && seedData.RiskAnalysis != null)
+                {
+                    context.RiskAnalysis.AddRange(seedData.RiskAnalysis);
+                    context.SaveChanges();
+                }
             }
+            catch (Exception)
+            {
+                // In a real seeder, we might log this, but we'll keep it silent to avoid breaking startup
+            }
+        }
+
+        private class SeedData
+        {
+            public List<DisasterType>? DisasterTypes { get; set; }
+            public List<Incident>? Incidents { get; set; }
+            public List<NewsNotification>? News { get; set; }
+            public List<MeteorologicalData>? Weather { get; set; }
+            public List<RiskAnalysis>? RiskAnalysis { get; set; }
         }
     }
 }

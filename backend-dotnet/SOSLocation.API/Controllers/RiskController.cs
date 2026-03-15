@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/risk")]
+    [Authorize]
     public class RiskController : ControllerBase
     {
         private readonly HttpClient _httpClient;

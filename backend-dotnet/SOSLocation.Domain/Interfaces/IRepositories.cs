@@ -121,5 +121,6 @@ namespace SOSLocation.Domain.Interfaces
     {
         Task BroadcastAlertAsync(object alert, CancellationToken ct = default);
         Task BroadcastRiskUpdateAsync(object risk, CancellationToken ct = default);
+        Task BroadcastWeatherUpdateAsync(object weather, string? location = null, string? country = null, CancellationToken ct = default);
     }
 }

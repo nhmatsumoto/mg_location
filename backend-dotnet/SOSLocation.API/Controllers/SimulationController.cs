@@ -5,10 +5,13 @@ using SOSLocation.Application.DTOs.Common;
 using SOSLocation.Application.DTOs.Simulation;
 using System.Collections.Generic;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/simulation")]
+    [Authorize]
     public class SimulationController : ControllerBase
     {
         private readonly SOSLocationDbContext _context;

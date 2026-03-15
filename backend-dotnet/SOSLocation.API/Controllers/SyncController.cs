@@ -2,10 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api")]
+    [Authorize]
     public class SyncController : ControllerBase
     {
         [HttpGet("sync")]

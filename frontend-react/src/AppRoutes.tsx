@@ -81,6 +81,7 @@ function PrivateLayout() {
  */
 export default function AppRoutes() {
   const { authenticated } = useAuthStore();
+  const hasVisitedOnboarding = localStorage.getItem('sos_onboarding_visited') === 'true';
 
   return (
     <Routes>
@@ -88,7 +89,7 @@ export default function AppRoutes() {
       <Route path="/" element={
         authenticated ? 
         <Navigate to="/app/sos" replace /> : 
-        <Suspense fallback={<LoadingScreen />}><OnboardingPage /></Suspense>
+        (hasVisitedOnboarding ? <Navigate to="/map" replace /> : <Suspense fallback={<LoadingScreen />}><OnboardingPage /></Suspense>)
       } />
 
       {/* Public Observation Routes */}

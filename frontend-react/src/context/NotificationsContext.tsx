@@ -71,6 +71,14 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       });
     });
 
+    connection.on('UpdateWeather', (weather: any) => {
+      pushNotice({
+        title: `Clima: ${weather.locationName || 'Local'}`,
+        message: `${weather.condition}: ${weather.temperature}°C`,
+        type: 'info'
+      });
+    });
+
     connection.start().catch((err: any) => console.error('SignalR Error: ', err));
 
     return () => {

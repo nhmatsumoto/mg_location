@@ -10,10 +10,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.OutputCaching;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/disasters")]
+    [Authorize]
     public class DisastersController : ControllerBase
     {
         private readonly SOSLocationDbContext _context;

@@ -10,6 +10,16 @@ export function OnboardingPage() {
     i18n.changeLanguage(lng);
   };
 
+  const handlePublicEntry = () => {
+    localStorage.setItem('sos_onboarding_visited', 'true');
+    navigate('/map');
+  };
+
+  const handleLoginEntry = () => {
+    localStorage.setItem('sos_onboarding_visited', 'true');
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,var(--tw-gradient-stops))] from-blue-900/20 via-slate-900 to-slate-950">
       <div className="absolute top-6 right-6 flex gap-2">
@@ -36,7 +46,7 @@ export function OnboardingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
           {/* Public Path */}
           <button
-            onClick={() => navigate('/map')}
+            onClick={handlePublicEntry}
             className="group relative bg-slate-800/50 border border-slate-700/50 p-10 rounded-3xl hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300 text-left overflow-hidden hover:shadow-[0_0_50px_-15px_rgba(59,130,246,0.3)] active:scale-[0.98]"
           >
             <div className="mb-6 p-4 rounded-2xl bg-slate-900/50 w-fit group-hover:scale-110 transition-transform text-blue-400">
@@ -53,7 +63,7 @@ export function OnboardingPage() {
 
           {/* Login Path */}
           <button
-            onClick={() => navigate('/login')}
+            onClick={handleLoginEntry}
             className="group relative bg-slate-800/50 border border-slate-700/50 p-10 rounded-3xl hover:border-cyan-500/50 hover:bg-slate-800 transition-all duration-300 text-left overflow-hidden hover:shadow-[0_0_50px_-15px_rgba(6,182,212,0.3)] active:scale-[0.98]"
           >
             <div className="mb-6 p-4 rounded-2xl bg-slate-900/50 w-fit group-hover:scale-110 transition-transform text-cyan-400">

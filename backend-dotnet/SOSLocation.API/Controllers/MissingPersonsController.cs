@@ -5,10 +5,13 @@ using SOSLocation.Domain.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/missing-persons")]
+    [Authorize]
     public class MissingPersonsController : ControllerBase
     {
         private readonly SOSLocationDbContext _context;

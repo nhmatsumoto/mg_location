@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SOSLocation.Application.DTOs.Incidents;
 using SOSLocation.Application.Features.Incidents.Commands.CreateIncident;
 using SOSLocation.Application.Features.Incidents.Queries.GetIncidents;
@@ -10,6 +11,7 @@ namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class IncidentsController : ControllerBase
     {
         private readonly IMediator _mediator;

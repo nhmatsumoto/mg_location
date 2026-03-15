@@ -1,0 +1,65 @@
+{
+  "DisasterTypes": [
+    { "Name": "Enchente", "Code": "FLOOD", "Description": "Eventos de inundação", "Icon": "flood", "Color": "#0000FF" },
+    { "Name": "Terremoto", "Code": "EARTHQUAKE", "Description": "Eventos sísmicos", "Icon": "landscape", "Color": "#8B4513" },
+    { "Name": "Deslizamento", "Code": "LANDSLIDE", "Description": "Deslizamentos de terra", "Icon": "terrain", "Color": "#654321" },
+    { "Name": "Tempestade", "Code": "STORM", "Description": "Clima severo", "Icon": "thunderstorm", "Color": "#808080" },
+    { "Name": "Incêndio", "Code": "FIRE", "Description": "Incêndios florestais", "Icon": "local_fire_department", "Color": "#FF4500" }
+  ],
+  "Incidents": [
+    {
+      "Name": "Enchente em Ubá",
+      "Type": "Flood",
+      "Status": "active",
+      "Region": "Zona da Mata",
+      "Country": "Brasil",
+      "Lat": -21.1215,
+      "Lon": -42.9427,
+      "StartsAt": "2026-03-14T00:00:00Z"
+    },
+    {
+      "Name": "Deslizamento Juiz de Fora",
+      "Type": "Landslide",
+      "Status": "monitoring",
+      "Region": "Zona da Mata",
+      "Country": "Brasil",
+      "Lat": -21.7595,
+      "Lon": -43.3502,
+      "StartsAt": "2026-03-13T00:00:00Z"
+    }
+  ],
+  "News": [
+    {
+      "Title": "Alerta de Chuvas Fortes",
+      "Content": "Previsão de chuvas intensas para o sudeste do Brasil.",
+      "Source": "MetSul",
+      "Country": "Brasil",
+      "Location": "Sudeste",
+      "PublishedAt": "2026-03-15T09:00:00Z",
+      "Category": "Storm",
+      "RiskScore": 85.0
+    }
+  ],
+  "Weather": [
+    {
+      "LocationName": "Ubá",
+      "Latitude": -21.1215,
+      "Longitude": -42.9427,
+      "Temperature": 24.5,
+      "Humidity": 82.0,
+      "WindSpeed": 15.0,
+      "Condition": "Rainy",
+      "CapturedAt": "2026-03-15T09:00:00Z"
+    }
+  ],
+  "RiskAnalysis": [
+    {
+      "LocationName": "Ubá",
+      "Latitude": -21.1215,
+      "Longitude": -42.9427,
+      "Score": 78.5,
+      "Level": "High",
+      "AnalysisDate": "2026-03-15T09:00:00Z"
+    }
+  ]
+}

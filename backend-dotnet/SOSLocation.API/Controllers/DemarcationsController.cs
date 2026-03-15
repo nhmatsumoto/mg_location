@@ -10,7 +10,7 @@ namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/map-annotations")]
-    [Authorize(Roles = "AdminGlobal")]
+    [Authorize]
     public class DemarcationsController : ControllerBase
     {
         private readonly IMapDemarcationRepository _repository;

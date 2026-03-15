@@ -8,10 +8,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/report-info")]
+    [Authorize]
     public class ReportInfoController : ControllerBase
     {
         private readonly SOSLocationDbContext _context;

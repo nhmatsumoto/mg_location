@@ -2,10 +2,11 @@ using SOSLocation.Domain.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using SOSLocation.Domain.Entities;
+using SOSLocation.Infrastructure.Persistence;
 using System.Net.Http;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,7 +46,6 @@ namespace SOSLocation.Infrastructure.Services.Gis
             try
             {
                 var client = _httpClientFactory.CreateClient();
-                // We use the internal Docker URL if available, otherwise fallback to localhost:8090 (host view)
                 var riskEngineUrl = Environment.GetEnvironmentVariable("RISK_ENGINE_URL") ?? "http://localhost:8090";
                 
                 var response = await client.GetAsync($"{riskEngineUrl}/risk_scores");
@@ -55,10 +55,25 @@ namespace SOSLocation.Infrastructure.Services.Gis
                     if (scores != null)
                     {
                         using var scope = _scopeFactory.CreateScope();
+                        var context = scope.ServiceProvider.GetRequiredService<SOSLocationDbContext>();
                         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
 
                         foreach (var risk in scores)
                         {
+                            // Persist to DB for history/audit
+                            var analysis = new RiskAnalysis
+                            {
+                                LocationName = risk.Location,
+                                Latitude = 0, // In a real scenario, we'd lookup or the API would provide this
+                                Longitude = 0,
+                                Score = risk.Score,
+                                Level = risk.Level,
+                                AnalysisDate = DateTime.UtcNow,
+                                FactorsJson = "{}"
+                            };
+                            context.RiskAnalysis.Add(analysis);
+
+                            // Broadcast to UI
                             await notificationService.BroadcastRiskUpdateAsync(new
                             {
                                 risk.Location,
@@ -67,7 +82,9 @@ namespace SOSLocation.Infrastructure.Services.Gis
                                 risk.Level
                             });
                         }
-                        _logger.LogInformation("Broadcasted {count} risk scores to all clients.", scores.Count);
+                        
+                        await context.SaveChangesAsync();
+                        _logger.LogInformation("Persisted and broadcasted {count} risk scores.", scores.Count);
                     }
                 }
             }

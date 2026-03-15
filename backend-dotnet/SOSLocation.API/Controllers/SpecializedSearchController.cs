@@ -4,10 +4,13 @@ using SOSLocation.Domain.Interfaces;
 using System.Threading.Tasks;
 using System;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/search-specialized")]
+    [Authorize]
     public class SpecializedSearchController : ControllerBase
     {
         private readonly IGeolocationRepository _geoRepository;

@@ -3,10 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using SOSLocation.Domain.Interfaces;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/incidents/{incidentId}/support")]
+    [Authorize]
     public class SupportController : ControllerBase
     {
         private readonly IMediator _mediator;

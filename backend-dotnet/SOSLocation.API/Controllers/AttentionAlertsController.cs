@@ -8,10 +8,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/integrations/alerts")]
+    [Authorize]
     public class AttentionAlertsController : ControllerBase
     {
         private readonly IMediator _mediator;

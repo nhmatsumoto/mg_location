@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SOSLocation.Application.Features.Logistics.Commands.CreateSupply;
 using SOSLocation.Domain.Interfaces;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class LogisticsController : ControllerBase
     {
         private readonly IMediator _mediator;

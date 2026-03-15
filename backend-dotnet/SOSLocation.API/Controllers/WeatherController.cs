@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SOSLocation.API.Controllers
 {
     [ApiController]
     [Route("api/integrations/weather")]
+    [AllowAnonymous]
     public class WeatherController : ControllerBase
     {
         private readonly IHttpClientFactory _httpClientFactory;
