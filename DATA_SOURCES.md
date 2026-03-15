@@ -1,20 +1,62 @@
-# Catalog of Data Sources
+# DATA_SOURCES.md — City-Scale GIS Simulation Catalog (v3.0)
 
-## People
+A comprehensive catalog of all data sources used for city simulation, disaster
+monitoring, and humanitarian coordination across **Brazil** and **Japan**.
 
-Links with information of deceased or missing people :
+---
 
-* [Google Docs 1](https://docs.google.com/spreadsheets/d/120JXqEF8Mil7Ex_ty9tbdfNAYqZpYyJ7PIYu46teUJY/edit#gid=0) - [1](https://github.com/dieegom/brumadinho_location/issues/8#issuecomment-458161520)
-* [Google Docs 2](https://docs.google.com/spreadsheets/d/1M2AxPtzonn2Q4QWPdiW5UE8DeylO_tTGgoJ9Vkitf4E/edit#gid=0) - [2](https://github.com/dieegom/brumadinho_location/issues/8#issuecomment-458168314)
-* [Vale - Pessoas sem contato](http://brumadinho.vale.com/listagem-pessoas-sem-contato.html)
-* [Vale - Óbitos identificados](http://brumadinho.vale.com/obitos-identificados.html)
+## GIS / Topography
 
-## Maps
+| Source | Type | Coverage | Provider Class |
+|---|---|---|---|
+| [OpenTopography SRTMGL1](https://portal.opentopography.org) | DEM 30m | Global | `OpenTopographyProvider` |
+| [OpenStreetMap / Overpass](https://overpass-api.de) | Buildings, Roads, Parks | Global | `OverpassProvider` |
+| [GSI Japan Tiles](https://cyberjapandata.gsi.go.jp) | Topo tiles | Japan | Planned |
+| [Kokudo Suuchi](https://nlftp.mlit.go.jp) | Shapefiles, Cadastre | Japan | Planned |
 
-* [Brumadinho MUD Area](https://overpass-turbo.eu/s/FBC)
+---
 
-## News
+## Climate & Weather
 
-* [G1](https://g1.globo.com/busca/?q=brumadinho)
-* [Vale](http://brumadinho.vale.com/todas-as-noticias.html)
-* [Google](https://news.google.com/topics/CAAqKAgKIiJDQkFTRXdvS0wyMHZNRE5vTW10ek5SSUZjSFF0UWxJb0FBUAE)
+| Source | Endpoint | Coverage | Provider Class |
+|---|---|---|---|
+| [Open-Meteo](https://api.open-meteo.com) | `/v1/forecast` | Global | `OpenMeteoProvider` |
+| [INMET](https://portal.inmet.gov.br) | CAP/RSS Alerts | Brazil | `InmetAlertProvider` |
+| [JMA 気象庁](https://www.jma.go.jp) | Alerts, Forecast | Japan | Planned |
+
+---
+
+## Disaster Monitoring
+
+| Source | Type | Provider Class |
+|---|---|---|
+| [CEMADEN](https://cemaden.gov.br) | Hydrological risk | `CemadenAlertProvider` |
+| [Defesa Civil](https://www.defesacivil.sc.gov.br) | Civil protection | `DefesaCivilAlertProvider` |
+| [GDACS](https://gdacs.org) | Global disaster alerts | `GlobalDisastersService` |
+| [USGS Earthquake](https://earthquake.usgs.gov) | Seismic events | `GlobalDisastersService` |
+
+---
+
+## Administrative / Cadastral
+
+| Source | URL | Coverage | Status |
+|---|---|---|---|
+| IBGE API | https://servicodados.ibge.gov.br | Brazil municipalities | ✅ Active |
+| Portal da Transparência | https://api.portaldatransparencia.gov.br | Federal funds | ✅ Active |
+| Prefeituras Municipais | varies | Building cadastre BR | 🔄 Planned |
+| G-XML (Japan) | — | Building data JP | 🔄 Planned |
+
+---
+
+## Satellite
+
+| Source | Data | Usage |
+|---|---|---|
+| NASA GIBS | MODIS, VIIRS, GOES-East | Base satellite layer |
+| STAC Planetary Computer | Sentinel-2, Landsat | Multi-spectral overlays |
+
+---
+
+## People Data (Historical / Research Refs)
+- [Brumadinho Missing](https://overpass-turbo.eu/s/FBC) — Overpass map reference
+- [Vale Óbitos](http://brumadinho.vale.com/listagem-pessoas-sem-contato.html) — Historical reference

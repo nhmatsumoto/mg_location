@@ -45,11 +45,17 @@ namespace SOSLocation.API.Extensions
             services.AddScoped<IGamificationRepository, GamificationRepository>();
             services.AddScoped<IDataSourceRepository, DataSourceRepository>();
 
-            // GIS Services
-            services.AddHttpClient<IGisService, GisService>(client =>
-            {
-                client.Timeout = TimeSpan.FromSeconds(120);
-            });
+            // GIS Configuration
+            services.Configure<GisOptions>(configuration.GetSection("ExternalIntegrations"));
+
+            // GIS Data Providers (Modular Architecture)
+            services.AddHttpClient<IGisDataProvider, OpenTopographyProvider>();
+            services.AddHttpClient<IGisDataProvider, OverpassProvider>();
+            services.AddHttpClient<IGisDataProvider, OpenMeteoProvider>();
+
+            // GIS Facade
+            services.AddScoped<IGisService, GisService>();
+            services.AddScoped<IGeoCentralService, GeoCentralService>();
 
             // Alert Providers
             services.AddHttpClient<IAlertProvider, InmetAlertProvider>();
@@ -62,6 +68,24 @@ namespace SOSLocation.API.Extensions
             // Risk Service Proxy
             services.AddHttpClient<SOSLocation.API.Controllers.RiskController>();
 
+            // External API Named Clients (performance: shared connection pool + timeout tuning)
+            services.AddHttpClient("ibge", client =>
+            {
+                client.BaseAddress = new Uri("https://servicodados.ibge.gov.br");
+                client.Timeout = TimeSpan.FromSeconds(10);
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+            });
+            services.AddHttpClient("transparency", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+            });
+            services.AddHttpClient("openmeteo", client =>
+            {
+                client.BaseAddress = new Uri("https://api.open-meteo.com");
+                client.Timeout = TimeSpan.FromSeconds(8);
+            });
+
             // Register AlertsBackgroundService as both IAlertsService and HostedService
             services.AddSingleton<AlertsBackgroundService>();
             services.AddSingleton<IAlertsService>(sp => sp.GetRequiredService<AlertsBackgroundService>());
@@ -72,9 +96,10 @@ namespace SOSLocation.API.Extensions
             services.AddHostedService<RiskBackgroundService>();
             services.AddHostedService<WeatherIndexerService>();
             services.AddHostedService<AlertHistoryService>();
+            services.AddHostedService<GisIndexerService>();
 
-            // Broadcast & Notifications
-            services.AddScoped<INotificationService, SOSLocation.API.Services.NotificationService>();
+            // Broadcast & Notifications (Singleton: used by BackgroundService singletons)
+            services.AddSingleton<INotificationService, SOSLocation.API.Services.NotificationService>();
 
             return services;
         }

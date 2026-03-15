@@ -1,9 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import LandslideSimulation from '../LandslideSimulation';
-import { Button } from '../components/ui/Button';
-import { TextInput } from '../components/ui/Field';
 import { simulationsApi } from '../services/simulationsApi';
 import { dataHubApi } from '../services/dataHubApi';
+import { 
+  Box, 
+  VStack, 
+  Text, 
+  SimpleGrid, 
+  Badge,
+  Center,
+  Icon
+} from '@chakra-ui/react';
+import { Activity } from 'lucide-react';
+import { StatBoard } from '../components/ui/StatBoard';
+
+// Atomic Components
+import { SimControlUnit } from '../components/ui/SimControlUnit';
+import { WeatherTelemetry } from '../components/ui/WeatherTelemetry';
+import { EventTimeline } from '../components/ui/EventTimeline';
 
 interface StreamStep {
   step: number;
@@ -16,16 +30,19 @@ interface StreamStep {
 export function SimulationsPage() {
   const [lat, setLat] = useState('-21.1215');
   const [lng, setLng] = useState('-42.9427');
-  const [result, setResult] = useState<string>('');
+  const [resultData, setResultData] = useState<any>(null);
   const [streamSteps, setStreamSteps] = useState<StreamStep[]>([]);
-  const [rainSummary, setRainSummary] = useState<string>('Carregando clima operacional...');
+  const [rainSummary, setRainSummary] = useState('CALIBRATING WEATHER_STATIONS...');
+  const [isSimulating, setIsSimulating] = useState(false);
 
   const numericLat = useMemo(() => Number(lat), [lat]);
   const numericLng = useMemo(() => Number(lng), [lng]);
 
   const run = async () => {
+    setIsSimulating(true);
     const payload = await simulationsApi.runFlow({ lat: numericLat, lng: numericLng });
-    setResult(`Área afetada estimada ${(payload.estimatedAffectedAreaM2 / 1_000_000).toFixed(2)} km² · profundidade máx. ${payload.maxDepth}m · células ${payload.floodedCells.length}`);
+    setResultData(payload);
+    setIsSimulating(false);
   };
 
   const startRealtime = () => {
@@ -65,38 +82,92 @@ export function SimulationsPage() {
         const hours = response.data?.hourly?.time?.length ?? 0;
         const precipitation = response.data?.hourly?.precipitation ?? [];
         const peakRain = Array.isArray(precipitation) && precipitation.length > 0 ? Math.max(...precipitation) : 0;
-        setRainSummary(`Previsão carregada (${hours} janelas) · pico de precipitação ${Number(peakRain).toFixed(1)} mm/h`);
+        setRainSummary(`PEAK_PRECIPITATION: ${Number(peakRain).toFixed(1)} MM/H // WIN_WINDOW: ${hours}H`);
       })
-      .catch(() => setRainSummary('Falha ao consultar API de clima.')); 
+      .catch(() => setRainSummary('ERROR: DATA_FETCH_FAILED')); 
   }, [numericLat, numericLng]);
 
   return (
-    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[420px_1fr]">
-      <section className="space-y-3 rounded-2xl border border-slate-700/60 bg-slate-900/70 p-4">
-        <h2 className="text-sm font-semibold text-slate-100">Centro de Simulação de Deslizamentos</h2>
-        <TextInput value={lat} onChange={(e) => setLat(e.target.value)} placeholder="Latitude origem" />
-        <TextInput value={lng} onChange={(e) => setLng(e.target.value)} placeholder="Longitude origem" />
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => void run()}>Rodar simulação analítica</Button>
-          <Button onClick={startRealtime}>Iniciar replay em tempo real</Button>
-        </div>
-        <div className="rounded-lg border border-cyan-700/40 bg-cyan-950/30 p-3 text-xs text-cyan-100">{rainSummary}</div>
-        <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-sm text-slate-300">
-          {result || 'Resultado: aguardando execução.'}
-        </div>
-        <div className="max-h-52 space-y-1 overflow-auto rounded-lg border border-slate-800 bg-slate-950/50 p-2 text-xs text-slate-300">
-          {streamSteps.length === 0 ? (
-            <p>Timeline em tempo real: aguardando evento.</p>
-          ) : (
-            streamSteps.map((step) => (
-              <p key={`${step.step}-${step.lat}`}>#{step.step} · {step.lat.toFixed(4)}, {step.lng.toFixed(4)} · lâmina {step.depth.toFixed(2)}m · risco {step.risk}</p>
-            ))
-          )}
-        </div>
-      </section>
-      <section className="min-h-[680px] rounded-2xl border border-slate-700/60 bg-slate-950/70 p-2">
+    <Box h="100vh" w="100vw" position="relative" overflow="hidden" bg="sos.dark">
+      {/* Primary Simulation Map View (Background) */}
+      <Box position="absolute" inset={0} zIndex={0}>
         <LandslideSimulation sourceLat={numericLat} sourceLng={numericLng} />
-      </section>
-    </div>
+      </Box>
+
+      {/* Floating HUD - Left Side */}
+      <VStack 
+        position="absolute" 
+        top={6} 
+        left={6} 
+        bottom={6} 
+        w="360px" 
+        zIndex={10} 
+        spacing={6} 
+        align="stretch"
+        display={{ base: 'none', lg: 'flex' }}
+      >
+        <SimControlUnit 
+          lat={lat}
+          setLat={setLat}
+          lng={lng}
+          setLng={setLng}
+          isSimulating={isSimulating}
+          onRun={() => void run()}
+          onRealtime={startRealtime}
+        />
+
+        <WeatherTelemetry summary={rainSummary} />
+
+        {/* Results Visualizer - Floating Tactical Panel */}
+        <Box 
+          flex={1} 
+          bg="rgba(15, 23, 42, 0.6)" 
+          backdropFilter="blur(20px)"
+          p={6} 
+          borderRadius="3xl" 
+          border="1px solid" 
+          borderColor="whiteAlpha.100" 
+          boxShadow="0 8px 32px 0 rgba(0, 0, 0, 0.4)"
+          display="flex" 
+          flexDirection="column"
+          overflow="hidden"
+        >
+          <Text fontSize="10px" fontWeight="black" color="whiteAlpha.400" textTransform="uppercase" letterSpacing="widest" mb={4}>Simulation Output</Text>
+          
+          {resultData ? (
+            <SimpleGrid columns={3} spacing={4} mb={6}>
+              <StatBoard label="Affected Area" value={`${(resultData?.estimatedAffectedAreaM2 / 1_000_000 || 0).toFixed(2)}`} unit="KM²" />
+              <StatBoard label="Max Depth" value={`${resultData?.maxDepth || 0}`} unit="METERS" />
+              <StatBoard label="Active Cells" value={`${resultData?.floodedCells?.length || 0}`} unit="PX" />
+            </SimpleGrid>
+          ) : (
+            <Center flex={1} flexDirection="column" opacity={0.3}>
+              <Icon as={Activity} size={32} />
+              <Text mt={4} fontSize="xs" fontWeight="bold">AWATING_INPUT...</Text>
+            </Center>
+          )}
+
+          <EventTimeline steps={streamSteps} />
+        </Box>
+      </VStack>
+
+      {/* Floating Status - Top Right */}
+      <Box position="absolute" top={6} right={6} zIndex={10}>
+         <Badge 
+           variant="solid" 
+           bg="sos.red.500" 
+           color="white" 
+           borderRadius="full" 
+           px={4} 
+           py={1}
+           fontSize="10px"
+           fontWeight="black"
+           letterSpacing="widest"
+           boxShadow="0 0 20px rgba(255, 59, 48, 0.4)"
+         >
+           LIVE_TELEMETRY
+         </Badge>
+      </Box>
+    </Box>
   );
 }

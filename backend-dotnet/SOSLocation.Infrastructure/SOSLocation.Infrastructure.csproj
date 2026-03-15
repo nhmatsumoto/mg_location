@@ -20,4 +20,10 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Persistence\SEED.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

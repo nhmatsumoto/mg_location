@@ -1,5 +1,5 @@
-import type React from 'react';
 import { useMapEvents } from 'react-leaflet';
+import type { LeafletMouseEvent } from 'leaflet';
 
 interface MapClickSelectorProps {
   enabled: boolean;
@@ -8,7 +8,7 @@ interface MapClickSelectorProps {
 
 export const MapClickSelector: React.FC<MapClickSelectorProps> = ({ enabled, onSelect }) => {
   useMapEvents({
-    click(e) {
+    click(e: LeafletMouseEvent) {
       if (!enabled) return;
       onSelect(e.latlng.lat, e.latlng.lng, e.originalEvent.clientX, e.originalEvent.clientY);
     },

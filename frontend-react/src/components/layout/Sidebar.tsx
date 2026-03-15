@@ -1,7 +1,10 @@
 import { Activity, AlertTriangle, BarChart3, FileWarning, Layers3, LifeBuoy, Radar, Search, Settings, Users, PlugZap, Globe, Heart, Truck, ShieldAlert, Coins, Cog } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { Box, VStack, Link, Text, type BoxProps } from '@chakra-ui/react';
+import { LogoFull } from '../brand/Logo';
 
 const navItems = [
+  // ... (keeping same nav items)
   { to: '/app/sos', label: 'Monitor SOS', icon: Radar },
   { to: '/app/hotspots', label: 'Hotspots', icon: AlertTriangle },
   { to: '/app/missing-persons', label: 'Desaparecidos', icon: Users },
@@ -23,41 +26,70 @@ const navItems = [
   { to: '/app/settings', label: 'Configurações', icon: Settings },
 ];
 
-export function Sidebar({ className }: { className?: string }) {
+export function Sidebar(props: BoxProps) {
   const location = useLocation();
 
   return (
-    <aside className={`rounded-2xl border border-slate-700/60 bg-slate-900/80 p-4 shadow-2xl shadow-black/25 ${className || ''}`}>
-      <div className="mb-4 border-b border-slate-700/70 pb-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-300">SOS Location</p>
-        <h1 className="text-lg font-bold text-slate-100">SOS Terminal</h1>
-      </div>
+    <Box 
+      as="aside" 
+      bg="whiteAlpha.50" 
+      p={4} 
+      borderRadius="xl" 
+      border="1px solid" 
+      borderColor="whiteAlpha.100"
+      backdropFilter="blur(16px)"
+      boxShadow="2xl"
+      overflowY="auto"
+      {...props}
+    >
+      <Box mb={6}>
+        <LogoFull />
+        <Text fontSize="10px" color="whiteAlpha.500" mt={2} fontWeight="bold" textTransform="uppercase" letterSpacing="widest">
+          Terminal de Comando
+        </Text>
+      </Box>
 
-      <nav className="space-y-1" aria-label="Menu principal">
+      <VStack spacing={1} align="stretch" as="nav">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = location.pathname === item.to;
           return (
             <Link
+              as={RouterLink}
               key={item.to}
               to={item.to}
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
-                active
-                  ? 'border-cyan-400/50 bg-cyan-500/15 text-cyan-100'
-                  : 'border-slate-700/70 bg-slate-900/40 text-slate-200 hover:bg-slate-800/80'
-              }`}
+              display="flex"
+              alignItems="center"
+              gap={3}
+              px={3}
+              py={2}
+              fontSize="sm"
+              borderRadius="md"
+              transition="all 0.2s"
+              color={active ? "white" : "whiteAlpha.700"}
+              bg={active ? "sos.blue.500" : "transparent"}
+              _hover={{
+                bg: active ? "sos.blue.600" : "whiteAlpha.100",
+                textDecoration: 'none'
+              }}
+              border="1px solid"
+              borderColor={active ? "sos.blue.400" : "transparent"}
             >
-              <Icon size={16} />
-              {item.label}
+              <Icon size={16} color={active ? "white" : "sos.blue.500"} />
+              <Text fontWeight={active ? "bold" : "medium"}>{item.label}</Text>
             </Link>
           );
         })}
-      </nav>
+      </VStack>
 
-      <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-2 text-xs text-slate-300">
-        <p className="font-semibold text-slate-100">Modo operacional</p>
-        <p>Dark mode padrão para ambiente de crise.</p>
-      </div>
-    </aside>
+      <Box mt={8} p={3} borderRadius="md" bg="blackAlpha.400" border="1px solid" borderColor="whiteAlpha.100">
+        <Text fontSize="xs" fontWeight="bold" color="whiteAlpha.800" mb={1}>
+          Operação: Ativa
+        </Text>
+        <Text fontSize="2xs" color="whiteAlpha.600">
+          Sistema de gestão de crise operacional.
+        </Text>
+      </Box>
+    </Box>
   );
 }

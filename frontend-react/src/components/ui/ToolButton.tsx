@@ -1,32 +1,36 @@
 import React from 'react';
+import { IconButton, Tooltip } from '@chakra-ui/react';
 
 interface ToolButtonProps {
   active: boolean;
   onClick: () => void;
-  icon: React.ReactNode;
+  icon: React.ReactElement;
   label: string;
   disabled?: boolean;
   className?: string;
   hideLabel?: boolean;
 }
 
-export function ToolButton({ active, onClick, icon, label, disabled, className = '', hideLabel = false }: ToolButtonProps) {
+export function ToolButton({ active, onClick, icon, label, disabled, hideLabel = false }: ToolButtonProps) {
   return (
-    <button 
-      onClick={!disabled ? onClick : undefined}
-      disabled={disabled}
-      className={`
-        flex items-center gap-3 px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-300
-        ${active 
-          ? 'bg-cyan-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] translate-x-1' 
-          : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}
-        ${disabled ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer'}
-        ${className}
-      `}
-      title={hideLabel ? label : undefined}
-    >
-      <span className={active ? "animate-pulse" : ""}>{icon}</span>
-      {!hideLabel && <span>{label}</span>}
-    </button>
+    <Tooltip label={label} isDisabled={!hideLabel}>
+      <IconButton
+        icon={icon}
+        aria-label={label}
+        onClick={onClick}
+        isDisabled={disabled}
+        variant={active ? 'tactical' : 'ghost'}
+        bg={active ? 'sos.blue.500' : 'transparent'}
+        color={active ? 'white' : 'whiteAlpha.600'}
+        _hover={{
+          bg: active ? 'sos.blue.600' : 'whiteAlpha.100',
+          color: 'white'
+        }}
+        fontSize="18px"
+        borderRadius="xl"
+        w="40px"
+        h="40px"
+      />
+    </Tooltip>
   );
 }

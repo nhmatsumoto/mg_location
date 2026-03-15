@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo } from 'react';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import { Modal } from '../components/ui/Modal';
-import { DraggablePanel } from '../components/map/DraggablePanel';
 import { QuickActions } from '../components/ui/QuickActions';
 
 import { LoadingOverlay } from '../components/ui/LoadingOverlay';
@@ -11,15 +10,21 @@ import { MemoizedEventMarker } from '../components/map/EventMarker';
 import { LiveOpsPanel } from '../components/map/LiveOpsPanel';
 import { CursorCoordinates } from '../components/map/CursorCoordinates';
 import { MapContextMenu } from '../components/map/MapContextMenu';
-import {
-  Crosshair
-} from 'lucide-react';
 
 import { useSOSPageData } from '../hooks/useSOSPageData';
 import { SOSHeaderHUD } from '../components/ui/SOSHeaderHUD';
 import { AlertSidebar } from '../components/ui/AlertSidebar';
 import { MissionsPanel } from '../components/gamification/MissionsPanel';
 import { GamificationHud } from '../components/gamification/GamificationHud';
+import { SituationIntelPanel } from '../components/ui/SituationIntelPanel';
+import { TacticalOpsForm } from '../components/ui/TacticalOpsForm';
+import {
+  Box,
+  VStack,
+  Center,
+  Spinner,
+  Text
+} from '@chakra-ui/react';
 
 export function SOSPage() {
   const {
@@ -94,9 +99,9 @@ export function SOSPage() {
   };
 
   return (
-    <div className="h-screen w-screen relative overflow-hidden bg-[#020617] antialiased font-sans">
-      {initialLoading && <LoadingOverlay message="Inicializando Terminal SOS..." />}
-      {savingOps && <LoadingOverlay message="Registrando Dados de Campo..." />}
+    <Box h="100vh" w="100vw" position="relative" overflow="hidden" bg="sos.dark">
+      {initialLoading && <LoadingOverlay message="Inicializando Guardian Terminal..." />}
+      {savingOps && <LoadingOverlay message="Sincronizando Dados de Campo..." />}
 
       {/* Floating Header */}
       <SOSHeaderHUD
@@ -138,54 +143,36 @@ export function SOSPage() {
       />
 
       {/* Experimental Missions HUD Section (Right Sidebar) */}
-      <aside className="absolute top-28 right-6 bottom-6 z-40 hidden xl:flex flex-col gap-6">
-         <GamificationHud 
-           xp={3420} 
-           level={42} 
-           rank="Sentinel III" 
-           nextLevelXp={5000} 
-           className="w-[320px] shadow-2xl" 
+      <VStack position="absolute" top="120px" right={6} bottom={6} zIndex={40} display={{ base: 'none', xl: 'flex' }} spacing={6} align="stretch">
+         <GamificationHud
+           xp={3420}
+           level={42}
+           rank="Sentinel III"
+           nextLevelXp={5000}
+           w="340px"
          />
          <MissionsPanel />
-      </aside>
+      </VStack>
 
       {/* Bottom Center: Quick Action Bar */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-40">
-        <div className="animate-in fade-in slide-in-from-bottom duration-1000">
-          <QuickActions onToggleLiveOps={() => setLiveOpsPanelOpen(!liveOpsPanelOpen)} onAction={handleQuickAction} />
-        </div>
-      </div>
+      <Box position="absolute" bottom={6} left="50%" transform="translateX(-50%)" zIndex={40}>
+        <QuickActions onToggleLiveOps={() => setLiveOpsPanelOpen(!liveOpsPanelOpen)} onAction={handleQuickAction} />
+      </Box>
 
       {intelPanelOpen && selectedEvent && (
-        <DraggablePanel
-          title="SITUATION INTEL"
-          position={{ top: 112, left: 340 }}
-          onDragStart={() => { }}
-          onToggleDock={() => setIntelPanelOpen(false)}
-        >
-          <div className="p-4 bg-slate-900/90 space-y-4 text-slate-200">
-            <div className="space-y-1">
-              <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1"><Crosshair size={10} /> DETALHES</div>
-              <h4 className="text-sm font-bold text-slate-100 italic">{(selectedEvent as any).title || (selectedEvent as any).id}</h4>
-            </div>
-            <div className="bg-slate-800/50 p-3 rounded-lg border border-white/5 text-[10px] font-mono leading-relaxed">
-              {(selectedEvent as any).description || "Nenhuma análise adicional disponível."}
-            </div>
-            <div className="flex justify-between items-center text-[10px]">
-              <span className="text-slate-500 uppercase font-bold">Severidade</span>
-              <span className="text-cyan-400 font-black">LVL_{(selectedEvent as any).severity || 1}</span>
-            </div>
-          </div>
-        </DraggablePanel>
+        <SituationIntelPanel 
+          event={selectedEvent} 
+          onClose={() => setIntelPanelOpen(false)} 
+        />
       )}
 
       {liveOpsPanelOpen && (
         <LiveOpsPanel onClose={() => setLiveOpsPanelOpen(false)} />
       )}
 
-      <div className="absolute inset-0 z-0">
+      <Box position="absolute" inset={0} zIndex={0}>
         {mapCenter && mapCenter[0] !== undefined && (
-          <MapContainer center={mapCenter} zoom={mapZoom} zoomControl={false} style={{ height: '100%', width: '100%' }} className="tactical-map-container">
+          <MapContainer center={mapCenter} zoom={mapZoom} zoomControl={false} style={{ height: '100%', width: '100%' }}>
             <TileLayer attribution='&copy; CARTO' url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' />
             <MapListener onMove={(c, z) => { setMapCenter(c); setMapZoom(z); }} />
             <MapInteractions
@@ -212,52 +199,25 @@ export function SOSPage() {
           </MapContainer>
         )}
         {!mapCenter && (
-          <div className="flex items-center justify-center h-full text-slate-500 font-mono text-[10px] uppercase tracking-widest bg-slate-950">
-            Aguardando sinal de geolocalização...
-          </div>
+          <Center h="full" bg="sos.dark">
+            <VStack spacing={4}>
+              <Spinner color="sos.blue.500" size="xl" />
+              <Text fontSize="10px" fontWeight="black" color="whiteAlpha.400" textTransform="uppercase" letterSpacing="widest">
+                Sincronizando com Satélites Guardian...
+              </Text>
+            </VStack>
+          </Center>
         )}
-      </div>
+      </Box>
 
       <Modal title="CADASTRO TÁTICO DE CAMPO" open={openOpsModal} onClose={() => setOpenOpsModal(false)}>
-        <div className="space-y-4 p-4 text-slate-200 bg-slate-950">
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { id: 'voluntario', label: 'Voluntário' },
-              { id: 'doacao', label: 'Doação' },
-              { id: 'resgate', label: 'Equipe Resgate' },
-              { id: 'bombeiros', label: 'Bombeiros' },
-              { id: 'exercito', label: 'Exército' },
-              { id: 'risk_area', label: 'Área de Risco' },
-              { id: 'missing_person', label: 'Busca Pessoa' }
-            ].map(mode => (
-              <button
-                key={mode.id}
-                onClick={() => setOpsForm({ ...opsForm, recordType: mode.id as any })}
-                className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${opsForm.recordType === mode.id ? 'bg-cyan-900/40 border-cyan-500 text-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700'}`}
-              >
-                <span className="text-[10px] font-black uppercase tracking-widest text-center">{mode.label}</span>
-              </button>
-            ))}
-          </div>
-          <div className="space-y-2">
-            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Descrição do Registro</label>
-            <input
-              className="w-full bg-slate-900 border border-slate-700/50 rounded-xl px-4 py-3 text-xs focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 outline-none transition-all"
-              placeholder="Título ou Identificação..."
-              value={opsForm.incidentTitle}
-              onChange={e => setOpsForm({ ...opsForm, incidentTitle: e.target.value })}
-            />
-          </div>
-          <button
-            onClick={handleSaveOps}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-emerald-900/20 active:scale-[0.98] transition-all"
-          >
-            REGISTRAR NO MAPA TÁTICO
-          </button>
-        </div>
+        <TacticalOpsForm 
+          opsForm={opsForm} 
+          setOpsForm={setOpsForm} 
+          onSave={handleSaveOps} 
+        />
       </Modal>
 
-      {/* New Interactive 2D Components */}
       <CursorCoordinates coords={cursorCoords} />
       {contextMenu && (
         <MapContextMenu
@@ -273,6 +233,7 @@ export function SOSPage() {
           }}
         />
       )}
-    </div>
+    </Box>
   );
 }
+

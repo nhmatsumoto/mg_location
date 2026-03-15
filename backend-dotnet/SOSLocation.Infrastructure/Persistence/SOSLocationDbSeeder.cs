@@ -57,6 +57,23 @@ namespace SOSLocation.Infrastructure.Persistence
                     context.SaveChanges();
                 }
 
+                // Seed DisasterEvents
+                if (!context.DisasterEvents.Any() && seedData.DisasterEvents != null)
+                {
+                    var types = context.DisasterTypes.ToList();
+                    foreach (var dEvent in seedData.DisasterEvents)
+                    {
+                        var type = types.FirstOrDefault(t => t.Code.Equals(dEvent.EventType, StringComparison.OrdinalIgnoreCase) 
+                                                          || t.Name.Equals(dEvent.EventType, StringComparison.OrdinalIgnoreCase));
+                        if (type != null)
+                        {
+                            dEvent.DisasterTypeId = type.Id;
+                        }
+                    }
+                    context.DisasterEvents.AddRange(seedData.DisasterEvents);
+                    context.SaveChanges();
+                }
+
                 // Seed RiskAnalysis
                 if (!context.RiskAnalysis.Any() && seedData.RiskAnalysis != null)
                 {
@@ -77,6 +94,7 @@ namespace SOSLocation.Infrastructure.Persistence
             public List<NewsNotification>? News { get; set; }
             public List<MeteorologicalData>? Weather { get; set; }
             public List<RiskAnalysis>? RiskAnalysis { get; set; }
+            public List<DisasterEvent>? DisasterEvents { get; set; }
         }
     }
 }

@@ -10,6 +10,7 @@ namespace SOSLocation.Domain.Interfaces
         Task<object> FetchUrbanFeaturesAsync(double minLat, double minLon, double maxLat, double maxLon);
         Task<object> FetchSoilDataAsync(double minLat, double minLon, double maxLat, double maxLon);
         Task<object> FetchVegetationDataAsync(double minLat, double minLon, double maxLat, double maxLon);
+        Task<object> FetchClimateDataAsync(double minLat, double minLon, double maxLat, double maxLon);
     }
 
     public interface IAlertsService

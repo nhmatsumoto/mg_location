@@ -1,4 +1,5 @@
-import { Target, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
+import { Target, CheckCircle2, Circle, ChevronRight } from 'lucide-react';
+import { Box, Flex, VStack, Text, Icon, HStack, Progress } from '@chakra-ui/react';
 
 interface Mission {
   id: string;
@@ -9,64 +10,112 @@ interface Mission {
 }
 
 const mockMissions: Mission[] = [
-  { id: '1', title: 'Validar 3 áreas de risco', reward: 500, completed: false, type: 'validate' },
-  { id: '2', title: 'Reportar inundação ativa', reward: 300, completed: true, type: 'report' },
-  { id: '3', title: 'Confirmar status de equipe', reward: 200, completed: false, type: 'rescue' },
+  { id: '1', title: 'VALIDAR_3_AREAS_RISCO', reward: 500, completed: false, type: 'validate' },
+  { id: '2', title: 'REPORTAR_INUNDACAO_ATIVA', reward: 300, completed: true, type: 'report' },
+  { id: '3', title: 'CONFIRMAR_EQUIPE_ZONA_B', reward: 200, completed: false, type: 'rescue' },
 ];
 
 export function MissionsPanel() {
   return (
-    <div className="glass-panel w-[320px] rounded-[2.5rem] flex flex-col border border-white/10 shadow-2xl overflow-hidden animate-panel">
-      <div className="p-8 pb-4">
-        <div className="flex items-center justify-between mb-6">
-          <div className="space-y-1">
-            <h3 className="text-xs font-black text-cyan-400 uppercase tracking-[0.3em]">Operações</h3>
-            <p className="text-xl font-black text-white">Missões Ativas</p>
-          </div>
-          <div className="h-10 w-10 glass-card rounded-xl flex items-center justify-center text-cyan-400 border border-cyan-500/20">
-            <Target size={18} />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-6 space-y-3 pb-8 custom-scrollbar">
-        {mockMissions.map((mission) => (
-          <div 
-            key={mission.id} 
-            className={`glass-card p-4 rounded-2xl border flex items-center justify-between group cursor-pointer transition-all ${
-              mission.completed ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-white/2 border-white/5 hover:border-cyan-500/30'
-            }`}
+    <Box
+      w="340px"
+      bg="rgba(15, 23, 42, 0.4)"
+      backdropFilter="blur(24px)"
+      borderRadius="3xl"
+      border="1px solid"
+      borderColor="whiteAlpha.100"
+      boxShadow="2xl"
+      display="flex"
+      flexDirection="column"
+      overflow="hidden"
+    >
+      <Box p={6} pb={3}>
+        <Flex align="center" justify="space-between">
+          <VStack align="flex-start" spacing={0}>
+            <Text fontSize="9px" fontWeight="black" color="sos.blue.400" textTransform="uppercase" letterSpacing="widest">
+              OBJETIVOS_TATICOS
+            </Text>
+            <Text fontSize="md" fontWeight="black" color="white">
+              Missões de Campo
+            </Text>
+          </VStack>
+          <Box
+            w="32px"
+            h="32px"
+            borderRadius="full"
+            bg="whiteAlpha.50"
+            border="1px solid"
+            borderColor="whiteAlpha.100"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
           >
-            <div className="flex items-center gap-3">
-               <div className={mission.completed ? 'text-emerald-400' : 'text-slate-500 group-hover:text-cyan-400 transition-colors'}>
-                  {mission.completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
-               </div>
-               <div className="space-y-0.5">
-                  <p className={`text-xs font-black leading-tight ${mission.completed ? 'text-emerald-400/80 line-through' : 'text-slate-200'}`}>
-                    {mission.title}
-                  </p>
-                  <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-tighter">
-                    +{mission.reward} XP
-                  </p>
-               </div>
-            </div>
-            
-            {!mission.completed && (
-              <ArrowRight size={14} className="text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
-            )}
-          </div>
-        ))}
-      </div>
+            <Icon as={Target} boxSize="14px" color="sos.blue.400" />
+          </Box>
+        </Flex>
+      </Box>
 
-      <div className="p-6 bg-black/40 border-t border-white/5 mt-auto">
-         <div className="flex items-center justify-between mb-3 text-[10px] font-black uppercase tracking-widest">
-            <span className="text-slate-500">Bônus Diário</span>
-            <span className="text-amber-400">80%</span>
-         </div>
-         <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-            <div className="h-full w-4/5 bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
-         </div>
-      </div>
-    </div>
+      <VStack spacing={0} align="stretch" px={2} pb={4}>
+        {mockMissions.map((mission) => (
+          <HStack 
+            key={mission.id} 
+            px={4}
+            py={3}
+            borderRadius="2xl"
+            cursor="pointer"
+            role="group"
+            transition="all 0.2s"
+            _hover={{ bg: mission.completed ? 'transparent' : 'whiteAlpha.50' }}
+            opacity={mission.completed ? 0.4 : 1}
+          >
+            <Icon 
+              as={mission.completed ? CheckCircle2 : Circle} 
+              size={18} 
+              color={mission.completed ? 'sos.green.400' : 'whiteAlpha.400'} 
+            />
+            <VStack align="flex-start" spacing={0} flex={1}>
+              <Text 
+                fontSize="xs" 
+                fontWeight="bold" 
+                color="white" 
+                fontFamily="mono"
+                textDecoration={mission.completed ? 'line-through' : 'none'}
+              >
+                {mission.title}
+              </Text>
+              <Text fontSize="9px" fontWeight="black" color="sos.blue.500">
+                RECOMPENSA: +{mission.reward} XP
+              </Text>
+            </VStack>
+            {!mission.completed && (
+              <Icon 
+                as={ChevronRight} 
+                size={14} 
+                color="whiteAlpha.300" 
+                _groupHover={{ color: 'sos.blue.400', transform: 'translateX(2px)' }} 
+                transition="all 0.2s"
+              />
+            )}
+          </HStack>
+        ))}
+      </VStack>
+
+      <Box p={6} pt={2} bg="blackAlpha.300">
+         <Flex align="center" justify="space-between" mb={2}>
+            <Text fontSize="9px" fontWeight="black" color="whiteAlpha.400" textTransform="uppercase" letterSpacing="widest">
+              EFICENCIA_OPERACIONAL
+            </Text>
+            <Text fontSize="10px" fontWeight="bold" color="sos.blue.400" fontFamily="mono">80.4%</Text>
+         </Flex>
+         <Progress 
+           value={80.4} 
+           size="xs" 
+           colorScheme="blue" 
+           bg="whiteAlpha.50" 
+           borderRadius="full" 
+           boxShadow="0 0 15px rgba(0, 102, 255, 0.2)"
+         />
+      </Box>
+    </Box>
   );
 }

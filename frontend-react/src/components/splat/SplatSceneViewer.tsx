@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, Splat, ContactShadows } from '@react-three/drei';
+import * as THREE from 'three';
 import { useSplatStore } from '../../store/useSplatStore';
 
 interface SplatSceneViewerProps {
@@ -24,7 +25,7 @@ const SplatSceneViewer: React.FC<SplatSceneViewerProps> = ({
   return (
     <div className="w-full h-full bg-slate-950 rounded-2xl overflow-hidden border border-white/5 shadow-2xl relative">
       <Canvas 
-        shadows 
+        shadows={{ type: THREE.PCFShadowMap }}
         camera={{ position: [5, 5, 5], fov: 45 }}
         gl={{ antialias: quality !== 'LOW' }}
       >

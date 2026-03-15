@@ -1,4 +1,5 @@
 import { useMap, useMapEvents, Rectangle } from 'react-leaflet';
+import type { LeafletMouseEvent } from 'leaflet';
 
 export type ToolMode = 'inspect' | 'point' | 'area' | 'filter_area' | 'simulation_box' | 'snapshot';
 
@@ -32,7 +33,7 @@ export function MapInteractions({
   const map = useMap();
   
   useMapEvents({
-    mousemove(e) {
+    mousemove(e: LeafletMouseEvent) {
       if (show3D) return;
       const wrap = e.latlng.wrap();
       onHover(wrap.lat, wrap.lng);
@@ -43,7 +44,7 @@ export function MapInteractions({
         setAreaDraft([areaDraft[0], [wrap.lat, wrap.lng]]);
       }
     },
-    click(e) {
+    click(e: LeafletMouseEvent) {
       if (show3D) return;
       const wrap = e.latlng.wrap();
       if (tool === 'point') {
@@ -65,14 +66,14 @@ export function MapInteractions({
         }
       }
     },
-    mousedown(e) {
+    mousedown(e: LeafletMouseEvent) {
       if (show3D) return;
       const wrap = e.latlng.wrap();
       if (tool === 'snapshot' || tool === 'simulation_box') {
         setAreaDraft([[wrap.lat, wrap.lng]]);
       }
     },
-    mouseup(e) {
+    mouseup(e: LeafletMouseEvent) {
       if (show3D) return;
       const wrap = e.latlng.wrap();
       if ((tool === 'snapshot' || tool === 'simulation_box') && areaDraft.length === 1) {
@@ -80,7 +81,7 @@ export function MapInteractions({
         setAreaDraft([]);
       }
     },
-    contextmenu(e) {
+    contextmenu(e: LeafletMouseEvent) {
       if (show3D) return;
       const wrap = e.latlng.wrap();
       if (tool === 'area' && areaDraft.length > 2) {

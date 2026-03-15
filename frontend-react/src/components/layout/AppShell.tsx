@@ -6,6 +6,7 @@ import { ToastStack } from '../feedback/ToastStack';
 import { NotificationCenter } from '../feedback/NotificationCenter';
 import { useNotifications } from '../../context/NotificationsContext';
 import { setApiNotifier } from '../../services/apiClient';
+import { Box, Flex, Grid, Spinner, Center } from '@chakra-ui/react';
 
 interface AppShellProps {
   children: ReactNode;
@@ -15,10 +16,6 @@ interface AppShellProps {
 }
 
 export function AppShell({ children, theme, onToggleTheme, variant = 'default' }: AppShellProps) {
-  const themeClass = theme === 'dark'
-    ? 'bg-[radial-gradient(circle_at_top,_#1e293b_0%,_#020617_45%)] text-slate-100'
-    : 'bg-[radial-gradient(circle_at_top,_#dbeafe_0%,_#f8fafc_55%)] text-slate-900';
-
   const { notices, pushNotice } = useNotifications();
   const [openCenter, setOpenCenter] = useState(false);
 
@@ -28,14 +25,21 @@ export function AppShell({ children, theme, onToggleTheme, variant = 'default' }
 
   if (variant === 'tactical') {
     return (
-      <div className={`min-h-screen ${themeClass}`}>
-        <div className="flex h-screen w-full overflow-hidden">
-          <Sidebar className="w-64 h-full shrink-0 border-r border-slate-700/50 bg-slate-900/90" />
-          <main className="flex-1 relative overflow-hidden">
-            <Suspense fallback={<div className="p-8 text-slate-500 font-bold animate-pulse text-center">Iniciando sistemas de comando...</div>}>
+      <Box minH="100vh" bg="sos.dark" color="white">
+        <Flex h="100vh" w="full" overflow="hidden">
+          <Sidebar h="full" w="72" borderRight="1px solid" borderColor="whiteAlpha.100" />
+          <Box as="main" flex="1" position="relative" overflow="hidden">
+            <Suspense fallback={
+              <Center h="full" flexDir="column">
+                <Spinner size="xl" color="sos.blue.500" thickness="4px" />
+                <Box mt={4} fontWeight="bold" color="whiteAlpha.700" fontFamily="mono" textTransform="uppercase" letterSpacing="widest">
+                  Inicializando Guardian Network...
+                </Box>
+              </Center>
+            }>
               {children}
             </Suspense>
-            <div className="absolute top-4 right-4 z-40">
+            <Box position="absolute" top={4} right={4} zIndex={40}>
               <Topbar
                 theme={theme}
                 onToggleTheme={onToggleTheme}
@@ -43,20 +47,27 @@ export function AppShell({ children, theme, onToggleTheme, variant = 'default' }
                 onOpenNotifications={() => setOpenCenter(true)}
                 minimal
               />
-            </div>
-          </main>
-        </div>
+            </Box>
+          </Box>
+        </Flex>
         <NotificationCenter open={openCenter} onClose={() => setOpenCenter(false)} />
         <ToastStack />
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div className={`min-h-screen ${themeClass}`}>
-      <div className="mx-auto grid min-h-screen w-full max-w-[1600px] grid-cols-1 gap-4 p-4 lg:grid-cols-[280px_1fr]">
+    <Box minH="100vh" bg="sos.dark">
+      <Grid 
+        templateColumns={{ base: '1fr', lg: '300px 1fr' }} 
+        gap={4} 
+        p={4} 
+        maxW="1800px" 
+        mx="auto" 
+        minH="100vh"
+      >
         <Sidebar />
-        <main className="space-y-3">
+        <Box as="main" display="flex" flexDirection="column" gap={4}>
           <Topbar
             theme={theme}
             onToggleTheme={onToggleTheme}
@@ -64,11 +75,13 @@ export function AppShell({ children, theme, onToggleTheme, variant = 'default' }
             onOpenNotifications={() => setOpenCenter(true)}
           />
           <StatusStrip />
-          {children}
-        </main>
-      </div>
+          <Box flex="1" position="relative">
+            {children}
+          </Box>
+        </Box>
+      </Grid>
       <NotificationCenter open={openCenter} onClose={() => setOpenCenter(false)} />
       <ToastStack />
-    </div>
+    </Box>
   );
 }

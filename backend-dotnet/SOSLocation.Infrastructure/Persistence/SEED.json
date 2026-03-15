@@ -61,5 +61,35 @@
       "Level": "High",
       "AnalysisDate": "2026-03-15T09:00:00Z"
     }
+  ],
+  "DisasterEvents": [
+    {
+      "Id": "97815f92-0697-448a-8530-81f1e944449f",
+      "Provider": "INMET",
+      "ProviderEventId": "INMET-1",
+      "EventType": "FLOOD",
+      "Severity": 4,
+      "Title": "Alerta de Enchente em Ubá",
+      "Description": "Risco alto de inundação nas áreas ribeirinhas.",
+      "Lat": -21.1215,
+      "Lon": -42.9427,
+      "CountryCode": "BR",
+      "CountryName": "Brasil",
+      "SourceUrl": "https://portal.inmet.gov.br"
+    },
+    {
+      "Id": "b1a2c3d4-e5f6-4a5b-8c7d-8e9f0a1b2c3d",
+      "Provider": "Cemaden",
+      "ProviderEventId": "CEMADEN-1",
+      "EventType": "LANDSLIDE",
+      "Severity": 5,
+      "Title": "Risco de Deslizamento em Juiz de Fora",
+      "Description": "Movimentação de massa detectada em encostas.",
+      "Lat": -21.7595,
+      "Lon": -43.3502,
+      "CountryCode": "BR",
+      "CountryName": "Brasil",
+      "SourceUrl": "https://www.cemaden.gov.br"
+    }
   ]
 }

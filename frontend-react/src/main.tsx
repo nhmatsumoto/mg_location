@@ -8,6 +8,8 @@ import './index.css';
 import './i18n';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { ChakraProvider, ColorModeScript } from '@chakra-ui/react';
+import theme from './theme';
 
 
 // Fix for Leaflet default icon 404s in bundled apps
@@ -45,11 +47,14 @@ root.render(<LoadingScreen />);
 const renderApp = () => {
   root.render(
     <StrictMode>
-      <NotificationsProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </NotificationsProvider>
+      <ChakraProvider theme={theme}>
+        <ColorModeScript initialColorMode={theme.config.initialColorMode} />
+        <NotificationsProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </NotificationsProvider>
+      </ChakraProvider>
     </StrictMode>,
   );
 };

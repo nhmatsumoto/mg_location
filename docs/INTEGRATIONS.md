@@ -1,107 +1,137 @@
-# Data Hub de Integrações (desastres: enchentes/deslizamentos)
+# Data Hub de Integrações (v3.0)
 
-Este módulo adiciona endpoints internos em `apps/api` para consolidar clima, alertas oficiais, transparência e satélite.
+Documenta todas as integrações externas utilizadas para coleta de dados
+geoespaciais, climáticos, alertas e transparência. A v3.0 adiciona suporte
+a fontes para simulação 3D de cidades (Brasil e Japão).
 
-## Endpoints implementados
+---
 
-- `GET /api/weather/forecast?lat=&lon=&days=`
-- `GET /api/weather/archive?lat=&lon=&start=&end=`
+## 1. GIS / Dados para Simulação 3D de Cidades
+
+### OpenTopography (DEM / Elevação)
+- **URL**: `https://portal.opentopography.org/API/globaldem`
+- **Dataset**: SRTMGL1 (30m de resolução)
+- **Uso**: Grade de elevação para renderização de terreno 3D
+- **Cache TTL**: 15 min
+- **Implementação**: `OpenTopographyProvider`
+- **Config**: `ExternalIntegrations__OpenTopographyUrl`
+
+### Overpass API (OpenStreetMap)
+- **URL**: `https://overpass-api.de/api/interpreter`
+- **Dados**: Edifícios (height, levels, usage), vias (highway, lanes), parques, florestas
+- **Uso**: Geometria 3D de edificações, rede viária, vegetação
+- **Cache TTL**: 15 min
+- **Implementação**: `OverpassProvider`
+- **Config**: `ExternalIntegrations__OverpassUrl`
+
+### Open-Meteo (Clima em tempo real)
+- **URL**: `https://api.open-meteo.com/v1/forecast`
+- **Dados**: Temperatura, umidade, precipitação, velocidade do vento
+- **Uso**: Sistema de partículas climáticas no renderizador 3D
+- **Cache TTL**: 30 min
+- **Implementação**: `OpenMeteoProvider`
+- **Config**: `ExternalIntegrations__OpenMeteoUrl`
+
+---
+
+## 2. Fontes Específicas por País
+
+### Brasil
+| Fonte | URL | Dados | Status |
+|---|---|---|---|
+| IBGE API | https://servicodados.ibge.gov.br | Municípios, limites, censo | ✅ Ativo |
+| INMET | https://apiprevmet3.inmet.gov.br | Alertas meteorológicos | ✅ Ativo |
+| CEMADEN | https://cemaden.gov.br | Alertas de desastres | ✅ Ativo |
+| Portal da Transparência CGU | https://api.portaldatransparencia.gov.br | Transferências e recursos | ✅ Ativo |
+| Prefeituras Municipais | variável | Plantas cadastrais, gabaritos | 🔄 Planejado |
+
+### Japão
+| Fonte | URL | Dados | Status |
+|---|---|---|---|
+| GSI Tiles (国土地理院) | https://cyberjapandata.gsi.go.jp | Tiles topográficos | 🔄 Planejado |
+| Kokudo Suuchi (国土数値情報) | https://nlftp.mlit.go.jp | Shapefiles, cadastro | 🔄 Planejado |
+| G-XML Format | — | Cadastro de edificações | 🔄 Planejado |
+| JMA (気象庁) | https://www.jma.go.jp | Alertas meteorológicos JP | 🔄 Planejado |
+
+---
+
+## 3. Alertas e Monitoramento
+
+### Endpoints de Alertas
 - `GET /api/alerts?bbox=minLon,minLat,maxLon,maxLat&since=ISO8601`
-- `GET /api/transparency/transfers?uf=&municipio=&start=&end=`
-- `GET /api/transparency/search?query=&start=&end=`
-- `GET /api/satellite/layers`
-- `GET /api/satellite/stac/search?collection=&bbox=&start=&end=&limit=`
-- `GET /api/satellite/goes/recent?minutes=`
+  - Agrega: INMET CAP/RSS, CEMADEN, DefesaCivil
+  - Feed configurável via `CAP_ALERT_FEEDS` env var
 
-## Fontes e adaptadores
+### Provedores Implementados
+| Provedor | Classe .NET | Dados |
+|---|---|---|
+| INMET | `InmetAlertProvider` | Avisos meteorológicos nacionais |
+| Defesa Civil | `DefesaCivilAlertProvider` | Alertas de desastre estaduais |
+| CEMADEN | `CemadenAlertProvider` | Pluviometria e risco hidrológico |
 
-- Clima: Open-Meteo (forecast + archive).
-- Alertas: feed CAP/RSS via `AlertFeedRegistry` (INMET por default, extensível por env).
-- Transparência: CGU Portal da Transparência (header `chave-api-dados`).
-- Satélite:
-  - A) manifest de layers NASA GIBS (WMTS/WMS);
-  - B) STAC Planetary Computer (Sentinel/Landsat);
-  - C) metadados de referência NOAA GOES Open Data (AWS Registry).
+---
 
-## Como obter a chave do Portal da Transparência
+## 4. Dados Climáticos e Meteorológicos
 
-1. Acesse a área da **API de Dados** do Portal da Transparência (CGU).
-2. Realize o cadastro de e-mail para emissão da chave gratuita.
-3. Configure no `.env`:
+### Previsão e Arquivo
+- `GET /api/weather/forecast?lat=&lon=&days=` → Open-Meteo
+- `GET /api/weather/archive?lat=&lon=&start=&end=` → Open-Meteo
+
+### Cache TTLs
+| Endpoint | TTL |
+|---|---|
+| GIS / DEM | 15 min |
+| GIS / Urban Features | 15 min |
+| Clima / Open-Meteo | 30 min |
+| Solo / Vegetação | 60 min |
+| Alertas | 3 min |
+| Transparência | 6 h |
+
+---
+
+## 5. Satélite
+
+- **NASA GIBS WMTS**: `MODIS_Terra_CorrectedReflectance_TrueColor`, `VIIRS_SNPP`, `GOES-East_ABI_GeoColor`
+- **STAC Planetary Computer**: Sentinel-2, Landsat (bbox + data range)
+- `GET /api/satellite/layers` — lista todas as camadas disponíveis
+
+---
+
+## 6. Transparência Pública
+
+- Portal da Transparência CGU — transferências e repasses federais
+- Chave de API via `TRANSPARENCIA_API_KEY` no `.env`
+
+---
+
+## 7. Resiliência das Integrações
+
+- **Fallback sintético**: todos os providers GIS geram dados sintéticos realísticos quando o serviço externo falha
+- **Circuit breaker**: timeout configurado por provider (15s OpenTopography, 30s Overpass, 10s Open-Meteo)
+- **Health check**: `IGisDataProvider.CheckHealthAsync()` exposto via Settings dashboard
+- **Retry**: HttpClient com política de retry via Polly (planejado)
+
+---
+
+## 8. Variáveis de Ambiente
 
 ```env
+# GIS (City-Scale Simulation)
+OPENTOPOGRAPHY_URL=https://portal.opentopography.org/API/globaldem
+OVERPASS_URL=https://overpass-api.de/api/interpreter
+OPENMETEO_URL=https://api.open-meteo.com/v1/forecast
+GIS_CACHE_EXPIRATION_MINUTES=15
+GIS_INDEXING_INTERVAL_MINUTES=30
+
+# Alertas BR
+INMET_URL=https://apiprevmet3.inmet.gov.br/avisos/ativos
+CAP_ALERT_FEEDS=https://apiprevmet3.inmet.gov.br/avisos/rss
+
+# Transparência
 TRANSPARENCIA_API_KEY=sua-chave
-```
+TRANSPARENCIA_BASE_URL=https://api.portaldatransparencia.gov.br/api-de-dados
 
-Sem a chave, os endpoints `/api/transparency/*` retornam erro 400 com mensagem explícita.
-
-## Camadas GIBS habilitadas
-
-- `MODIS_Terra_CorrectedReflectance_TrueColor`
-- `VIIRS_SNPP_CorrectedReflectance_TrueColor`
-- `GOES-East_ABI_GeoColor`
-
-Retornadas por `/api/satellite/layers` com `{id,title,type,templateUrl,attribution,timeSupport}`.
-
-## Como trocar/estender feeds CAP
-
-Use variável de ambiente com lista CSV:
-
-```env
-CAP_ALERT_FEEDS=https://apiprevmet3.inmet.gov.br/avisos/rss,https://outro-feed-cap.xml
-```
-
-A classe `AlertFeedRegistry` busca todos os feeds configurados, normaliza e aplica filtros opcionais (`bbox` e `since`).
-
-## Cache, resiliência e observabilidade
-
-- Cache em memória + file-cache opcional (via `CACHE_DIR`), com TTL por endpoint:
-  - Forecast: 15 min
-  - Alerts: 3 min
-  - Transparência: 6 h
-  - GIBS Layers: 24 h
-- Retry com backoff exponencial para timeouts/5xx (`HttpClient`).
-- Circuit breaker simples por fonte (`HttpClient`, evita martelar origem indisponível).
-- Logging estruturado no wrapper HTTP (`source`, `durationMs`, `status`, `cacheHit`).
-
-## Flags por ambiente
-
-```env
+# Satélite
 ENABLE_GOES=false
 ENABLE_STAC=true
-CACHE_DIR=.cache
 ```
-
-- `ENABLE_GOES=false`: endpoint GOES retorna 403 por padrão (opcional).
-- `ENABLE_STAC=true`: habilita busca STAC.
-
-
-## Configuração avançada (CGU)
-
-Se o Portal da Transparência alterar os caminhos de endpoint, você pode sobrescrever por env:
-
-```env
-TRANSPARENCIA_TRANSFERS_PATH=/transferencias
-TRANSPARENCIA_SEARCH_PATH=/busca-livre
-```
-
-## Testes rápidos sem dependência de Django
-
-Execute:
-
-```bash
-python -m unittest apps.api.integrations.tests.test_integrations_unit
-```
-
-
-## Cadastros e integração com banco (Missing Persons)
-
-O formulário de cadastro no mapa foi simplificado para usar apenas os campos essenciais:
-
-- `personName`
-- `lastSeenLocation`
-- coordenadas (`lat`, `lng`) selecionadas no mapa
-
-A API `POST /api/missing-persons` agora aceita payload simplificado e completa defaults de plataforma para campos não informados (`city`, `contactName`, `contactPhone`), persistindo no banco via model `MissingPerson`.
-
-A listagem de `GET /api/missing-persons` retorna também `lat` e `lng`, permitindo renderização direta no mapa.

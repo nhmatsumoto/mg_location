@@ -139,7 +139,11 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Only redirect to HTTPS in development (Nginx handles TLS termination in production/Docker)
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

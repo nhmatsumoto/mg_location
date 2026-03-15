@@ -81,9 +81,7 @@ services:
     restart: unless-stopped
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=https://+:8001;http://+:8000
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/certs/server.pfx
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=dev-password
+      - ASPNETCORE_URLS=http://+:8000
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=sos_location;Username=sos_location_user;Password=sos_location_password
       - Keycloak__Authority=https://keycloak:8443/realms/sos-location
       - Keycloak__Audience=sos-location-frontend
@@ -91,6 +89,9 @@ services:
       - ExternalIntegrations__InmetUrl=${INMET_URL:-https://apiprevmet3.inmet.gov.br/avisos/ativos}
       - ExternalIntegrations__OpenTopographyUrl=${OPENTOPOGRAPHY_URL:-https://portal.opentopography.org/API/globaldem}
       - ExternalIntegrations__OverpassUrl=${OVERPASS_URL:-https://overpass-api.de/api/interpreter}
+      - ExternalIntegrations__OpenMeteoUrl=${OPENMETEO_URL:-https://api.open-meteo.com/v1/forecast}
+      - ExternalIntegrations__CacheExpirationMinutes=${GIS_CACHE_EXPIRATION_MINUTES:-15}
+      - ExternalIntegrations__IndexingIntervalMinutes=${GIS_INDEXING_INTERVAL_MINUTES:-30}
     volumes:
       - ./infra/certs:/app/certs:ro
     depends_on:

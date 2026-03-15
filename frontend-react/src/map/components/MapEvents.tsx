@@ -1,14 +1,15 @@
 import { useMapEvents } from 'react-leaflet';
+import type { LeafletMouseEvent, LeafletEvent } from 'leaflet';
 import { useMapStore } from '../store/mapStore';
 
 export function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
   const setViewport = useMapStore((state) => state.setViewport);
 
   useMapEvents({
-    click(event) {
+    click(event: LeafletMouseEvent) {
       onMapClick(event.latlng.lat, event.latlng.lng);
     },
-    moveend(event) {
+    moveend(event: LeafletEvent) {
       const map = event.target;
       const center = map.getCenter();
       const bounds = map.getBounds();

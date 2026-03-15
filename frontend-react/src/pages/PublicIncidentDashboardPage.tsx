@@ -1,20 +1,70 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Polygon, TileLayer, MapContainer } from 'react-leaflet';
-import { useParams } from 'react-router-dom';
-import { LoadingOverlay } from '../components/ui/LoadingOverlay';
-import { modulesApi } from '../services/modulesApi';
-import { KpiCard } from '../components/ui/KpiCard';
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  Box, 
+  VStack, 
+  HStack, 
+  Text, 
+  Icon, 
+  Circle, 
+  Badge, 
+  Button
+} from '@chakra-ui/react';
 import { 
   Target, 
   CheckCircle, 
   Heart, 
   Wallet,
   Globe,
-  Info
+  Info,
+  ArrowLeft
 } from 'lucide-react';
+import { LoadingOverlay } from '../components/ui/LoadingOverlay';
+import { modulesApi } from '../services/modulesApi';
+
+interface KpiItemProps {
+  label: string;
+  value: string | number;
+  icon: React.ElementType;
+  color: string;
+  trend?: string;
+}
+
+const KpiItem: React.FC<KpiItemProps> = ({ label, value, icon, color, trend }) => (
+  <Box 
+    bg="rgba(15, 23, 42, 0.6)" 
+    backdropFilter="blur(20px)" 
+    borderRadius="2xl" 
+    border="1px solid" 
+    borderColor="whiteAlpha.100" 
+    p={4}
+    boxShadow="xl"
+  >
+    <HStack spacing={4}>
+      <Circle size="40px" bg="whiteAlpha.100">
+        <Icon as={icon} size={18} color={color} />
+      </Circle>
+      <VStack align="flex-start" spacing={0}>
+        <Text fontSize="8px" fontWeight="black" color="whiteAlpha.500" textTransform="uppercase" letterSpacing="widest">
+          {label}
+        </Text>
+        <HStack spacing={2}>
+          <Text fontSize="lg" fontWeight="black" color="white">{value}</Text>
+          {trend && (
+            <Badge variant="subtle" colorScheme="green" fontSize="10px" borderRadius="md">
+              {trend}
+            </Badge>
+          )}
+        </HStack>
+      </VStack>
+    </HStack>
+  </Box>
+);
 
 export function PublicIncidentDashboardPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [snapshot, setSnapshot] = useState<any | null>(null);
   const [areas, setAreas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,73 +99,133 @@ export function PublicIncidentDashboardPage() {
   const stats = useMemo(() => snapshot?.data || {}, [snapshot]);
 
   return (
-    <div className="h-screen w-screen relative overflow-hidden bg-slate-950">
+    <Box h="100vh" w="100vw" position="relative" overflow="hidden" bg="sos.dark">
       {loading && <LoadingOverlay message="Obtendo Dados Públicos..." />}
-      {/* Premium Identity Header */}
-      <div className="absolute top-4 left-4 right-4 z-50 flex justify-between items-start pointer-events-none">
-        <div className="flex gap-4 items-center bg-slate-900/80 border border-white/10 p-2 px-4 rounded-2xl backdrop-blur-xl pointer-events-auto shadow-2xl">
-          <Globe className="h-5 w-5 text-cyan-400" />
-          <div className="flex flex-col">
-            <h1 className="text-[10px] font-black text-white uppercase tracking-widest leading-none">PORTAL DE TRANSPARÊNCIA</h1>
-            <span className="text-[8px] text-cyan-500/70 font-mono">INCIDENTE #{id} | MONITORAMENTO PÚBLICO</span>
-          </div>
-        </div>
 
-        <div className="flex flex-col items-end gap-2 pointer-events-auto">
-          <div className="bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full backdrop-blur-md">
-            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-tighter">● OPERAÇÃO ATIVA</span>
-          </div>
-        </div>
-      </div>
+      {/* Floating Header */}
+      <Box 
+        position="absolute" 
+        top={6} 
+        left={6} 
+        right={6} 
+        zIndex={50}
+      >
+        <HStack justify="space-between">
+          <HStack 
+            bg="rgba(15, 23, 42, 0.7)" 
+            backdropFilter="blur(20px)" 
+            borderRadius="full" 
+            border="1px solid" 
+            borderColor="whiteAlpha.100" 
+            px={5} 
+            h="64px"
+            boxShadow="2xl"
+          >
+            <HStack spacing={4}>
+              <Circle size="36px" bg="sos.blue.500">
+                <Icon as={Globe} size={18} color="white" />
+              </Circle>
+              <Box>
+                <Text fontSize="10px" fontWeight="black" color="white" textTransform="uppercase" letterSpacing="widest" lineHeight="shorter">
+                  Portal de Transparência
+                </Text>
+                <Text fontSize="9px" color="sos.blue.400" fontFamily="mono" fontWeight="bold">
+                  INCIDENTE #{id} // MONITORAMENTO PÚBLICO
+                </Text>
+              </Box>
+            </HStack>
+          </HStack>
 
-      {/* KPI Sidebar - Floating - Pushed down to avoid header overlap */}
-      <div className="absolute top-28 left-4 z-40 flex flex-col gap-3 w-[220px]">
-        <KpiCard 
-          title="ÁREAS TOTAIS" 
+          <HStack spacing={4}>
+            <Badge 
+              variant="solid" 
+              bg="sos.green.500" 
+              color="white" 
+              borderRadius="full" 
+              px={4} 
+              py={2}
+              fontSize="10px"
+              fontWeight="black"
+              letterSpacing="widest"
+              boxShadow="0 0 20px rgba(40, 167, 69, 0.4)"
+            >
+              ● OPERAÇÃO ATIVA
+            </Badge>
+            <Button 
+              leftIcon={<ArrowLeft size={16} />} 
+              variant="tactical" 
+              borderRadius="full" 
+              h="48px" 
+              px={6}
+              onClick={() => navigate('/map')}
+            >
+              Voltar ao Mapa
+            </Button>
+          </HStack>
+        </HStack>
+      </Box>
+
+      {/* KPI Sidebar */}
+      <VStack 
+        position="absolute" 
+        top="110px" 
+        left={6} 
+        zIndex={40} 
+        spacing={4} 
+        w="280px"
+      >
+        <KpiItem 
+          label="Áreas Totais" 
           value={stats.searchAreas?.total ?? 0} 
-          icon={<Target size={16} />} 
-          color="text-slate-100"
+          icon={Target} 
+          color="white" 
         />
-        <KpiCard 
-          title="CONCLUÍDAS" 
+        <KpiItem 
+          label="Concluídas" 
           value={stats.searchAreas?.completed ?? 0} 
-          icon={<CheckCircle size={16} />} 
-          color="text-emerald-400"
+          icon={CheckCircle} 
+          color="sos.green.400"
           trend={`${stats.searchAreas?.total ? Math.round((stats.searchAreas.completed / stats.searchAreas.total) * 100) : 0}%`}
         />
-        <KpiCard 
-          title="DOAÇÕES" 
+        <KpiItem 
+          label="Doações" 
           value={`R$ ${stats.supportSummary?.totalReceivedMoney ?? 0}`} 
-          icon={<Heart size={16} />} 
-          color="text-rose-400"
+          icon={Heart} 
+          color="sos.red.400" 
         />
-        <KpiCard 
-          title="INVESTIDO" 
+        <KpiItem 
+          label="Investido" 
           value={`R$ ${stats.supportSummary?.totalSpentMoney ?? 0}`} 
-          icon={<Wallet size={16} />} 
-          color="text-amber-400"
+          icon={Wallet} 
+          color="orange.400" 
         />
-      </div>
 
-      {/* Info Box - Bottom Left */}
-      <div className="absolute bottom-6 left-4 z-40 max-w-[320px]">
-        <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl">
-          <div className="flex items-start gap-3">
-            <div className="bg-cyan-500/20 p-2 rounded-lg text-cyan-400">
-              <Info size={16} />
-            </div>
-            <div className="space-y-1">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Como ajudar</p>
-              <p className="text-xs text-slate-200 leading-relaxed font-medium">
+        {/* Info Box */}
+        <Box 
+          mt={4}
+          bg="rgba(15, 23, 42, 0.6)" 
+          backdropFilter="blur(20px)" 
+          borderRadius="2xl" 
+          border="1px solid" 
+          borderColor="whiteAlpha.100" 
+          p={5}
+        >
+          <HStack spacing={3} align="flex-start">
+            <Icon as={Info} size={16} color="sos.blue.400" mt={1} />
+            <VStack align="flex-start" spacing={1}>
+              <Text fontSize="9px" fontWeight="black" color="whiteAlpha.500" textTransform="uppercase" letterSpacing="widest">
+                Como ajudar
+              </Text>
+              <Text fontSize="xs" color="whiteAlpha.800" lineHeight="relaxed">
                 Acompanhe as campanhas oficiais e canais de doação autorizados. Sua ajuda é fundamental para as equipes de resgate.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+              </Text>
+            </VStack>
+          </HStack>
+        </Box>
+      </VStack>
 
-      {/* Map Content */}
-      <div className="absolute inset-0 z-0">
+      {/* Map Content (Background) */}
+      <Box position="absolute" inset={0} zIndex={0}>
         <MapContainer 
           center={[-21.1215, -42.9427]} 
           zoom={12} 
@@ -133,7 +243,7 @@ export function PublicIncidentDashboardPage() {
                 key={r.id} 
                 positions={path} 
                 pathOptions={{ 
-                  color: r.status === 'Completed' ? '#10b981' : r.status === 'InProgress' ? '#f59e0b' : '#3b82f6', 
+                  color: r.status === 'Completed' ? '#28A745' : r.status === 'InProgress' ? '#f59e0b' : '#003366', 
                   fillOpacity: 0.3,
                   weight: 2,
                   dashArray: r.status === 'InProgress' ? '5, 10' : undefined
@@ -142,7 +252,7 @@ export function PublicIncidentDashboardPage() {
             );
           })}
         </MapContainer>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

@@ -1,4 +1,5 @@
 import { Bell, Bolt, Moon, Search, Sun } from 'lucide-react';
+import { Box, Flex, HStack, IconButton, Input, InputGroup, InputLeftElement, Select, Badge, Button } from '@chakra-ui/react';
 
 interface TopbarProps {
   theme: 'dark' | 'light';
@@ -9,49 +10,122 @@ interface TopbarProps {
 }
 
 export function Topbar({ theme, onToggleTheme, notificationCount, onOpenNotifications, minimal }: TopbarProps) {
+
   if (minimal) {
     return (
-      <header className="rounded-xl border border-slate-700/60 bg-slate-900/40 p-2 backdrop-blur-md">
-        <div className="flex items-center gap-2">
-           <button onClick={onOpenNotifications} className="relative rounded-lg border border-slate-700 bg-slate-950/50 p-1.5 text-slate-100 hover:bg-slate-800" aria-label="Abrir notificações">
-            <Bell size={14} />
-            {notificationCount > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-rose-500 px-1 text-[8px] font-bold text-white">{notificationCount}</span>}
-          </button>
-          <button onClick={onToggleTheme} className="rounded-lg border border-slate-700 bg-slate-950/50 p-1.5 text-slate-100 hover:bg-slate-800" aria-label="Alternar tema">
-            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-          </button>
-        </div>
-      </header>
+      <Box as="header" p={2} bg="whiteAlpha.50" backdropFilter="blur(16px)" border="1px solid" borderColor="whiteAlpha.100" borderRadius="xl">
+        <HStack spacing={2}>
+          <Box position="relative">
+            <IconButton
+              size="sm"
+              icon={<Bell size={14} />}
+              aria-label="Notificações"
+              onClick={onOpenNotifications}
+              variant="tactical"
+              bg="sos.blue.500"
+              _hover={{ bg: 'sos.blue.600' }}
+            />
+            {notificationCount > 0 && (
+              <Badge
+                position="absolute"
+                top="-1"
+                right="-1"
+                bg="sos.red.500"
+                color="white"
+                borderRadius="full"
+                fontSize="2xs"
+                px={1}
+              >
+                {notificationCount}
+              </Badge>
+            )}
+          </Box>
+          <IconButton
+            size="sm"
+            icon={theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+            aria-label="Alternar tema"
+            onClick={onToggleTheme}
+            variant="ghost"
+            _hover={{ bg: 'whiteAlpha.100' }}
+          />
+        </HStack>
+      </Box>
     );
   }
 
   return (
-    <header className="rounded-2xl border border-slate-700/60 bg-slate-900/80 p-3">
-      <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <select className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+    <Box as="header" p={3} bg="whiteAlpha.50" backdropFilter="blur(16px)" border="1px solid" borderColor="whiteAlpha.100" borderRadius="2xl" boxShadow="xl">
+      <Flex direction={{ base: 'column', xl: 'row' }} justify="space-between" align={{ base: 'stretch', xl: 'center' }} gap={2}>
+        <HStack spacing={2} wrap="wrap">
+          <Select 
+            size="sm" 
+            maxW="250px" 
+            bg="sos.dark" 
+            borderColor="whiteAlpha.200"
+            color="white"
+            borderRadius="md"
+            _hover={{ borderColor: 'sos.blue.400' }}
+          >
             <option>Evento: Enchente Zona da Mata</option>
             <option>Evento: Deslizamento Serra Azul</option>
-          </select>
-          <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-300">
-            <Search size={14} />
-            <input aria-label="Busca global" placeholder="Busca global (pessoa, rua, equipe...)" className="w-52 bg-transparent outline-none placeholder:text-slate-400" />
-          </div>
-        </div>
+          </Select>
+          <InputGroup size="sm" maxW="300px">
+            <InputLeftElement pointerEvents="none">
+              <Search size={14} color="gray" />
+            </InputLeftElement>
+            <Input 
+              placeholder="Busca tática..." 
+              bg="sos.dark" 
+              borderColor="whiteAlpha.200"
+              _placeholder={{ color: 'whiteAlpha.400' }}
+              _focus={{ borderColor: 'sos.blue.400' }}
+            />
+          </InputGroup>
+        </HStack>
 
-        <div className="flex items-center gap-2">
-          <button onClick={onOpenNotifications} className="relative rounded-lg border border-slate-700 bg-slate-950 p-2 text-slate-100 hover:bg-slate-800" aria-label="Abrir notificações">
-            <Bell size={16} />
-            {notificationCount > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">{notificationCount}</span>}
-          </button>
-          <button className="inline-flex items-center gap-1 rounded-lg bg-cyan-600 px-3 py-2 text-xs font-semibold text-white hover:bg-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
-            <Bolt size={14} /> Ações rápidas
-          </button>
-          <button onClick={onToggleTheme} className="rounded-lg border border-slate-700 bg-slate-950 p-2 text-slate-100 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900" aria-label="Alternar tema">
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-        </div>
-      </div>
-    </header>
+        <HStack spacing={2}>
+          <Box position="relative">
+            <IconButton
+              icon={<Bell size={16} />}
+              aria-label="Abrir notificações"
+              onClick={onOpenNotifications}
+              bg="sos.dark"
+              borderColor="whiteAlpha.200"
+              _hover={{ bg: 'whiteAlpha.100' }}
+            />
+            {notificationCount > 0 && (
+              <Badge
+                position="absolute"
+                top="-1"
+                right="-1"
+                bg="sos.red.500"
+                color="white"
+                borderRadius="full"
+                px={1.5}
+                fontSize="xs"
+              >
+                {notificationCount}
+              </Badge>
+            )}
+          </Box>
+          <Button 
+            leftIcon={<Bolt size={14} />} 
+            variant="tactical"
+            size="sm" 
+            fontSize="xs"
+          >
+            AÇÕES RÁPIDAS
+          </Button>
+          <IconButton
+            icon={theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            aria-label="Alternar tema"
+            onClick={onToggleTheme}
+            bg="sos.dark"
+            borderColor="whiteAlpha.200"
+            _hover={{ bg: 'whiteAlpha.100' }}
+          />
+        </HStack>
+      </Flex>
+    </Box>
   );
 }

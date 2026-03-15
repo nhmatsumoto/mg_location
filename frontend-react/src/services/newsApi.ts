@@ -22,8 +22,12 @@ export const newsApi = {
       const response = await apiClient.get(`/v1/news`, {
         params: { country, location, timeWindow }
       });
-      // apiClient already unwraps response.data.data, so response.data is the payload
-      return response.data.items as NewsNotification[];
+      // apiClient interceptor already unwraps Result<T>.data → response.data is ListResponseDto
+      const payload = response.data;
+      // ListResponseDto has .items; but interceptor may have unwrapped further
+      if (Array.isArray(payload)) return payload as NewsNotification[];
+      if (payload?.items) return payload.items as NewsNotification[];
+      return [];
     } catch (error) {
       console.error("Failed to fetch news:", error);
       return [];

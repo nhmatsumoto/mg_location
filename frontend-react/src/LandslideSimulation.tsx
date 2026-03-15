@@ -423,7 +423,7 @@ export default function LandslideSimulation({
         </div>
       )}
 
-      <Canvas camera={{ position: [12, 10, 14], fov: 47 }} shadows>
+      <Canvas camera={{ position: [12, 10, 14], fov: 47 }} shadows={{ type: THREE.PCFShadowMap }}>
         <ambientLight intensity={0.42} />
         <directionalLight position={[10, 20, 5]} intensity={1.15} castShadow />
         <directionalLight position={[-8, 6, -4]} intensity={0.35} color="#93c5fd" />
